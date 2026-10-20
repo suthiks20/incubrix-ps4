@@ -1,0 +1,7 @@
+# Local dependencies and generated output do not belong in source control.
+node_modules/
+.env
+data/
+coverage/
+batch-results/
+*.log
