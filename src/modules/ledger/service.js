@@ -47,4 +47,5 @@ async function publish(knex, connector, rendition, destination, connection, key)
   }
 }
 function resultFromRow(row) { return { platform_post_id: row.platform_post_id, live_url: row.live_url, status: 'published' }; }
-module.exports = { publish };
+async function publishedTimes(knex, connectorKey, destinationRef, since) { return repository.publishedTimes(knex, connectorKey, destinationRef, since); }
+module.exports = { publish, publishedTimes };
