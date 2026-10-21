@@ -47,7 +47,8 @@ function createBase(manifest, options = {}) {
         : resetHeader !== null && Number.isFinite(Number(resetHeader))
           ? Math.max(0, Number(resetHeader) - Math.floor(now() / 1000))
           : undefined;
-      if (retryAfter !== undefined) details.retry_after_seconds = retryAfter;
+      details.retry_after_seconds = retryAfter === undefined ? Math.ceil(config.CONNECTOR_MAX_BACKOFF_MS / 1000) : retryAfter;
+      details.action = 'Wait for retry_after_seconds before trying again.';
     }
     if (code) return new AppError(code, `Platform returned HTTP ${status}`, { statusCode: require('../../shared/errors/codes')[code].statusCode, retryable: require('../../shared/errors/codes')[code].retryable, details });
     if (status >= 500) return new AppError('PLATFORM_UNAVAILABLE', 'Platform is temporarily unavailable', { statusCode: 503, retryable: true });
@@ -56,7 +57,9 @@ function createBase(manifest, options = {}) {
   async function request(destination, connection, url, init = {}) {
     const key = `${manifest.key}:${destination.config.base_url}`;
     const circuit = circuits.get(key) || { failures: 0, openedAt: null };
-    if (circuit.openedAt !== null && now() - circuit.openedAt < config.CIRCUIT_COOLDOWN_SECONDS * 1000) throw new AppError('PLATFORM_UNAVAILABLE', 'Connector circuit is open', { statusCode: 503, retryable: true });
+    if (circuit.openedAt !== null && now() - circuit.openedAt < config.CIRCUIT_COOLDOWN_SECONDS * 1000) {
+      throw new AppError('PLATFORM_UNAVAILABLE', 'Connector circuit is open', { statusCode: 503, retryable: true, details: { circuit_open: true } });
+    }
     if (circuit.openedAt !== null) { circuit.openedAt = null; circuit.failures = 0; }
     let attempt = 0;
     while (true) {
@@ -70,7 +73,7 @@ function createBase(manifest, options = {}) {
         circuit.failures += 1;
         if (circuit.failures >= config.CIRCUIT_FAILURE_THRESHOLD) circuit.openedAt = now();
         circuits.set(key, circuit);
-        throw new AppError('PLATFORM_UNAVAILABLE', 'Platform request failed', { statusCode: 503, retryable: true });
+        throw new AppError('PLATFORM_UNAVAILABLE', 'Request to the platform timed out or the connection dropped', { statusCode: 503, retryable: true });
       }
       clearTimeout(timer);
       if (response.ok) { circuits.set(key, { failures: 0, openedAt: null }); return response; }
@@ -79,13 +82,14 @@ function createBase(manifest, options = {}) {
       for (const secret of [connection.api_key, connection.api_username]) {
         if (typeof secret === 'string' && secret) message = message.split(secret).join('[REDACTED]');
       }
+      const hasRetryDelay = response.headers.get('retry-after') !== null || response.headers.get('x-ratelimit-reset') !== null;
       const error = platformError(response.status, message, response.headers);
       if (error.code === 'PLATFORM_UNAVAILABLE') {
         circuit.failures += 1;
         if (circuit.failures >= config.CIRCUIT_FAILURE_THRESHOLD) circuit.openedAt = now();
         circuits.set(key, circuit);
       }
-      if (response.status === 429 && attempt === 0 && error.details.retry_after_seconds !== undefined && error.details.retry_after_seconds * 1000 <= config.CONNECTOR_MAX_BACKOFF_MS) {
+      if (response.status === 429 && hasRetryDelay && attempt === 0 && error.details.retry_after_seconds * 1000 <= config.CONNECTOR_MAX_BACKOFF_MS) {
         if (options.logger) options.logger.info({ retry_after_seconds: error.details.retry_after_seconds }, 'Retrying connector request after rate limit');
         await sleep(error.details.retry_after_seconds * 1000);
         attempt += 1;

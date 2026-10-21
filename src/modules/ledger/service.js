@@ -7,6 +7,13 @@ const AppError = require('../../shared/errors/AppError');
 const { requestHash } = require('../../shared/idempotency/hash');
 const { assertValidKey } = require('../../shared/idempotency/keyValidation');
 const repository = require('./repository');
+const RETRY_ACTION = 'Retry with the same idempotency_key. The service will check the platform for the post before publishing again, so no duplicate is created.';
+
+function withUnknownLedgerDetails(error) {
+  if (error.code !== 'PLATFORM_UNAVAILABLE') return error;
+  error.details = { ...error.details, ledger_state: 'unknown', action: RETRY_ACTION };
+  return error;
+}
 
 async function publish(knex, connector, rendition, destination, connection, key) {
   assertValidKey(key);
@@ -20,7 +27,9 @@ async function publish(knex, connector, rendition, destination, connection, key)
     if (row.request_hash !== hash) throw new AppError('IDEMPOTENCY_KEY_CONFLICT', 'This idempotency key was already used for a different request', { statusCode: 409 });
     if (row.state === 'published') return { ...resultFromRow(row), replay: true };
     if (row.state === 'in_flight' || row.state === 'unknown') {
-      const found = await connector.findByMarker(destination, connection, marker);
+      let found;
+      try { found = await connector.findByMarker(destination, connection, marker); }
+      catch (error) { throw withUnknownLedgerDetails(error); }
       if (found) {
         row = await repository.update(knex, connector.key, key, { state: 'published', platform_post_id: found.platform_post_id, live_url: found.live_url, error_code: null });
         return { ...resultFromRow(row), replay: true };
@@ -34,7 +43,7 @@ async function publish(knex, connector, rendition, destination, connection, key)
     return { ...resultFromRow(row), replay: false };
   } catch (error) {
     await repository.update(knex, connector.key, key, { state: error.code === 'PLATFORM_UNAVAILABLE' ? 'unknown' : 'failed', error_code: error.code || 'INTERNAL_ERROR' });
-    throw error;
+    throw withUnknownLedgerDetails(error);
   }
 }
 function resultFromRow(row) { return { platform_post_id: row.platform_post_id, live_url: row.live_url, status: 'published' }; }

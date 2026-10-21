@@ -49,5 +49,5 @@ test('opens a circuit at its failure threshold and allows requests after cooldow
 });
 test('maps network failures to retryable platform unavailable', async () => {
   const base = createBase(manifest, { config, fetch: async () => { throw new Error('private network details'); } });
-  await expect(base.request({ config: { base_url: 'http://example.test' } }, {}, 'http://example.test')).rejects.toMatchObject({ code: 'PLATFORM_UNAVAILABLE', retryable: true, message: 'Platform request failed' });
+  await expect(base.request({ config: { base_url: 'http://example.test' } }, {}, 'http://example.test')).rejects.toMatchObject({ code: 'PLATFORM_UNAVAILABLE', retryable: true, message: 'Request to the platform timed out or the connection dropped' });
 });

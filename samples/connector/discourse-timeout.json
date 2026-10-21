@@ -1,0 +1,6 @@
+{
+  "idempotency_key": "demo-timeout-001",
+  "rendition": { "title": "A title that is long enough", "body": "Hello from IncuBrix", "language": "en", "is_promotional": false, "ai_generated": false },
+  "destination": { "name": "t", "url": "http://127.0.0.1:8000/mock/discourse/timeout_after_success", "platform_key": "discourse", "surface": "topic", "enabled": true, "config": { "base_url": "http://127.0.0.1:8000/mock/discourse/timeout_after_success" } },
+  "connection": { "api_key": "x", "api_username": "y" }
+}
