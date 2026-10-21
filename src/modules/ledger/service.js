@@ -63,6 +63,6 @@ async function publish(knex, connector, rendition, destination, connection, key,
   }
 }
 function resultFromRow(row) { return { platform_post_id: row.platform_post_id, live_url: row.live_url, status: 'published' }; }
-async function publishedTimes(knex, connectorKey, ref, since, states) { return repository.publishedTimes(knex, connectorKey, ref, since, states); }
+async function publishedTimes(knex, connectorKey, ref, since, states, excludeKey) { return repository.publishedTimes(knex, connectorKey, ref, since, states, excludeKey); }
 async function find(knex, connectorKey, key) { return repository.find(knex, connectorKey, key); }
 module.exports = { publish, publishedTimes, find };

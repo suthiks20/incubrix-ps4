@@ -7,7 +7,7 @@ const { createTestDatabase } = require('./testDatabase');
 let app; let knex; let root;
 const connection = { api_key: 'fake-api-key', api_username: 'fake-user' };
 beforeAll(async () => { knex = createTestDatabase(); app = buildApp({ knex, apiToken: '' }); await app.listen({ port: 0, host: '127.0.0.1' }); root = `http://127.0.0.1:${app.server.address().port}/mock/discourse`; });
-beforeEach(async () => { await knex('publish_ledger').del(); await fetch(`${root}/normal/_reset`, { method: 'POST' }); });
+beforeEach(async () => { await knex('publish_ledger').del(); await Promise.all(['normal', 'timeout_after_success'].map((scenario) => fetch(`${root}/${scenario}/_reset`, { method: 'POST' }))); });
 afterAll(async () => { await app.close(); await knex.destroy(); });
 function request(key, destination = {}, rendition = {}) { return { idempotency_key: key, destination: { config: { base_url: `${root}/normal` }, ...destination }, connection, rendition: { title: 'A sufficiently long title', body: 'Helpful body', language: 'en', ...rendition } }; }
 async function publish(body) { return app.inject({ method: 'POST', url: '/connector/v1/discourse/publish', payload: body }); }
@@ -17,6 +17,15 @@ test('HARD CASE second post inside the weekly cap is rescheduled with next_allow
 });
 test('HARD CASE retrying a published key under a cap replays with 200 and Idempotent-Replay true', async () => {
   const body = request('rule-replay', { frequency_cap: { posts: 1, per_days: 7 } }); expect((await publish(body)).statusCode).toBe(200); const retry = await publish(body); expect(retry.statusCode).toBe(200); expect(retry.headers['idempotent-replay']).toBe('true');
+});
+test('HARD CASE timeout then retry under a frequency cap still reconciles', async () => {
+  const destination = { config: { base_url: `${root}/timeout_after_success` }, frequency_cap: { posts: 1, per_days: 7 }, self_promo_allowed: true };
+  const body = request('rule-timeout-cap', destination); const first = await publish(body); expect(first.statusCode).toBe(503);
+  const retry = await publish(body); expect(retry.statusCode).toBe(200); expect(retry.headers['idempotent-replay']).toBe('true'); expect((await fetch(`${root}/timeout_after_success/_state`).then((r) => r.json())).posts).toHaveLength(1); expect((await knex('publish_ledger').where({ idempotency_key: 'rule-timeout-cap' }).first()).state).toBe('published');
+});
+test('a different key while an unknown post exists remains blocked by the cap', async () => {
+  const destination = { config: { base_url: `${root}/timeout_after_success` }, frequency_cap: { posts: 1, per_days: 7 } };
+  expect((await publish(request('rule-unknown-a', destination))).statusCode).toBe(503); const second = await publish(request('rule-unknown-b', destination)); expect(second.statusCode).toBe(429);
 });
 test('HARD CASE promotional post to a no-promo destination is blocked', async () => {
   const response = await publish(request('rule-promo', { self_promo_allowed: false }, { is_promotional: true })); expect(response.statusCode).toBe(422); expect(response.json().error.code).toBe('DEST_RULE_VIOLATION'); expect((await fetch(`${root}/normal/_state`).then((r) => r.json())).post_attempts).toBe(0); expect(await knex('publish_ledger').where({ idempotency_key: 'rule-promo' })).toHaveLength(0);

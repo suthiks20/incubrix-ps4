@@ -76,11 +76,11 @@ The Discourse manifest is the source of destination limits and platform error ma
 
 `POST /api/v1/rules/evaluate` is a pure dry run. The engine checks, in order: enabled/demoted state, automation permission, rolling frequency cap, self-promotion, link policy, AI disclosure, and language. Its decisions are `allow`, `block`, `reschedule`, or `assist`; block takes precedence over assist, then reschedule. Reasons always state the action taken, for example `DEST_RULE_FREQUENCY_CAP` supplies `next_allowed_at`, while `AI_DISCLOSURE_APPENDED` reports that the disclosure was appended. The fixture summary is: `rule cases: 24, caught: 24, missed: 0`.
 
-Frequency history includes published, in-flight, and unknown ledger rows so concurrent distinct keys are less likely to exceed a cap. This narrows rather than eliminates the race; production should use a per-destination PostgreSQL advisory lock.
+Frequency history includes published, in-flight, and unknown ledger rows so concurrent distinct keys are less likely to exceed a cap. The current per-destination publish lock is in-process and therefore protects a single service instance; production should use a per-destination PostgreSQL advisory lock.
 
 ## Webhook connector
 
-The protocol connector signs the exact JSON string sent using `sha256=` plus the HMAC-SHA256 of `${timestamp}.${rawBody}` with `connection.signing_secret`. For example, `sign('test-signing-secret', '1700000000', '{"title":"Hi"}')` produces the value sent in `X-IncuBrix-Signature`; `X-IncuBrix-Timestamp` holds the Unix seconds. The secret is redacted from logs, responses, and platform messages.
+The protocol connector signs the exact raw request body string sent using `sha256=` plus the HMAC-SHA256 of `${timestamp}.${rawBody}` with `connection.signing_secret`. For example, `sign('test-signing-secret', '1700000000', '{"title":"Hi"}')` produces the value sent in `X-IncuBrix-Signature`; `X-IncuBrix-Timestamp` holds the Unix seconds. The secret is redacted from logs, responses, and platform messages.
 
 Webhook simulation scenarios are `normal`, `bad_signature`, `partner_revoked`, `timeout_after_success`, `unavailable`, `rate_limit_long`, and `renamed_field`. They live under `/mock/webhook/:scenario` and are enabled only with `SIMULATION_MODE=true`.
 

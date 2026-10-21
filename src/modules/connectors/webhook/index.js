@@ -39,7 +39,7 @@ function createWebhook(options = {}) {
     const result = await base.readJson(response);
     const posts = Array.isArray(result) ? result : result.posts;
     if (!Array.isArray(posts)) throw new AppError('SCHEMA_DRIFT', 'Platform response is missing required fields', { statusCode: 502, details: { missing_fields: ['posts'] } });
-    const post = posts[0];
+    const post = posts.find((item) => item && item.ix_ref === marker);
     if (!post) return null;
     base.requireFields(post, [{ name: 'id', type: 'number' }, { name: 'url', type: 'string' }]);
     return { platform_post_id: String(post.id), live_url: post.url, status: 'published' };

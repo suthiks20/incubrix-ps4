@@ -50,19 +50,18 @@ async function execute(app, key, method, input) {
     if (violations.length) throw new AppError('DEST_SPEC_VIOLATION', 'Content does not meet destination requirements', { statusCode: 400, details: { violations } });
     const ref = destinationRef(resolvedDestination);
     return withDestinationLock(app, `${connector.key}:${ref}`, async () => {
-      const prior = await ledger.find(app.knex, connector.key, input.idempotency_key);
       const windowDays = resolvedDestination.frequency_cap && resolvedDestination.frequency_cap.per_days || 36500;
       const since = new Date(Date.now() - Number(windowDays) * 86400000).toISOString();
-      const history = { published_at: prior && prior.state === 'published' ? [] : await ledger.publishedTimes(app.knex, connector.key, ref, since, ['published', 'in_flight', 'unknown']) };
+      const history = { published_at: await ledger.publishedTimes(app.knex, connector.key, ref, since, ['published', 'in_flight', 'unknown'], input.idempotency_key) };
       const rules = evaluate({ rendition, destination: resolvedDestination, history, now: new Date().toISOString() });
-    if (rules.decision === 'reschedule') throw new AppError('DEST_RULE_FREQUENCY_CAP', 'Destination frequency cap requires rescheduling', { statusCode: 429, retryable: true, details: { next_allowed_at: rules.next_allowed_at, reasons: rules.reasons } });
-    if (rules.decision === 'block' || rules.decision === 'assist') {
-      const stateCode = rules.reasons.find((reason) => ['DESTINATION_DISABLED', 'DESTINATION_DEMOTED'].includes(reason.code));
-      const statusCode = stateCode ? (stateCode.code === 'DESTINATION_DISABLED' ? 409 : 409) : rules.decision === 'assist' ? 409 : 422;
-      const message = rules.decision === 'assist' ? 'Destination requires the assisted connector; a person must post.' : 'Destination rules do not allow automated publishing';
-      throw new AppError(stateCode ? stateCode.code : 'DEST_RULE_VIOLATION', message, { statusCode, details: { reasons: rules.reasons } });
-    }
-    const result = await ledger.publish(app.knex, connector, rules.rendition, resolvedDestination, connection, input.idempotency_key, app.config);
+      if (rules.decision === 'reschedule') throw new AppError('DEST_RULE_FREQUENCY_CAP', 'Destination frequency cap requires rescheduling', { statusCode: 429, retryable: true, details: { next_allowed_at: rules.next_allowed_at, reasons: rules.reasons } });
+      if (rules.decision === 'block' || rules.decision === 'assist') {
+        const stateCode = rules.reasons.find((reason) => ['DESTINATION_DISABLED', 'DESTINATION_DEMOTED'].includes(reason.code));
+        const statusCode = stateCode ? 409 : rules.decision === 'assist' ? 409 : 422;
+        const message = rules.decision === 'assist' ? 'Destination requires the assisted connector; a person must post.' : 'Destination rules do not allow automated publishing';
+        throw new AppError(stateCode ? stateCode.code : 'DEST_RULE_VIOLATION', message, { statusCode, details: { reasons: rules.reasons } });
+      }
+      const result = await ledger.publish(app.knex, connector, rules.rendition, resolvedDestination, connection, input.idempotency_key, app.config);
       return { ...result, warnings: rules.reasons.filter((reason) => reason.severity === 'fixed' || reason.severity === 'warn') };
     });
   }
