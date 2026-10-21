@@ -11,6 +11,8 @@ function validateManifest(manifest) {
   const required = ['key', 'version', 'tier', 'auth', 'surfaces', 'rate_limits', 'capabilities', 'error_map', 'instance_param'];
   const missing = required.filter((name) => manifest[name] === undefined);
   if (missing.length) throw new Error(`Connector manifest missing required keys: ${missing.join(', ')}`);
+  if (!Array.isArray(manifest.surfaces) || !manifest.surfaces.length || manifest.surfaces.some((surface) => !surface.key || !surface.spec)) throw new Error('Connector manifest surfaces must be a non-empty list of keyed specs');
+  if (!manifest.rate_limits.per_connection) throw new Error('Connector manifest rate_limits.per_connection is required');
   for (const [status, code] of Object.entries(manifest.error_map)) {
     if (!errorCodes[code]) throw new Error(`Connector manifest error_map ${status} uses unknown error code ${code}`);
   }
@@ -21,8 +23,10 @@ function loadManifest(filePath) {
   return validateManifest(yaml.load(fs.readFileSync(filePath, 'utf8')));
 }
 
-function loadManifests(directory = path.join(__dirname, 'discourse')) {
-  return [loadManifest(path.join(directory, 'manifest.yaml'))];
+function loadManifests(directory = __dirname) {
+  return fs.readdirSync(directory, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && fs.existsSync(path.join(directory, entry.name, 'manifest.yaml')))
+    .map((entry) => loadManifest(path.join(directory, entry.name, 'manifest.yaml')));
 }
 
 module.exports = { validateManifest, loadManifest, loadManifests };

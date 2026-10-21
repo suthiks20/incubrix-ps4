@@ -6,9 +6,11 @@ const DEFAULT_DISCLOSURE = 'Disclosure: this post was created with AI assistance
 function linkList(rendition) {
   const links = [...(rendition.links || [])];
   const matches = String(rendition.body || '').match(/https?:\/\/[^\s)\]]+/gi) || [];
-  return [...new Set([...links, ...matches])];
+  return [...new Set([...links, ...matches].map((link) => String(link).replace(/[.,!?;:]+$/, '')))];
 }
 function evaluate({ rendition, destination, history = { published_at: [] }, now }) {
+  const current = new Date(now);
+  if (!now || Number.isNaN(current.getTime())) throw new TypeError('now must be a valid ISO date');
   const result = { ...rendition, links: rendition.links ? [...rendition.links] : rendition.links };
   const reasons = [];
   let next_allowed_at = null;
@@ -16,7 +18,6 @@ function evaluate({ rendition, destination, history = { published_at: [] }, now 
   if (destination.enabled === false) add('DESTINATION_DISABLED', 'Destination is disabled.', 'Enable the destination before publishing.');
   if (destination.demoted === true) add('DESTINATION_DEMOTED', 'Certification failed; this destination is excluded until recertified.', 'Recertify the destination.');
   if (destination.automation_allowed === false) add('AUTOMATION_NOT_ALLOWED', 'This destination requires assisted posting.', 'Use POST /connector/v1/assisted/build_assist_pack; a person must post.', 'warn');
-  const current = new Date(now);
   const cap = destination.frequency_cap;
   if (cap && Number(cap.posts) > 0 && Number(cap.per_days) > 0) {
     const cutoff = current.getTime() - Number(cap.per_days) * 86400000;
@@ -46,7 +47,7 @@ function evaluate({ rendition, destination, history = { published_at: [] }, now 
     }
   } else if (destination.disclosure_required && typeof rendition.ai_generated !== 'boolean') add('AI_DISCLOSURE_UNKNOWN', 'AI-generated status is required for this destination.', 'Set ai_generated to true or false.');
   if (destination.language && rendition.language && destination.language.split('-')[0].toLowerCase() !== rendition.language.split('-')[0].toLowerCase()) add('LANGUAGE_MISMATCH', `Rendition language ${rendition.language} does not match destination language ${destination.language}.`, `Provide a rendition in destination language ${destination.language}.`);
-  const decision = reasons.some((reason) => reason.severity === 'block') ? 'block'
+  const decision = reasons.some((reason) => reason.severity === 'block' && reason.code !== 'DEST_RULE_FREQUENCY_CAP') ? 'block'
     : reasons.some((reason) => reason.code === 'AUTOMATION_NOT_ALLOWED') ? 'assist'
       : reasons.some((reason) => reason.code === 'DEST_RULE_FREQUENCY_CAP') ? 'reschedule' : 'allow';
   return { decision, reasons, next_allowed_at, rendition: result };

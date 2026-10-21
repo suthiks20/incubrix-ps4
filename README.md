@@ -72,6 +72,22 @@ The Discourse manifest is the source of destination limits and platform error ma
 | content_rejected | Returns 422 |
 | renamed_field | Returns a changed response field to trigger SCHEMA_DRIFT |
 
+## Rules engine
+
+`POST /api/v1/rules/evaluate` is a pure dry run. The engine checks, in order: enabled/demoted state, automation permission, rolling frequency cap, self-promotion, link policy, AI disclosure, and language. Its decisions are `allow`, `block`, `reschedule`, or `assist`; block takes precedence over assist, then reschedule. Reasons always state the action taken, for example `DEST_RULE_FREQUENCY_CAP` supplies `next_allowed_at`, while `AI_DISCLOSURE_APPENDED` reports that the disclosure was appended. The fixture summary is: `rule cases: 24, caught: 24, missed: 0`.
+
+Frequency history includes published, in-flight, and unknown ledger rows so concurrent distinct keys are less likely to exceed a cap. This narrows rather than eliminates the race; production should use a per-destination PostgreSQL advisory lock.
+
+## Webhook connector
+
+The protocol connector signs the exact JSON string sent using `sha256=` plus the HMAC-SHA256 of `${timestamp}.${rawBody}` with `connection.signing_secret`. For example, `sign('test-signing-secret', '1700000000', '{"title":"Hi"}')` produces the value sent in `X-IncuBrix-Signature`; `X-IncuBrix-Timestamp` holds the Unix seconds. The secret is redacted from logs, responses, and platform messages.
+
+Webhook simulation scenarios are `normal`, `bad_signature`, `partner_revoked`, `timeout_after_success`, `unavailable`, `rate_limit_long`, and `renamed_field`. They live under `/mock/webhook/:scenario` and are enabled only with `SIMULATION_MODE=true`.
+
+## Assisted connector
+
+`POST /connector/v1/assisted/build_assist_pack` makes a caption, media file list, destination deep link, and rule-derived checklist for a person to post. Its publish/status/delete methods intentionally return `501 CONNECTOR_NOT_IMPLEMENTED`; it makes no network calls and does not create ledger rows.
+
 In Windows Command Prompt, use `/mock/discourse/timeout_after_success` for the ambiguous-success recovery scenario (the demo credentials are for local simulation only):
 
 ```bat
@@ -106,7 +122,7 @@ curl.exe -X POST http://localhost:8000/connector/v1/discourse/publish -H "Conten
 | Group | Codes |
 | --- | --- |
 | Connector | DEST_SPEC_VIOLATION, DEST_RULE_FREQUENCY_CAP, CONNECTION_AUTH_EXPIRED, PLATFORM_RATE_LIMIT, PLATFORM_QUOTA_EXHAUSTED, PLATFORM_CONTENT_REJECTED, PLATFORM_UNAVAILABLE, CONNECTOR_DISABLED |
-| Connector framework extension | SCHEMA_DRIFT (502; extends the shared connector error set for incompatible platform responses) |
+| Connector framework extensions | SCHEMA_DRIFT, DEST_RULE_VIOLATION, DESTINATION_DEMOTED |
 | Platform | VALIDATION_ERROR, UNSUPPORTED_MEDIA_TYPE, PAYLOAD_TOO_LARGE, NOT_FOUND, UNAUTHORIZED, IDEMPOTENCY_KEY_REQUIRED, IDEMPOTENCY_KEY_CONFLICT, IDEMPOTENCY_REQUEST_IN_PROGRESS, RATE_LIMITED, NOT_READY, INTERNAL_ERROR, CONNECTOR_NOT_IMPLEMENTED, DESTINATION_DISABLED |
 | Destinations | DUPLICATE_DESTINATION |
 
@@ -118,4 +134,4 @@ curl.exe -X POST http://localhost:8000/connector/v1/discourse/publish -H "Conten
 - Phase 3 - done: idempotency claims, response replay, and concurrent duplicate protection.
 - Phase 3.5 cleanup - done: client error envelopes, server-managed destination fields, and config cleanup.
 - Phase 4 - done: connector framework, Discourse, simulator, and publish ledger.
-- Phases 5-6 - pending.
+- Phase 5 - done: rules engine, webhook, assisted connector, race protections, and simulation coverage.

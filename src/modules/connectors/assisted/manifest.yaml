@@ -1,0 +1,15 @@
+# Assisted connector metadata for destinations requiring a human poster.
+# Its pack surface is intentionally local and never writes to a platform.
+key: assisted
+version: 1.0.0
+tier: assisted
+auth: none
+surfaces:
+  - key: pack
+    content_types: [text]
+    spec: {title_max_chars: 300, body_max_chars: 20000, links_allowed: true}
+rate_limits:
+  per_connection: {requests: 60, per_seconds: 60}
+capabilities: [assist]
+error_map: {}
+instance_param: base_url

@@ -21,6 +21,7 @@ module.exports = {
       'req.body.connection',
       'req.body.connection.api_key',
       'req.body.connection.api_username',
+      'req.body.connection.signing_secret',
       'token',
       'secret',
       'password',
@@ -31,7 +32,10 @@ module.exports = {
       '*.api_key',
       '*.api_username',
       '**.api_key',
-      '**.api_username'
+      '**.api_username',
+      'signing_secret',
+      '*.signing_secret',
+      '**.signing_secret'
     ],
     censor: '[REDACTED]'
   }

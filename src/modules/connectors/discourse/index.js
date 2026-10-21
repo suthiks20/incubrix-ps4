@@ -9,7 +9,7 @@ const { loadManifest } = require('../manifestLoader');
 const manifest = loadManifest(__dirname + '/manifest.yaml');
 
 function createDiscourse(options = {}) {
-  const base = createBase(manifest, options);
+  const base = createBase(manifest, { ...options, authHeaders: (connection) => ({ 'Api-Key': connection.api_key, 'Api-Username': connection.api_username }), secretFields: ['api_key', 'api_username'] });
   function apiUrl(destination, path) { return `${destination.config.base_url.replace(/\/$/, '')}${path}`; }
   async function publish(rendition, destination, connection, idempotencyKey) {
     const marker = crypto.createHash('sha256').update(idempotencyKey).digest('hex').slice(0, 16);
@@ -46,4 +46,4 @@ function createDiscourse(options = {}) {
 }
 
 const unsupported = async () => { throw new AppError('CONNECTOR_NOT_IMPLEMENTED', 'This connector method is not implemented', { statusCode: 501 }); };
-module.exports = { manifest, createDiscourse, unsupported };
+module.exports = { manifest, createDiscourse, createConnector: createDiscourse, unsupported };

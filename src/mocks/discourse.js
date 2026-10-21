@@ -20,6 +20,7 @@ async function mock(app) {
     if (scenario === 'unavailable') return reply.code(503).send({ error: 'temporarily unavailable' });
     if (scenario === 'rate_limit' && !state.rateLimited) { state.rateLimited = true; reply.header('Retry-After', '1'); return reply.code(429).send({ errors: ['rate limited'] }); }
     if (scenario === 'rate_limit_long') { reply.header('Retry-After', '120'); return reply.code(429).send({ errors: ['rate limited'] }); }
+    if (scenario === 'slow') await new Promise((resolve) => setTimeout(resolve, 300));
     const id = state.nextId++;
     const slug = request.body.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     const post = { id, topic_id: id, topic_slug: slug, raw: request.body.raw, title: request.body.title };

@@ -14,8 +14,10 @@ const registerErrorHandlers = require('./shared/errors/errorHandler');
 const healthRoutes = require('./modules/health/routes');
 const destinationRoutes = require('./modules/destinations/routes');
 const connectorRoutes = require('./modules/connectors/routes');
+const rulesRoutes = require('./modules/rules/routes');
 const { loadManifests } = require('./modules/connectors/manifestLoader');
 const discourseMock = require('./mocks/discourse');
+const webhookMock = require('./mocks/webhook');
 const config = require('./config');
 
 function buildApp(opts = {}) {
@@ -43,7 +45,8 @@ function buildApp(opts = {}) {
   app.register(healthRoutes);
   app.register(destinationRoutes);
   app.register(connectorRoutes);
-  if (appConfig.SIMULATION_MODE) app.register(discourseMock);
+  app.register(rulesRoutes);
+  if (appConfig.SIMULATION_MODE) { app.register(discourseMock); app.register(webhookMock); }
   return app;
 }
 

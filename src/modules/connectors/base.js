@@ -22,8 +22,10 @@ function createBase(manifest, options = {}) {
   const sleep = options.sleep || ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
   const fetchImpl = options.fetch || fetch;
   const config = options.config || require('../../config');
-  function validate(rendition) {
-    const spec = manifest.surfaces.topic.spec;
+  function validate(rendition, surfaceKey) {
+    const surfaces = Array.isArray(manifest.surfaces) ? manifest.surfaces : Object.entries(manifest.surfaces).map(([key, value]) => ({ key, ...value }));
+    const surface = surfaces.find((entry) => entry.key === surfaceKey) || surfaces[0];
+    const spec = surface.spec;
     const violations = [];
     if (typeof rendition.title !== 'string') violations.push({ field: 'title', code: 'required', message: 'Title is required' });
     else if (rendition.title.length > spec.title_max_chars) violations.push({ field: 'title', code: 'max_length', message: `Title must be at most ${spec.title_max_chars} characters` });
@@ -37,7 +39,7 @@ function createBase(manifest, options = {}) {
     return violations;
   }
   function platformError(status, message, headers) {
-    const code = manifest.error_map[String(status)];
+    const code = manifest.error_map[String(status)] || (status === 403 ? 'CONNECTION_AUTH_EXPIRED' : undefined);
     const details = { platform_status: status, ...(message ? { platform_message: message } : {}) };
     if (status === 429) {
       const retryHeader = headers.get('retry-after');
@@ -55,7 +57,8 @@ function createBase(manifest, options = {}) {
     return new AppError('PLATFORM_CONTENT_REJECTED', 'Platform rejected the request', { statusCode: 422, details });
   }
   async function request(destination, connection, url, init = {}) {
-    const key = `${manifest.key}:${destination.config.base_url}`;
+    const baseUrl = destination.config && destination.config.base_url || destination.base_url || destination.url;
+    const key = `${manifest.key}:${baseUrl}`;
     const circuit = circuits.get(key) || { failures: 0, openedAt: null };
     if (circuit.openedAt !== null && now() - circuit.openedAt < config.CIRCUIT_COOLDOWN_SECONDS * 1000) {
       throw new AppError('PLATFORM_UNAVAILABLE', 'Connector circuit is open', { statusCode: 503, retryable: true, details: { circuit_open: true } });
@@ -67,7 +70,8 @@ function createBase(manifest, options = {}) {
       const timer = setTimeout(() => controller.abort(), config.CONNECTOR_HTTP_TIMEOUT_MS);
       let response;
       try {
-        response = await fetchImpl(url, { ...init, signal: controller.signal, headers: { ...(init.headers || {}), 'Api-Key': connection.api_key, 'Api-Username': connection.api_username } });
+        const authHeaders = options.authHeaders ? options.authHeaders(connection, init) : {};
+        response = await fetchImpl(url, { ...init, signal: controller.signal, headers: { ...(init.headers || {}), ...authHeaders } });
       } catch {
         clearTimeout(timer);
         circuit.failures += 1;
@@ -79,7 +83,8 @@ function createBase(manifest, options = {}) {
       if (response.ok) { circuits.set(key, { failures: 0, openedAt: null }); return response; }
       let message = '';
       try { const parsed = await response.clone().json(); message = parsed.errors && parsed.errors.join('; ') || parsed.error || ''; } catch { message = ''; }
-      for (const secret of [connection.api_key, connection.api_username]) {
+      for (const field of options.secretFields || ['api_key', 'api_username']) {
+        const secret = connection[field];
         if (typeof secret === 'string' && secret) message = message.split(secret).join('[REDACTED]');
       }
       const hasRetryDelay = response.headers.get('retry-after') !== null || response.headers.get('x-ratelimit-reset') !== null;
