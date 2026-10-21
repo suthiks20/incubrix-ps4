@@ -41,8 +41,18 @@ function loadConfig(env = process.env) {
     LOG_LEVEL: env.LOG_LEVEL || 'info',
     DATABASE_URL: requireValue(env, 'DATABASE_URL'),
     PUBLIC_BASE_URL: validateUrl('PUBLIC_BASE_URL', env.PUBLIC_BASE_URL || 'http://localhost:8000'),
-    SIMULATION_MODE: parseBoolean('SIMULATION_MODE', env.SIMULATION_MODE)
+    SIMULATION_MODE: parseBoolean('SIMULATION_MODE', env.SIMULATION_MODE),
+    DB_AUTO_MIGRATE: parseNamedBoolean('DB_AUTO_MIGRATE', env.DB_AUTO_MIGRATE, true),
+    API_TOKEN: env.API_TOKEN || '',
+    TEST_DATABASE_URL: env.TEST_DATABASE_URL || ''
   });
+}
+
+function parseNamedBoolean(name, value, defaultValue) {
+  if (value === undefined) return defaultValue;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  throw new Error(`${name} must be true or false`);
 }
 
 module.exports = loadConfig();

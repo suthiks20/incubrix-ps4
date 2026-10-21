@@ -10,7 +10,9 @@
     "test": "jest --runInBand",
     "test:unit": "jest --runInBand tests/unit",
     "test:integration": "jest --runInBand tests/integration",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "migrate": "knex --knexfile knexfile.js migrate:latest",
+    "migrate:rollback": "knex --knexfile knexfile.js migrate:rollback"
   },
   "dependencies": {
     "fastify": "^5.2.1",

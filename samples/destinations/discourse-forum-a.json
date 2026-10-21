@@ -1,0 +1,9 @@
+{
+  "name": "Example Discourse Forum A",
+  "url": "https://forum-a.example.com",
+  "platform_key": "discourse",
+  "connector_key": "discourse",
+  "config": { "base_url": "https://forum-a.example.com" },
+  "level": "L1",
+  "language": "en"
+}

@@ -4,7 +4,10 @@
  */
 module.exports = {
   testEnvironment: 'node',
+  roots: ['<rootDir>/tests'],
   testMatch: ['<rootDir>/tests/**/*.test.js'],
+  globalSetup: '<rootDir>/tests/setup/globalSetup.js',
   clearMocks: true,
-  transformIgnorePatterns: ['/node_modules/(?!(cookie)/)']
+  transformIgnorePatterns: ['/node_modules/(?!(cookie)/)'],
+  moduleNameMapper: { '^cookie$': '<rootDir>/tests/mocks/cookie.js' }
 };

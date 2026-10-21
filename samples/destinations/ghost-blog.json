@@ -1,0 +1,9 @@
+{
+  "name": "Example Ghost Publication",
+  "url": "https://publication.example.com",
+  "platform_key": "ghost",
+  "connector_key": "ghost",
+  "config": { "base_url": "https://publication.example.com" },
+  "level": "L1",
+  "language": "en"
+}

@@ -1,0 +1,11 @@
+{
+  "name": "Example No Promotion Forum",
+  "url": "https://no-promo.example.com",
+  "platform_key": "discourse",
+  "connector_key": "discourse",
+  "config": { "base_url": "https://no-promo.example.com" },
+  "self_promo_allowed": false,
+  "frequency_cap": { "posts": 1, "per_days": 7 },
+  "level": "L1",
+  "language": "en"
+}

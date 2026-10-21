@@ -20,5 +20,6 @@ module.exports = Object.freeze({
   NOT_READY: { statusCode: 503, retryable: false },
   INTERNAL_ERROR: { statusCode: 500, retryable: false },
   CONNECTOR_NOT_IMPLEMENTED: { statusCode: 501, retryable: false },
-  DESTINATION_DISABLED: { statusCode: 409, retryable: false }
+  DESTINATION_DISABLED: { statusCode: 409, retryable: false },
+  DUPLICATE_DESTINATION: { statusCode: 409, retryable: false }
 });

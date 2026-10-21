@@ -1,13 +1,14 @@
 /**
  * Confirms common HTTP failures use the shared public error envelope.
- * Injection still exercises Fastify parsing, validation, and not-found handling.
+ * Injection exercises Fastify parsing, validation, and not-found handling.
  */
 process.env.DATABASE_URL = 'postgres://ix:ix@localhost:5432/ix';
 jest.mock('cookie', () => ({ stringifySetCookie: ({ name, value }) => `${name}=${value}` }));
 const buildApp = require('../../src/app');
+const { createTestDatabase } = require('./testDatabase');
 let app;
-beforeAll(async () => { app = buildApp({ knex: { raw: jest.fn().mockResolvedValue({}) } }); await app.ready(); });
-afterAll(async () => { await app.close(); });
+beforeAll(async () => { app = buildApp({ knex: createTestDatabase() }); await app.ready(); });
+afterAll(async () => { await app.close(); await app.knex.destroy(); });
 function expectEnvelope(response, code) {
   expect(response.statusCode).toBe(code === 'NOT_FOUND' ? 404 : 400);
   expect(response.json()).toEqual(expect.objectContaining({ error: expect.objectContaining({ code, message: expect.any(String), retryable: expect.any(Boolean), details: expect.any(Object) }) }));
