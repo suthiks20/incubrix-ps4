@@ -11,6 +11,7 @@ const instances = new WeakMap();
 const destinationLocks = new WeakMap();
 const { evaluate } = require('../../rules/engine');
 const { destinationRef } = require('../commons/destinationRef');
+const { resolveConnection } = require('../../../shared/connections/resolve');
 
 function connectorFor(app, entry) {
   if (!instances.has(app)) instances.set(app, new Map());
@@ -38,7 +39,7 @@ async function execute(app, key, method, input) {
   const destination = input.destination || (input.destination_id ? await destinations.findById(app.knex, input.destination_id) : null);
   if (input.destination_id && !destination) throw new AppError('NOT_FOUND', 'Destination not found', { statusCode: 404 });
   const resolvedDestination = destination || { config: { base_url: input.destination_ref || input.base_url }, category: input.category };
-  const connection = input.connection || {};
+  const connection = input.connection || (destination ? resolveConnection(destination, app.config) : {});
   const rendition = input.rendition || {};
   if (key === 'assisted' && ['publish', 'get_status', 'delete', 'fetch_metrics', 'refresh_auth'].includes(method)) return connector[method] ? connector[method]() : entry.unsupported();
   if (method === 'validate') {

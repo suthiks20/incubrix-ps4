@@ -61,6 +61,13 @@ function loadConfig(env = process.env) {
     CONNECTOR_MAX_BACKOFF_MS: parseIntegerSetting('CONNECTOR_MAX_BACKOFF_MS', env.CONNECTOR_MAX_BACKOFF_MS, 5000, 0),
     CIRCUIT_FAILURE_THRESHOLD: parseIntegerSetting('CIRCUIT_FAILURE_THRESHOLD', env.CIRCUIT_FAILURE_THRESHOLD, 5, 1),
     CIRCUIT_COOLDOWN_SECONDS: parseIntegerSetting('CIRCUIT_COOLDOWN_SECONDS', env.CIRCUIT_COOLDOWN_SECONDS, 60, 1),
+    CERT_TEST_POST_TTL_MINUTES: parseIntegerSetting('CERT_TEST_POST_TTL_MINUTES', env.CERT_TEST_POST_TTL_MINUTES, 10, 1),
+    CERT_JANITOR_INTERVAL_SECONDS: parseIntegerSetting('CERT_JANITOR_INTERVAL_SECONDS', env.CERT_JANITOR_INTERVAL_SECONDS, 60, 1),
+    CERT_ALLOWED_HOSTS: (env.CERT_ALLOWED_HOSTS || 'localhost,127.0.0.1').split(',').map((host) => host.trim()).filter(Boolean),
+    STORAGE_DRIVER: env.STORAGE_DRIVER || 'local',
+    STORAGE_DIR: env.STORAGE_DIR || './data/storage',
+    SELF_BASE_URL: validateUrl('SELF_BASE_URL', env.SELF_BASE_URL || `http://127.0.0.1:${env.PORT || '8000'}`),
+    SEED_DEMO_DESTINATIONS: parseBoolean('SEED_DEMO_DESTINATIONS', env.SEED_DEMO_DESTINATIONS, (env.SIMULATION_MODE === undefined || env.SIMULATION_MODE === 'true')),
     CONNECTORS_DISABLED: (env.CONNECTORS_DISABLED || '').split(',').map((key) => key.trim()).filter(Boolean)
   });
 }

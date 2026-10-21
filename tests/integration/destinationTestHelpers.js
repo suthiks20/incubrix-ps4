@@ -19,8 +19,7 @@ function postDestination(app, payload, { key } = {}) {
   return app.inject({ method: 'POST', url: '/api/v1/destinations', headers: { 'Idempotency-Key': key === undefined ? randomUUID() : key }, payload });
 }
 async function clearDestinations(knex) {
-  await knex('idempotency_keys').truncate();
-  await knex('destinations').truncate();
+  await knex.raw('TRUNCATE destinations, certification_runs, destination_alerts, idempotency_keys RESTART IDENTITY CASCADE');
 }
 function expectEnvelope(response, code, statusCode) {
   expect(response.statusCode).toBe(statusCode);
