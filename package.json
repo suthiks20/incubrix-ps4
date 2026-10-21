@@ -8,6 +8,7 @@
   "scripts": {
     "start": "node src/server.js",
     "test": "jest --runInBand",
+    "test:ci": "jest --runInBand --ci",
     "test:unit": "jest --runInBand tests/unit",
     "test:integration": "jest --runInBand tests/integration",
     "lint": "eslint .",

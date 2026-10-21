@@ -7,7 +7,7 @@ const buildApp = require('../../src/app');
 let app;
 let knex;
 beforeAll(async () => {
-  knex = knexFactory({ client: 'pg', connection: { host: '127.0.0.1', port: 1, user: 'ix', password: 'ix', database: 'unreachable', connectionTimeoutMillis: 200 }, pool: { min: 0, max: 1, acquireTimeoutMillis: 500 } });
+  knex = knexFactory({ client: 'pg', connection: { host: '127.0.0.1', port: 1, user: 'ix', password: 'ix', database: 'unreachable', connectionTimeoutMillis: 200 }, pool: { min: 0, max: 1, acquireTimeoutMillis: 500 }, log: { warn: () => {} } });
   app = buildApp({ knex, apiToken: '' });
   await app.ready();
 });

@@ -4,6 +4,7 @@
  */
 module.exports = {
   testEnvironment: 'node',
+  setupFiles: ['<rootDir>/tests/setup/silenceLogs.js'],
   roots: ['<rootDir>/tests'],
   testMatch: ['<rootDir>/tests/**/*.test.js'],
   globalSetup: '<rootDir>/tests/setup/globalSetup.js',

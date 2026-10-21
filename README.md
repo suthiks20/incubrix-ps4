@@ -18,12 +18,15 @@ src/modules/<module>/
 
 ## Setup and verification
 
+Copying `.env.example` to `.env` is optional and only needed to override the Compose defaults. Start and verify with:
+
 ```bash
-copy .env.example .env
-docker compose up --build
+docker compose up --build -d
 docker compose run --rm api npm test
 docker compose run --rm api npm run lint
 ```
+
+The single command that runs all tests is `docker compose run --rm api npm test`.
 
 ## Destinations API
 

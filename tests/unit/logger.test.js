@@ -9,7 +9,7 @@ const loggerOptions = require('../../src/shared/logger');
 test('redacts secrets and authorization headers', () => {
   let output = '';
   const stream = new Writable({ write(chunk, _encoding, callback) { output += chunk; callback(); } });
-  pino(loggerOptions, stream).info({ token: 'abc123SECRET', req: { headers: { authorization: 'Bearer private-value' } } }, 'test');
+  pino({ ...loggerOptions, level: 'info' }, stream).info({ token: 'abc123SECRET', req: { headers: { authorization: 'Bearer private-value' } } }, 'test');
   expect(output).not.toContain('abc123SECRET');
   expect(output).not.toContain('Bearer private-value');
   expect(output).toContain('[REDACTED]');
