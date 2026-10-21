@@ -30,5 +30,6 @@ async function updateById(knex, id, data) {
   return rows[0];
 }
 function deleteById(knex, id) { return knex(TABLE_NAME).where({ id }).del(); }
+async function updateCertification(knex, id, state) { return (await knex(TABLE_NAME).where({ id }).update({ ...state, updated_at: knex.fn.now() }).returning('*'))[0]; }
 
-module.exports = { insert, findAll, countAll, findById, findByPlatformAndUrl, updateById, deleteById };
+module.exports = { insert, findAll, countAll, findById, findByPlatformAndUrl, updateById, deleteById, updateCertification };

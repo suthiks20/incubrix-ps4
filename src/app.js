@@ -19,6 +19,8 @@ const { loadManifests } = require('./modules/connectors/manifestLoader');
 const discourseMock = require('./mocks/discourse');
 const webhookMock = require('./mocks/webhook');
 const config = require('./config');
+const { createStorage } = require('./shared/storage');
+const certificationRoutes = require('./modules/certification/routes');
 
 function buildApp(opts = {}) {
   const appConfig = opts.config || config;
@@ -37,6 +39,9 @@ function buildApp(opts = {}) {
   });
   app.decorate('knex', opts.knex || knex);
   app.decorate('config', appConfig);
+  app.decorate('storage', opts.storage || createStorage(appConfig));
+  app.decorate('now', opts.now || (() => new Date()));
+  app.decorate('connectorFactory', opts.connectorFactory || null);
   loadManifests();
   correlationId(app);
   auth(app, { apiToken: opts.apiToken === undefined ? appConfig.API_TOKEN : opts.apiToken });
@@ -46,6 +51,7 @@ function buildApp(opts = {}) {
   app.register(destinationRoutes);
   app.register(connectorRoutes);
   app.register(rulesRoutes);
+  app.register(certificationRoutes);
   if (appConfig.SIMULATION_MODE) { app.register(discourseMock); app.register(webhookMock); }
   return app;
 }

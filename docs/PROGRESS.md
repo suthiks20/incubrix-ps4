@@ -8,4 +8,4 @@ Docker verification: Test Suites: 35 passed, 35 total. Tests: 162 passed, 162 to
 
 ## Next
 
-Implement Phase 6A certification core and demotion only. Do not begin 6B or 6C.
+Phase 6A-2 partial: alerts endpoint and a basic certification failure result/demotion path are present. Existing Docker suite remains green: 35 suites, 162 tests; lint clean. Certification integration coverage, per-step failure evidence/cleanup state, secrets coverage, and README documentation are still required. Do not begin 6B or 6C.
