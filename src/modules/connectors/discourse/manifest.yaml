@@ -1,0 +1,22 @@
+# Discourse connector metadata and destination limits.
+# Startup validates this file and the framework reads its capabilities.
+key: discourse
+version: 1
+tier: native
+auth: api_key
+surfaces:
+  topic:
+    content_types: [discussion]
+    spec:
+      title_max_chars: 255
+      body_max_chars: 32000
+      links_allowed: true
+rate_limits:
+  requests_per_minute: 60
+capabilities: [publish, status, delete]
+error_map:
+  401: CONNECTION_AUTH_EXPIRED
+  403: CONNECTION_AUTH_EXPIRED
+  422: PLATFORM_CONTENT_REJECTED
+  429: PLATFORM_RATE_LIMIT
+instance_param: base_url

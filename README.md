@@ -1,6 +1,6 @@
 # IncuBrix Long-Tail Destination Network
 
-The IncuBrix Long-Tail Destination Network is a Node.js/Fastify connector service foundation for publishing content to community destinations. Phase 2 adds database migrations, optional bearer authentication, and a destination catalogue API.
+The IncuBrix Long-Tail Destination Network is a Node.js/Fastify service for publishing content to community destinations. Phase 4 adds a manifest-driven connector framework, the Discourse connector, a simulation platform, and a durable publish ledger.
 
 ## Module layering
 
@@ -52,6 +52,32 @@ If authentication is enabled, add `-H "Authorization: Bearer YOUR_API_TOKEN"` to
 
 Every `POST` whose path starts with `/api/v1` requires an `Idempotency-Key` header containing 1–255 printable ASCII characters. A repeat with the same key, method, path, and request content replays the stored status and body and adds `Idempotent-Replay: true`. Reusing the same key for different request content returns `409 IDEMPOTENCY_KEY_CONFLICT`. If the original request is still running, the duplicate waits up to `IDEMPOTENCY_WAIT_MS`, then returns retryable `409 IDEMPOTENCY_REQUEST_IN_PROGRESS` if it has not finished. Completed keys are retained for `IDEMPOTENCY_TTL_HOURS`; abandoned in-progress claims can be reclaimed after `IDEMPOTENCY_LOCK_TTL_SECONDS`. `/connector/v1` is excluded because its connector contract carries `idempotency_key` in the JSON body, to be handled by the connector runtime later. Health routes and non-POST methods are also excluded.
 
+## Connector contract
+
+`POST /connector/v1/:key/:method` accepts `destination_ref` (the connector API base URL), `connection`, `rendition`, and `idempotency_key`. `destination_id` may be supplied instead to load a saved destination. Contract schemas intentionally accept additional properties so the request can evolve without changing the common envelope. Destination records use their `config.base_url`; connection values use `api_key` and `api_username`. The API key is only sent to the platform and is never persisted or returned.
+
+### Assumed contract schemas
+
+The Phase 4 request shapes are `rendition: { title, body, language?, is_promotional?, ai_generated?, canonical_url?, links?: string[], media?: { url, type }[] }`, `destination: { config: { base_url }, enabled? }`, and `connection: { api_key, api_username }`. Title and body are required by publish validation; unknown extra fields are accepted for forward compatibility.
+
+The Discourse manifest is the source of destination limits and platform error mappings. Publishing validates the title/body against the manifest and uses a hidden `ix-ref` marker for recovery. The ledger distinguishes `in_flight`, `published`, `unknown`, and `failed`; after a network failure the next request searches by marker before attempting another create.
+
+| Simulation scenario | Result |
+| --- | --- |
+| normal | Creates and reads posts normally |
+| timeout_after_success | Creates once, then drops the response connection |
+| unavailable | Returns a platform 503 |
+| rate_limit / rate_limit_long | Returns a short retryable 429 / a long 429 with Retry-After |
+| expired_token / revoked | Returns 401 / 403 |
+| content_rejected | Returns 422 |
+| renamed_field | Returns a changed response field to trigger SCHEMA_DRIFT |
+
+In Windows Command Prompt, use `/mock/discourse/timeout_after_success` for the ambiguous-success recovery scenario (the demo credentials are for local simulation only):
+
+```bat
+curl.exe -X POST http://localhost:8000/connector/v1/discourse/publish -H "Content-Type: application/json" --data-raw "{\"idempotency_key\":\"demo-publish-001\",\"destination_ref\":\"http://localhost:8000/mock/discourse/timeout_after_success\",\"connection\":{\"api_key\":\"demo\",\"api_username\":\"tester\"},\"rendition\":{\"title\":\"An example topic title\",\"body\":\"Hello community\"}}"
+```
+
 ## Settings
 
 | Setting | Default | Purpose |
@@ -69,12 +95,18 @@ Every `POST` whose path starts with `/api/v1` requires an `Idempotency-Key` head
 | IDEMPOTENCY_TTL_HOURS | 24 | Hours a completed request key is retained |
 | IDEMPOTENCY_WAIT_MS | 5000 | Maximum time a duplicate waits for an active request |
 | IDEMPOTENCY_LOCK_TTL_SECONDS | 60 | Age after which an unfinished claim is reclaimed |
+| CONNECTOR_HTTP_TIMEOUT_MS | 10000 | Per-request platform HTTP timeout |
+| CONNECTOR_MAX_BACKOFF_MS | 5000 | Maximum automatic wait for one rate-limit retry |
+| CIRCUIT_FAILURE_THRESHOLD | 5 | Consecutive unavailable responses before opening a connector circuit |
+| CIRCUIT_COOLDOWN_SECONDS | 60 | Seconds before an open circuit can retry |
+| CONNECTORS_DISABLED | empty | Comma-separated connector keys disabled by configuration |
 
 ## Error codes
 
 | Group | Codes |
 | --- | --- |
 | Connector | DEST_SPEC_VIOLATION, DEST_RULE_FREQUENCY_CAP, CONNECTION_AUTH_EXPIRED, PLATFORM_RATE_LIMIT, PLATFORM_QUOTA_EXHAUSTED, PLATFORM_CONTENT_REJECTED, PLATFORM_UNAVAILABLE, CONNECTOR_DISABLED |
+| Connector framework extension | SCHEMA_DRIFT (502; extends the shared connector error set for incompatible platform responses) |
 | Platform | VALIDATION_ERROR, UNSUPPORTED_MEDIA_TYPE, PAYLOAD_TOO_LARGE, NOT_FOUND, UNAUTHORIZED, IDEMPOTENCY_KEY_REQUIRED, IDEMPOTENCY_KEY_CONFLICT, IDEMPOTENCY_REQUEST_IN_PROGRESS, RATE_LIMITED, NOT_READY, INTERNAL_ERROR, CONNECTOR_NOT_IMPLEMENTED, DESTINATION_DISABLED |
 | Destinations | DUPLICATE_DESTINATION |
 
@@ -85,4 +117,5 @@ Every `POST` whose path starts with `/api/v1` requires an `Idempotency-Key` head
 - Phase 2 — done: migrations, optional bearer authentication, and destinations API.
 - Phase 3 - done: idempotency claims, response replay, and concurrent duplicate protection.
 - Phase 3.5 cleanup - done: client error envelopes, server-managed destination fields, and config cleanup.
-- Phases 4–6 — pending.
+- Phase 4 - done: connector framework, Discourse, simulator, and publish ledger.
+- Phases 5-6 - pending.

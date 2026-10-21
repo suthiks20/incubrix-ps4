@@ -10,6 +10,7 @@ module.exports = Object.freeze({
   PLATFORM_QUOTA_EXHAUSTED: { statusCode: 429, retryable: true, retry_hint: 'next window' },
   PLATFORM_CONTENT_REJECTED: { statusCode: 422, retryable: false },
   PLATFORM_UNAVAILABLE: { statusCode: 503, retryable: true },
+  SCHEMA_DRIFT: { statusCode: 502, retryable: false },
   CONNECTOR_DISABLED: { statusCode: 409, retryable: false },
   VALIDATION_ERROR: { statusCode: 400, retryable: false },
   UNSUPPORTED_MEDIA_TYPE: { statusCode: 415, retryable: false },

@@ -15,7 +15,10 @@ function validationFields(validation) {
 
 function registerErrorHandlers(app) {
   app.setErrorHandler((error, request, reply) => {
-    if (error instanceof AppError) return send(reply, error.statusCode, error.code, error.message, error.retryable, error.details);
+    if (error instanceof AppError) {
+      if (error.code === 'PLATFORM_RATE_LIMIT' && error.details.retry_after_seconds !== undefined) reply.header('Retry-After', String(error.details.retry_after_seconds));
+      return send(reply, error.statusCode, error.code, error.message, error.retryable, error.details);
+    }
     if (error.validation && request.headers['content-type']?.split(';')[0].trim().toLowerCase() === 'text/plain') {
       return send(reply, 415, 'UNSUPPORTED_MEDIA_TYPE', 'Request content type is not supported', false, {});
     }

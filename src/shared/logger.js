@@ -16,12 +16,22 @@ module.exports = {
     paths: [
       'req.headers.authorization',
       'req.headers.x-api-key',
+      'req.headers.api-key',
+      'req.headers.api-username',
+      'req.body.connection',
+      'req.body.connection.api_key',
+      'req.body.connection.api_username',
       'token',
       'secret',
       'password',
       'api_key',
       'access_token',
-      'refresh_token'
+      'refresh_token',
+      'connection',
+      '*.api_key',
+      '*.api_username',
+      '**.api_key',
+      '**.api_username'
     ],
     censor: '[REDACTED]'
   }
