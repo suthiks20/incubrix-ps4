@@ -29,6 +29,9 @@ test('parses SIMULATION_MODE as a boolean', () => {
 test('parses DB_AUTO_MIGRATE as a boolean', () => {
   expect(loadConfig({ DATABASE_URL: 'postgres://ix:ix@localhost:5432/ix', DB_AUTO_MIGRATE: 'false' }).DB_AUTO_MIGRATE).toBe(false);
 });
+test('invalid boolean settings name the setting', () => {
+  expect(() => loadConfig({ DATABASE_URL: 'postgres://ix:ix@localhost:5432/ix', DB_AUTO_MIGRATE: 'yes' })).toThrow('DB_AUTO_MIGRATE');
+});
 test('reads API_TOKEN and TEST_DATABASE_URL from the supplied environment', () => {
   const config = loadConfig({ DATABASE_URL: 'postgres://ix:ix@localhost:5432/ix', API_TOKEN: 'test-token', TEST_DATABASE_URL: 'postgres://ix:ix@localhost:5432/ix_test' });
   expect(config.API_TOKEN).toBe('test-token');

@@ -4,6 +4,5 @@
   "platform_key": "lemmy",
   "connector_key": "lemmy",
   "config": { "base_url": "https://community.example.com", "community": "ideas" },
-  "level": "L1",
   "language": "en"
 }

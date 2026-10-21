@@ -21,6 +21,8 @@ function buildApp(opts = {}) {
     logger: opts.logger === false ? false : logger,
     ajv: { customOptions: { removeAdditional: false } },
     genReqId: (request) => request.headers['x-correlation-id'] || crypto.randomUUID(),
+    // Fastify's LogController customizes its internal request log lines.
+    // This label makes each request log carry the correlation_id field.
     logController: new LogController({ requestIdLogLabel: 'correlation_id' })
   });
   app.decorate('knex', opts.knex || knex);

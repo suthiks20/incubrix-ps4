@@ -27,8 +27,8 @@ function parseIntegerSetting(name, value, defaultValue, minimum) {
   return parsed;
 }
 
-function parseBoolean(name, value) {
-  if (value === undefined) return true;
+function parseBoolean(name, value, defaultValue) {
+  if (value === undefined) return defaultValue;
   if (value === 'true') return true;
   if (value === 'false') return false;
   throw new Error(`${name} must be true or false`);
@@ -50,21 +50,14 @@ function loadConfig(env = process.env) {
     LOG_LEVEL: env.LOG_LEVEL || 'info',
     DATABASE_URL: requireValue(env, 'DATABASE_URL'),
     PUBLIC_BASE_URL: validateUrl('PUBLIC_BASE_URL', env.PUBLIC_BASE_URL || 'http://localhost:8000'),
-    SIMULATION_MODE: parseBoolean('SIMULATION_MODE', env.SIMULATION_MODE),
-    DB_AUTO_MIGRATE: parseNamedBoolean('DB_AUTO_MIGRATE', env.DB_AUTO_MIGRATE, true),
+    SIMULATION_MODE: parseBoolean('SIMULATION_MODE', env.SIMULATION_MODE, true),
+    DB_AUTO_MIGRATE: parseBoolean('DB_AUTO_MIGRATE', env.DB_AUTO_MIGRATE, true),
     API_TOKEN: env.API_TOKEN || '',
     TEST_DATABASE_URL: env.TEST_DATABASE_URL || '',
     IDEMPOTENCY_TTL_HOURS: parseIntegerSetting('IDEMPOTENCY_TTL_HOURS', env.IDEMPOTENCY_TTL_HOURS, 24, 1),
     IDEMPOTENCY_WAIT_MS: parseIntegerSetting('IDEMPOTENCY_WAIT_MS', env.IDEMPOTENCY_WAIT_MS, 5000, 0),
     IDEMPOTENCY_LOCK_TTL_SECONDS: parseIntegerSetting('IDEMPOTENCY_LOCK_TTL_SECONDS', env.IDEMPOTENCY_LOCK_TTL_SECONDS, 60, 1)
   });
-}
-
-function parseNamedBoolean(name, value, defaultValue) {
-  if (value === undefined) return defaultValue;
-  if (value === 'true') return true;
-  if (value === 'false') return false;
-  throw new Error(`${name} must be true or false`);
 }
 
 module.exports = loadConfig();

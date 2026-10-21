@@ -12,6 +12,8 @@ module.exports = Object.freeze({
   PLATFORM_UNAVAILABLE: { statusCode: 503, retryable: true },
   CONNECTOR_DISABLED: { statusCode: 409, retryable: false },
   VALIDATION_ERROR: { statusCode: 400, retryable: false },
+  UNSUPPORTED_MEDIA_TYPE: { statusCode: 415, retryable: false },
+  PAYLOAD_TOO_LARGE: { statusCode: 413, retryable: false },
   NOT_FOUND: { statusCode: 404, retryable: false },
   UNAUTHORIZED: { statusCode: 401, retryable: false },
   IDEMPOTENCY_KEY_REQUIRED: { statusCode: 400, retryable: false },

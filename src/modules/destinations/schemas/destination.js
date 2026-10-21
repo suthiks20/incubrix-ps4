@@ -17,11 +17,11 @@ const requestProperties = {
   connector_key: { type: 'string', minLength: 1 }, config: { type: 'object', additionalProperties: true },
   connection_ref: { type: 'string', nullable: true, description: 'Name of the stored connection or secret. Never put a secret value here.' },
   relevance_score: { type: 'integer', minimum: 1, maximum: 5, nullable: true }, relevance_reason: { type: 'string', nullable: true },
-  level: { type: 'string', enum: LEVELS }, last_certified_at: { type: 'string', format: 'date-time', nullable: true },
-  enabled: { type: 'boolean' }, demoted: { type: 'boolean' }
+  enabled: { type: 'boolean' }
 };
 const responseProperties = {
   id: { type: 'string', format: 'uuid' }, ...requestProperties,
+  level: { type: 'string', enum: LEVELS }, last_certified_at: { type: 'string', format: 'date-time', nullable: true }, demoted: { type: 'boolean' },
   url_normalized: { type: 'string' }, created_at: { type: 'string', format: 'date-time' }, updated_at: { type: 'string', format: 'date-time' }
 };
 

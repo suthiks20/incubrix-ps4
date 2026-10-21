@@ -4,6 +4,5 @@
   "platform_key": "discourse",
   "connector_key": "discourse",
   "config": { "base_url": "https://forum-b.example.com" },
-  "level": "L1",
   "language": "en"
 }

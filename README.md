@@ -43,7 +43,7 @@ The sample JSON files live in `samples/destinations`. In Windows Command Prompt,
 curl.exe -X POST http://localhost:8000/api/v1/destinations -H "Content-Type: application/json" -H "Idempotency-Key: demo-001" --data-binary "@samples\destinations\discourse-forum-a.json"
 ```
 
-If authentication is enabled, add `-H "Authorization: Bearer YOUR_API_TOKEN"` to the command. Reuse an idempotency key only for the same request; use a new key for a new attempt. A duplicate destination with a different key returns `409 DUPLICATE_DESTINATION`.
+If authentication is enabled, add `-H "Authorization: Bearer YOUR_API_TOKEN"` to the command. Reuse an idempotency key only for the same request; use a new key for a new attempt. A duplicate destination with a different key returns `409 DUPLICATE_DESTINATION`. The `level`, `last_certified_at`, and `demoted` fields are server-managed: new destinations start at level `L0`, and later certification code can update those fields. Clients may still set `enabled` to disable a destination.
 
 ## Idempotency
 
@@ -72,7 +72,7 @@ Every `POST` whose path starts with `/api/v1` requires an `Idempotency-Key` head
 | Group | Codes |
 | --- | --- |
 | Connector | DEST_SPEC_VIOLATION, DEST_RULE_FREQUENCY_CAP, CONNECTION_AUTH_EXPIRED, PLATFORM_RATE_LIMIT, PLATFORM_QUOTA_EXHAUSTED, PLATFORM_CONTENT_REJECTED, PLATFORM_UNAVAILABLE, CONNECTOR_DISABLED |
-| Platform | VALIDATION_ERROR, NOT_FOUND, UNAUTHORIZED, IDEMPOTENCY_KEY_REQUIRED, IDEMPOTENCY_KEY_CONFLICT, IDEMPOTENCY_REQUEST_IN_PROGRESS, RATE_LIMITED, NOT_READY, INTERNAL_ERROR, CONNECTOR_NOT_IMPLEMENTED, DESTINATION_DISABLED |
+| Platform | VALIDATION_ERROR, UNSUPPORTED_MEDIA_TYPE, PAYLOAD_TOO_LARGE, NOT_FOUND, UNAUTHORIZED, IDEMPOTENCY_KEY_REQUIRED, IDEMPOTENCY_KEY_CONFLICT, IDEMPOTENCY_REQUEST_IN_PROGRESS, RATE_LIMITED, NOT_READY, INTERNAL_ERROR, CONNECTOR_NOT_IMPLEMENTED, DESTINATION_DISABLED |
 | Destinations | DUPLICATE_DESTINATION |
 
 ## Phases
@@ -81,4 +81,5 @@ Every `POST` whose path starts with `/api/v1` requires an `Idempotency-Key` head
 - Phase 1 — done: project skeleton, health/readiness, configuration, errors, logging, tests, and Docker.
 - Phase 2 — done: migrations, optional bearer authentication, and destinations API.
 - Phase 3 - done: idempotency claims, response replay, and concurrent duplicate protection.
+- Phase 3.5 cleanup - done: client error envelopes, server-managed destination fields, and config cleanup.
 - Phases 4–6 — pending.
