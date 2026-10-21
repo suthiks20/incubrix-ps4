@@ -5,6 +5,7 @@
 const buildApp = require('./app');
 const config = require('./config');
 const { runMigrations } = require('./db/migrate');
+const { purgeExpired } = require('./shared/idempotency/repository');
 const app = buildApp();
 
 async function closeServer(signal) {
@@ -17,6 +18,8 @@ process.on('SIGTERM', () => closeServer('SIGTERM'));
 process.on('SIGINT', () => closeServer('SIGINT'));
 async function startServer() {
   if (config.DB_AUTO_MIGRATE) await runMigrations(app.knex, app.log);
+  const purgedCount = await purgeExpired(app.knex);
+  app.log.info({ purged_count: purgedCount }, 'Expired idempotency keys purged');
   await app.listen({ port: config.PORT, host: config.HOST });
 }
 

@@ -9,6 +9,7 @@ const knex = require('./db/knex');
 const logger = require('./shared/logger');
 const correlationId = require('./shared/plugins/correlationId');
 const auth = require('./shared/plugins/auth');
+const idempotency = require('./shared/plugins/idempotency');
 const registerErrorHandlers = require('./shared/errors/errorHandler');
 const healthRoutes = require('./modules/health/routes');
 const destinationRoutes = require('./modules/destinations/routes');
@@ -25,6 +26,7 @@ function buildApp(opts = {}) {
   app.decorate('knex', opts.knex || knex);
   correlationId(app);
   auth(app, { apiToken: opts.apiToken === undefined ? appConfig.API_TOKEN : opts.apiToken });
+  idempotency(app, appConfig);
   registerErrorHandlers(app);
   app.register(healthRoutes);
   app.register(destinationRoutes);

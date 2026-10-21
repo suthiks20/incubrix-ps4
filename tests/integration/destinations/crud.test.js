@@ -2,13 +2,13 @@
  * Exercises destination create, read, partial update, list, and hard delete over HTTP.
  * The app uses the isolated TEST_DATABASE_URL database initialized by Jest global setup.
  */
-const { createDestinationContext, destinationInput, clearDestinations, expectEnvelope } = require('../destinationTestHelpers');
+const { createDestinationContext, destinationInput, postDestination, clearDestinations, expectEnvelope } = require('../destinationTestHelpers');
 let context;
 beforeAll(async () => { context = await createDestinationContext(); });
 afterAll(async () => { await context.app.close(); await context.knex.destroy(); });
 beforeEach(async () => clearDestinations(context.knex));
 test('creates, gets, updates, lists, deletes, then reports not found', async () => {
-  const createdResponse = await context.app.inject({ method: 'POST', url: '/api/v1/destinations', payload: destinationInput() });
+  const createdResponse = await postDestination(context.app, destinationInput());
   expect(createdResponse.statusCode).toBe(201);
   const created = createdResponse.json();
   expect(created.url_normalized).toBe('https://forum.example.com/');

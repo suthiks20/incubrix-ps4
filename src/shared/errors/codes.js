@@ -16,6 +16,7 @@ module.exports = Object.freeze({
   UNAUTHORIZED: { statusCode: 401, retryable: false },
   IDEMPOTENCY_KEY_REQUIRED: { statusCode: 400, retryable: false },
   IDEMPOTENCY_KEY_CONFLICT: { statusCode: 409, retryable: false },
+  IDEMPOTENCY_REQUEST_IN_PROGRESS: { statusCode: 409, retryable: true },
   RATE_LIMITED: { statusCode: 429, retryable: false },
   NOT_READY: { statusCode: 503, retryable: false },
   INTERNAL_ERROR: { statusCode: 500, retryable: false },

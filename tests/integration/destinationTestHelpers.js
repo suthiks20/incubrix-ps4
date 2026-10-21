@@ -4,6 +4,7 @@
  */
 const buildApp = require('../../src/app');
 const { createTestDatabase } = require('./testDatabase');
+const { randomUUID } = require('crypto');
 
 async function createDestinationContext(apiToken = '') {
   const knex = createTestDatabase();
@@ -14,11 +15,17 @@ async function createDestinationContext(apiToken = '') {
 function destinationInput(overrides = {}) {
   return { name: 'Example Community', url: 'https://forum.example.com/', platform_key: 'discourse', connector_key: 'discourse', config: { base_url: 'https://forum.example.com' }, ...overrides };
 }
-async function clearDestinations(knex) { await knex('destinations').truncate(); }
+function postDestination(app, payload, { key } = {}) {
+  return app.inject({ method: 'POST', url: '/api/v1/destinations', headers: { 'Idempotency-Key': key === undefined ? randomUUID() : key }, payload });
+}
+async function clearDestinations(knex) {
+  await knex('idempotency_keys').truncate();
+  await knex('destinations').truncate();
+}
 function expectEnvelope(response, code, statusCode) {
   expect(response.statusCode).toBe(statusCode);
   expect(response.json()).toEqual({ error: expect.objectContaining({ code, message: expect.any(String), retryable: expect.any(Boolean), details: expect.any(Object) }) });
   expect(Object.keys(response.json().error).sort()).toEqual(['code', 'details', 'message', 'retryable']);
 }
 
-module.exports = { createDestinationContext, destinationInput, clearDestinations, expectEnvelope };
+module.exports = { createDestinationContext, destinationInput, postDestination, clearDestinations, expectEnvelope };

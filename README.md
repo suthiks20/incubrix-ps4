@@ -40,10 +40,14 @@ All destination endpoints are under `/api/v1/destinations`. When `API_TOKEN` is 
 The sample JSON files live in `samples/destinations`. In Windows Command Prompt, start the stack, then post a sample with:
 
 ```bat
-curl.exe -X POST http://localhost:8000/api/v1/destinations -H "Content-Type: application/json" --data-binary "@samples\destinations\discourse-forum-a.json"
+curl.exe -X POST http://localhost:8000/api/v1/destinations -H "Content-Type: application/json" -H "Idempotency-Key: demo-001" --data-binary "@samples\destinations\discourse-forum-a.json"
 ```
 
-If authentication is enabled, add `-H "Authorization: Bearer YOUR_API_TOKEN"` to the command. Posting the same sample again returns `409 DUPLICATE_DESTINATION`.
+If authentication is enabled, add `-H "Authorization: Bearer YOUR_API_TOKEN"` to the command. Reuse an idempotency key only for the same request; use a new key for a new attempt. A duplicate destination with a different key returns `409 DUPLICATE_DESTINATION`.
+
+## Idempotency
+
+Every `POST` whose path starts with `/api/v1` requires an `Idempotency-Key` header containing 1–255 printable ASCII characters. A repeat with the same key, method, path, and request content replays the stored status and body and adds `Idempotent-Replay: true`. Reusing the same key for different request content returns `409 IDEMPOTENCY_KEY_CONFLICT`. If the original request is still running, the duplicate waits up to `IDEMPOTENCY_WAIT_MS`, then returns retryable `409 IDEMPOTENCY_REQUEST_IN_PROGRESS` if it has not finished. Completed keys are retained for `IDEMPOTENCY_TTL_HOURS`; abandoned in-progress claims can be reclaimed after `IDEMPOTENCY_LOCK_TTL_SECONDS`. `/connector/v1` is excluded because its connector contract carries `idempotency_key` in the JSON body, to be handled by the connector runtime later. Health routes and non-POST methods are also excluded.
 
 ## Settings
 
@@ -59,17 +63,22 @@ If authentication is enabled, add `-H "Authorization: Bearer YOUR_API_TOKEN"` to
 | DB_AUTO_MIGRATE | true | Apply pending migrations before listening |
 | API_TOKEN | empty | Optional bearer token; empty disables authentication |
 | TEST_DATABASE_URL | optional | Isolated database used by Jest integration tests |
+| IDEMPOTENCY_TTL_HOURS | 24 | Hours a completed request key is retained |
+| IDEMPOTENCY_WAIT_MS | 5000 | Maximum time a duplicate waits for an active request |
+| IDEMPOTENCY_LOCK_TTL_SECONDS | 60 | Age after which an unfinished claim is reclaimed |
 
 ## Error codes
 
 | Group | Codes |
 | --- | --- |
 | Connector | DEST_SPEC_VIOLATION, DEST_RULE_FREQUENCY_CAP, CONNECTION_AUTH_EXPIRED, PLATFORM_RATE_LIMIT, PLATFORM_QUOTA_EXHAUSTED, PLATFORM_CONTENT_REJECTED, PLATFORM_UNAVAILABLE, CONNECTOR_DISABLED |
-| Platform | VALIDATION_ERROR, NOT_FOUND, UNAUTHORIZED, IDEMPOTENCY_KEY_REQUIRED, IDEMPOTENCY_KEY_CONFLICT, RATE_LIMITED, NOT_READY, INTERNAL_ERROR, CONNECTOR_NOT_IMPLEMENTED, DESTINATION_DISABLED |
+| Platform | VALIDATION_ERROR, NOT_FOUND, UNAUTHORIZED, IDEMPOTENCY_KEY_REQUIRED, IDEMPOTENCY_KEY_CONFLICT, IDEMPOTENCY_REQUEST_IN_PROGRESS, RATE_LIMITED, NOT_READY, INTERNAL_ERROR, CONNECTOR_NOT_IMPLEMENTED, DESTINATION_DISABLED |
 | Destinations | DUPLICATE_DESTINATION |
 
 ## Phases
 
+
 - Phase 1 — done: project skeleton, health/readiness, configuration, errors, logging, tests, and Docker.
 - Phase 2 — done: migrations, optional bearer authentication, and destinations API.
-- Phases 3–6 — pending.
+- Phase 3 - done: idempotency claims, response replay, and concurrent duplicate protection.
+- Phases 4–6 — pending.
