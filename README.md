@@ -115,6 +115,11 @@ curl.exe -X POST http://localhost:8000/connector/v1/discourse/publish -H "Conten
 | CONNECTOR_MAX_BACKOFF_MS | 5000 | Maximum automatic wait for one rate-limit retry |
 | CIRCUIT_FAILURE_THRESHOLD | 5 | Consecutive unavailable responses before opening a connector circuit |
 | CIRCUIT_COOLDOWN_SECONDS | 60 | Seconds before an open circuit can retry |
+| STORAGE_DRIVER | local | Certification evidence storage driver |
+| STORAGE_DIR | ./data/storage | Directory for local certification evidence |
+| CERT_TEST_POST_TTL_MINUTES | 10 | Maximum lifetime of a certification test post |
+| CERT_JANITOR_INTERVAL_SECONDS | 60 | Future certification cleanup interval in seconds |
+| CERT_ALLOWED_HOSTS | localhost,127.0.0.1 | Hosts allowed to receive certification posts |
 | CONNECTORS_DISABLED | empty | Comma-separated connector keys disabled by configuration |
 
 ## Error codes

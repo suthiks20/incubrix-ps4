@@ -24,7 +24,14 @@ services:
       CONNECTOR_MAX_BACKOFF_MS: ${CONNECTOR_MAX_BACKOFF_MS:-5000}
       CIRCUIT_FAILURE_THRESHOLD: ${CIRCUIT_FAILURE_THRESHOLD:-5}
       CIRCUIT_COOLDOWN_SECONDS: ${CIRCUIT_COOLDOWN_SECONDS:-60}
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
+      STORAGE_DIR: ${STORAGE_DIR:-./data/storage}
+      CERT_TEST_POST_TTL_MINUTES: ${CERT_TEST_POST_TTL_MINUTES:-10}
+      CERT_JANITOR_INTERVAL_SECONDS: ${CERT_JANITOR_INTERVAL_SECONDS:-60}
+      CERT_ALLOWED_HOSTS: ${CERT_ALLOWED_HOSTS:-localhost,127.0.0.1}
       CONNECTORS_DISABLED: ${CONNECTORS_DISABLED:-}
+    volumes:
+      - certdata:/app/data
     depends_on:
       postgres:
         condition: service_healthy
@@ -48,3 +55,4 @@ services:
       retries: 5
 volumes:
   pgdata:
+  certdata:
