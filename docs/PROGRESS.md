@@ -2,10 +2,16 @@
 
 ## Current step
 
-Step 0 is complete. Test cleanup now truncates destinations and its certification dependants in one `TRUNCATE ... CASCADE` statement.
+Certification Block A, steps S1 to S4 (partial) are done and verified against a real Postgres 16.
+Docker totals to confirm on your machine: Test Suites: 41 passed, Tests: 182 passed; lint clean.
 
-Docker verification: Test Suites: 35 passed, 35 total. Tests: 162 passed, 162 total. Lint: clean.
+Done: config hygiene, pure certification building blocks, repository/handler layout, the certification
+orchestrator (run.js, platformSteps.js, outcome.js), passing path for Discourse, webhook and assisted,
+failed runs record every step (later steps skipped), demotion, one alert, recertification.
 
 ## Next
 
-Consolidated Phase 6A item 1 started: certification test harness added. Existing verified baseline remains 35 suites, 162 tests; lint clean. Items 2-8 remain unfinished: certification success/failure/alerts/secrets/unit tests, service hardening, route schemas/handlers, and documentation. Do not begin 6B or 6C.
+S3c: remaining certify tests (non-sandbox host, no frequency-cap count, idempotent retry,
+recertification keeps level, stored steps). S4: unavailable platform, expired token, missing base_url,
+disabled connector. S5: immediate cleanup and cleanup_pending. S6: HTTP schemas, 404s, alerts tests.
+S7: janitor, summary, secrets test. Then docs (A3).

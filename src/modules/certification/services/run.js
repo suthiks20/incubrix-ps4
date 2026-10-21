@@ -1,25 +1,77 @@
 /**
- * Runs the safe happy-path certification checks without using publish policy or ledger.
- * It records each platform step and stores safe evidence through the storage adapter.
+ * Certifies one destination: validate, publish a test post, check it, delete it, store evidence.
+ * It talks to the connector directly, so it never uses the rules engine or the publish ledger.
  */
-const crypto = require('crypto'); const AppError = require('../../../shared/errors/AppError'); const runs = require('../repository/runs'); const destinations = require('../../destinations/repository/destinations'); const registry = require('../../connectors/registry'); const { resolveConnection } = require('../../../shared/connections/resolve');
-const levelFor = (tier) => tier === 'assisted' ? 'L1' : ['feed', 'bridge'].includes(tier) ? 'L2' : 'L3';
-async function runHappy(deps, destinationId) {
-  const now = deps.now || (() => new Date()); const start = now(); const destination = await destinations.findById(deps.knex, destinationId); if (!destination) throw new AppError('NOT_FOUND', 'Destination not found', { statusCode: 404 }); const entry = registry.get(destination.connector_key); if (!entry || deps.config.CONNECTORS_DISABLED.includes(destination.connector_key)) throw new AppError('CONNECTOR_DISABLED', 'Connector is disabled', { statusCode: 409 });
-  const base = destination.config && destination.config.base_url; const host = new URL(base).hostname; if (!deps.config.CERT_ALLOWED_HOSTS.includes(host) && destination.config.sandbox !== true) throw new AppError('CERT_HOST_NOT_ALLOWED', 'Certification host is not allowed', { statusCode: 409 });
-  const id = crypto.randomUUID(); const connector = deps.connectorFactory ? deps.connectorFactory(entry) : entry.createConnector({ config: deps.config, logger: deps.logger }); const connection = resolveConnection(destination, deps.config); const steps = []; const step = async (name, work) => { const at = now(); const result = await work(); steps.push({ name, status: 'passed', started_at: at.toISOString(), duration_ms: now() - at, summary: 'completed' }); return result; };
-  let published; let deleted = false; const rendition = { title: `[IncuBrix certification test] ${id.slice(0, 8)}`, body: 'Automated certification post. It will be deleted within 10 minutes.', language: destination.language, is_promotional: false, ai_generated: false };
-  await step('validate', async () => { const violations = connector.validate(rendition); if (violations.length) throw new AppError('DEST_SPEC_VIOLATION', 'Certification rendition is invalid', { statusCode: 400, details: { violations } }); });
-  if (entry.manifest.tier === 'assisted') { await step('build_assist_pack', () => connector.build_assist_pack(rendition, destination)); ['publish', 'confirm_live', 'read_status', 'delete', 'verify_gone'].forEach((name) => steps.push({ name, status: 'skipped', started_at: now().toISOString(), duration_ms: 0, summary: 'assisted tier: a person posts' })); } else { published = await step('publish', () => connector.publish(rendition, destination, connection, `cert-${id}`)); const current = await step('confirm_live', () => connector.get_status(destination, connection, published.platform_post_id)); if (current.status !== 'published' || !current.live_url) throw new AppError('PLATFORM_UNAVAILABLE', 'Certification post is not live', { statusCode: 503 }); const again = await step('read_status', () => connector.get_status(destination, connection, published.platform_post_id)); if (again.live_url !== published.live_url) throw new AppError('SCHEMA_DRIFT', 'Platform live URL changed during certification', { statusCode: 502 }); const removed = await step('delete', () => connector.delete(destination, connection, published.platform_post_id)); if (!removed.deleted) throw new AppError('PLATFORM_UNAVAILABLE', 'Certification post was not deleted', { statusCode: 503 }); const gone = await step('verify_gone', () => connector.get_status(destination, connection, published.platform_post_id)); if (gone.status !== 'deleted') throw new AppError('PLATFORM_UNAVAILABLE', 'Certification post remains live', { statusCode: 503 }); deleted = true; }
-  const level = levelFor(entry.manifest.tier); const finished = now(); const evidenceKey = `certification/${destination.id}/${id}.json`; const evidence = { run_id: id, destination: { name: destination.name, url: destination.url, connector_key: destination.connector_key, platform_key: destination.platform_key }, connector: { key: entry.manifest.key, version: entry.manifest.version }, steps, platform_post_id: published && published.platform_post_id, live_url: published && published.live_url, deletion_confirmed: deleted, verdict: 'passed', level_awarded: level, totals: { duration_ms: finished - start } }; await deps.storage.put(evidenceKey, JSON.stringify(evidence), 'application/json'); const run = await runs.insert(deps.knex, { id, destination_id: destination.id, connector_key: entry.manifest.key, status: 'passed', level_awarded: level, platform_post_id: published && published.platform_post_id, live_url: published && published.live_url, test_post_deleted: deleted, evidence_key: evidenceKey, started_at: start, finished_at: finished, duration_ms: finished - start }); await destinations.updateCertification(deps.knex, destination.id, { level, last_certified_at: finished, demoted: false }); return { ...run, steps, evidence_link: `/api/v1/certification/runs/${id}/evidence` };
+const crypto = require('crypto');
+const registry = require('../../connectors/registry');
+const destinationsRepo = require('../../destinations/repository/destinations');
+const { resolveConnection } = require('../../../shared/connections/resolve');
+const { assertCanCertify } = require('./preconditions');
+const { createRecorder } = require('./steps');
+const { storeEvidence } = require('./evidence');
+const platform = require('./platformSteps');
+const outcome = require('./outcome');
+
+async function loadTarget(deps, destinationId) {
+  const destination = await destinationsRepo.findById(deps.knex, destinationId);
+  const entry = destination ? registry.get(destination.connector_key) : undefined;
+  assertCanCertify({
+    destination,
+    connector: entry ? entry.manifest : undefined,
+    config: deps.config,
+    disabledConnectors: deps.config.CONNECTORS_DISABLED
+  });
+  return { destination, entry };
 }
-async function runCertification(deps, destinationId) {
-  try { return await runHappy(deps, destinationId); } catch (error) {
-    if (error.code === 'NOT_FOUND' || error.code === 'CERT_HOST_NOT_ALLOWED' || error.code === 'CONNECTOR_DISABLED') throw error;
-    const destination = await destinations.findById(deps.knex, destinationId); if (!destination) throw error;
-    const finished = (deps.now || (() => new Date()))(); const id = crypto.randomUUID(); const evidenceKey = `certification/${destination.id}/${id}.json`; const code = error.code || 'INTERNAL_ERROR'; const evidence = { run_id: id, destination: { name: destination.name, url: destination.url, connector_key: destination.connector_key, platform_key: destination.platform_key }, steps: [], verdict: 'failed', failure: { code, message: error.message } };
-    await deps.storage.put(evidenceKey, JSON.stringify(evidence), 'application/json'); const run = await runs.insert(deps.knex, { id, destination_id: destination.id, connector_key: destination.connector_key, status: 'failed', failure_code: code, failure_step: 'certification', failure_message: error.message, evidence_key: evidenceKey, started_at: finished, finished_at: finished, duration_ms: 0 });
-    await destinations.updateCertification(deps.knex, destination.id, { demoted: true }); const alerts = require('../repository/alerts'); await alerts.insert(deps.knex, { destination_id: destination.id, kind: code === 'SCHEMA_DRIFT' ? 'schema_drift' : 'certification_failed', message: error.message, run_id: id, details: { code } }); if (deps.logger) deps.logger.warn({ destination_id: destination.id, code }, 'Certification failed'); return { ...run, steps: [], evidence_link: `/api/v1/certification/runs/${id}/evidence` };
+
+function buildContext(deps, destination, entry) {
+  const runId = crypto.randomUUID();
+  const options = { config: deps.config, logger: deps.logger };
+  return {
+    runId,
+    destination,
+    entry,
+    connector: deps.connectorFactory ? deps.connectorFactory(entry) : entry.createConnector(options),
+    connection: resolveConnection(destination, deps.config),
+    recorder: createRecorder(deps.now),
+    rendition: platform.testRendition(destination, runId),
+    post: null,
+    deleted: false
+  };
+}
+
+async function executeSteps(ctx) {
+  try {
+    if (ctx.entry.manifest.tier === 'assisted') await platform.runAssistedSteps(ctx);
+    else await platform.runPlatformSteps(ctx);
+    return null;
+  } catch (error) {
+    platform.skipAfterFailure(ctx);
+    return error;
   }
 }
+
+async function runCertification(deps, destinationId) {
+  const { destination, entry } = await loadTarget(deps, destinationId);
+  const startedAt = deps.now();
+  const ctx = buildContext(deps, destination, entry);
+  const failure = await executeSteps(ctx);
+  const result = {
+    runId: ctx.runId,
+    destination,
+    connectorKey: entry.manifest.key,
+    tier: entry.manifest.tier,
+    post: ctx.post,
+    deleted: ctx.deleted,
+    steps: ctx.recorder.steps(),
+    startedAt,
+    finishedAt: deps.now(),
+    evidenceKey: `certification/${destination.id}/${ctx.runId}.json`
+  };
+  await storeEvidence(deps.storage, result, entry.manifest, failure);
+  const save = failure ? outcome.recordFailed(deps, result, failure) : outcome.recordPassed(deps, result);
+  const row = await save;
+  return { ...row, evidence_link: `/api/v1/certification/runs/${row.id}/evidence` };
+}
+
 module.exports = { runCertification };
