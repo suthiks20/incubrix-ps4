@@ -44,3 +44,19 @@ test('resolveConnection normalises connection refs with case and punctuation', (
   const connection = resolveConnection({ connection_ref: 'MiXeD.Ref-2' }, { SIMULATION_MODE: false });
   expect(connection).toEqual({ signing_secret: 'fake-signing-secret' });
 });
+
+test('malformed connection JSON never leaks its content', () => {
+  const secret = 'SUPERSECRET123abc';
+  process.env[environmentName] = `{\"api_key\":\"${secret}\"`;
+  try {
+    resolveConnection({ connection_ref: 'mixed.ref-2' }, { SIMULATION_MODE: false });
+  } catch (error) {
+    expect(error).toBeInstanceOf(AppError);
+    expect(error.code).toBe('CONNECTION_AUTH_EXPIRED');
+    expect(error.message).toBe('Connection setting is not valid JSON');
+    expect(JSON.stringify(error.details)).not.toContain(secret);
+    expect(error.message).not.toContain(secret);
+    return;
+  }
+  throw new Error('Expected malformed connection JSON to be rejected');
+});
