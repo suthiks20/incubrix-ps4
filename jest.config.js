@@ -8,6 +8,7 @@ module.exports = {
   roots: ['<rootDir>/tests'],
   testMatch: ['<rootDir>/tests/**/*.test.[jt]s'],
   globalSetup: '<rootDir>/tests/setup/globalSetup.js',
+  maxWorkers: 1,
   clearMocks: true,
   transform: { '^.+\\.[jt]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.json' }] },
   transformIgnorePatterns: ['/node_modules/(?!(cookie)/)'],

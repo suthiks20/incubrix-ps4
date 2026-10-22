@@ -13,6 +13,7 @@ interface ImmediateCleanupResult {
   attempted: boolean;
   deleted: boolean;
   cleanup_due_at: string | null;
+  error?: Error;
 }
 
 async function attemptImmediateCleanup(
@@ -28,11 +29,13 @@ async function attemptImmediateCleanup(
       context.post.platform_post_id
     );
     if (result.deleted) return { attempted: true, deleted: true, cleanup_due_at: null };
-  } catch {
+  } catch (error) {
     // The caller records cleanup_pending and lets the janitor retry later.
+    const dueAt = new Date(now.getTime() + ttlMinutes * 60 * 1000).toISOString();
+    return { attempted: true, deleted: false, cleanup_due_at: dueAt, error: error as Error };
   }
   const dueAt = new Date(now.getTime() + ttlMinutes * 60 * 1000).toISOString();
-  return { attempted: true, deleted: false, cleanup_due_at: dueAt };
+  return { attempted: true, deleted: false, cleanup_due_at: dueAt, error: new Error('Delete was not confirmed') };
 }
 
 export { attemptImmediateCleanup };

@@ -15,13 +15,23 @@ function baseRow(result) {
     connector_key: result.connectorKey,
     platform_post_id: post ? post.platform_post_id : null,
     live_url: post ? post.live_url : null,
-    test_post_deleted: result.deleted,
+    ...failedRunValues(result),
     evidence_key: result.evidenceKey,
     steps: JSON.stringify(result.steps),
     started_at: result.startedAt,
     finished_at: result.finishedAt,
     duration_ms: result.finishedAt - result.startedAt
   };
+}
+
+function failedRunValues(result) {
+  if (result.deleted) {
+    return { status: 'failed', test_post_deleted: true, cleanup_due_at: null };
+  }
+  if (result.cleanup_due_at) {
+    return { status: 'cleanup_pending', test_post_deleted: false, cleanup_due_at: result.cleanup_due_at };
+  }
+  return { status: 'failed', test_post_deleted: false, cleanup_due_at: null };
 }
 
 async function recordPassed(deps, result) {
@@ -39,9 +49,10 @@ async function recordFailed(deps, result, error) {
   const code = error.code || 'INTERNAL_ERROR';
   const failedStep = result.steps.find((step) => step.status === 'failed');
   const failureStep = failedStep ? failedStep.name : 'certification';
+  const failedValues = failedRunValues(result);
   const row = await runs.insert(deps.knex, {
     ...baseRow(result),
-    status: 'failed',
+    ...failedValues,
     failure_code: code,
     failure_step: failureStep,
     failure_message: error.message
@@ -58,4 +69,4 @@ async function recordFailed(deps, result, error) {
   return row;
 }
 
-module.exports = { recordPassed, recordFailed };
+module.exports = { recordPassed, recordFailed, failedRunValues };

@@ -34,6 +34,7 @@ test('HARD CASE renamed field fails certification and demotes the destination', 
   expect(response.statusCode).toBe(200);
   const run = response.json();
   expect(run.status).toBe('failed');
+  expect(run.test_post_deleted).toBe(true);
   expect(run.failure_code).toBe('SCHEMA_DRIFT');
   expect(run.failure_step).toBe('publish');
   const statuses = run.steps.map((step) => `${step.name}:${step.status}`);
@@ -43,7 +44,8 @@ test('HARD CASE renamed field fails certification and demotes the destination', 
     'confirm_live:skipped',
     'read_status:skipped',
     'delete:skipped',
-    'verify_gone:skipped'
+    'verify_gone:skipped',
+    'cleanup:passed'
   ]);
   const row = await ctx.knex('destinations').where({ id: destination.id }).first();
   expect(row.demoted).toBe(true);
@@ -51,11 +53,40 @@ test('HARD CASE renamed field fails certification and demotes the destination', 
   const alerts = await ctx.knex('destination_alerts').where({ destination_id: destination.id });
   expect(alerts).toHaveLength(1);
   expect(alerts[0].kind).toBe('schema_drift');
+  const state = await mockState(ctx, 'discourse', 'renamed_field');
+  expect(state.posts).toHaveLength(0);
   const before = (await mockState(ctx, 'discourse', 'renamed_field')).post_attempts;
   const blocked = await publishViaConnector(destination.id, 'blocked-after-drift');
   expect(blocked.statusCode).toBe(409);
   expect(blocked.json().error.code).toBe('DESTINATION_DEMOTED');
   expect((await mockState(ctx, 'discourse', 'renamed_field')).post_attempts).toBe(before);
+});
+
+test('HARD CASE delete fails once and the immediate cleanup removes the test post', async () => {
+  const destination = await createDestination(ctx, 'discourse', 'delete_fails_once');
+  const response = await certify(ctx, destination.id, 'cert-delete-once');
+  expect(response.statusCode).toBe(200);
+  const run = response.json();
+  expect(run.status).toBe('failed');
+  expect(run.test_post_deleted).toBe(true);
+  expect(run.steps.map((step) => `${step.name}:${step.status}`)).toContain('cleanup:passed');
+  const state = await mockState(ctx, 'discourse', 'delete_fails_once');
+  expect(state.delete_attempts).toBe(2);
+  expect(state.posts).toHaveLength(0);
+});
+
+test('HARD CASE delete fails twice and the run is cleanup_pending with a due time', async () => {
+  const destination = await createDestination(ctx, 'discourse', 'delete_fails_twice');
+  const response = await certify(ctx, destination.id, 'cert-delete-twice');
+  expect(response.statusCode).toBe(200);
+  const run = response.json();
+  expect(run.status).toBe('cleanup_pending');
+  expect(run.test_post_deleted).toBe(false);
+  expect(new Date(run.cleanup_due_at).getTime()).toBeGreaterThan(Date.now());
+  expect(run.steps.map((step) => `${step.name}:${step.status}`)).toContain('cleanup:failed');
+  const state = await mockState(ctx, 'discourse', 'delete_fails_twice');
+  expect(state.delete_attempts).toBe(2);
+  expect(state.posts).toHaveLength(1);
 });
 
 test('HARD CASE recertification clears the demotion', async () => {

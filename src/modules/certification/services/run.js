@@ -11,6 +11,8 @@ const { createRecorder } = require('./steps');
 const { storeEvidence } = require('./evidence');
 const platform = require('./platformSteps');
 const outcome = require('./outcome');
+const { markerFor } = require('../../connectors/commons/marker');
+const { attemptImmediateCleanup } = require('./immediateCleanup');
 
 async function loadTarget(deps, destinationId) {
   const destination = await destinationsRepo.findById(deps.knex, destinationId);
@@ -35,9 +37,35 @@ function buildContext(deps, destination, entry) {
     connection: resolveConnection(destination, deps.config),
     recorder: createRecorder(deps.now),
     rendition: platform.testRendition(destination, runId),
+    publishKey: `cert-${runId}`,
     post: null,
-    deleted: false
+    deleted: false,
+    cleanup: null
   };
+}
+
+async function recoverPost(ctx) {
+  if (ctx.post) return;
+  try {
+    ctx.post = await ctx.connector.findByMarker(ctx.destination, ctx.connection, markerFor(ctx.publishKey));
+  } catch {
+    // The original certification failure remains the client-visible failure.
+  }
+}
+
+async function cleanupAfterFailure(ctx, deps) {
+  await recoverPost(ctx);
+  if (!ctx.post || ctx.deleted) return;
+  try {
+    await ctx.recorder.run('cleanup', async () => {
+      ctx.cleanup = await attemptImmediateCleanup(ctx, deps.now(), deps.config.CERT_TEST_POST_TTL_MINUTES);
+      if (!ctx.cleanup.deleted) throw ctx.cleanup.error;
+      ctx.deleted = true;
+      return { summary: `immediate cleanup deleted post ${ctx.post.platform_post_id}` };
+    });
+  } catch {
+    // Cleanup details are persisted with the original certification failure.
+  }
 }
 
 async function executeSteps(ctx) {
@@ -56,6 +84,7 @@ async function runCertification(deps, destinationId) {
   const startedAt = deps.now();
   const ctx = buildContext(deps, destination, entry);
   const failure = await executeSteps(ctx);
+  if (failure) await cleanupAfterFailure(ctx, deps);
   const result = {
     runId: ctx.runId,
     destination,
@@ -63,6 +92,7 @@ async function runCertification(deps, destinationId) {
     tier: entry.manifest.tier,
     post: ctx.post,
     deleted: ctx.deleted,
+    cleanup_due_at: ctx.cleanup ? ctx.cleanup.cleanup_due_at : null,
     steps: ctx.recorder.steps(),
     startedAt,
     finishedAt: deps.now(),

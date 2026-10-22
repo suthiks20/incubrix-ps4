@@ -16,5 +16,9 @@ test('reports a deferred deadline when the one immediate delete fails', async ()
   const now = new Date('2026-10-22T00:00:00.000Z');
   const result = await attemptImmediateCleanup({ connector, destination: {}, connection: {}, post: { platform_post_id: '1' } }, now, 10);
   expect(connector.delete).toHaveBeenCalledTimes(1);
-  expect(result).toEqual({ attempted: true, deleted: false, cleanup_due_at: '2026-10-22T00:10:00.000Z' });
+  expect(result).toMatchObject({
+    attempted: true,
+    deleted: false,
+    cleanup_due_at: '2026-10-22T00:10:00.000Z'
+  });
 });

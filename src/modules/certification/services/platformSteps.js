@@ -36,8 +36,7 @@ function validateStep(ctx) {
 
 function publishStep(ctx) {
   return ctx.recorder.run('publish', async () => {
-    const key = `cert-${ctx.runId}`;
-    ctx.post = await ctx.connector.publish(ctx.rendition, ctx.destination, ctx.connection, key);
+    ctx.post = await ctx.connector.publish(ctx.rendition, ctx.destination, ctx.connection, ctx.publishKey);
     return { summary: `created post ${ctx.post.platform_post_id} at ${ctx.post.live_url}` };
   });
 }
