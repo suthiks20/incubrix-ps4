@@ -8,5 +8,7 @@ module.exports = {
   getRun: require('./getRun'),
   getEvidence: require('./getEvidence'),
   getAlerts: require('./getAlerts'),
-  acknowledgeAlert: require('./acknowledgeAlert')
+  acknowledgeAlert: require('./acknowledgeAlert'),
+  cleanup: require('./cleanup'),
+  getSummary: require('./getSummary')
 };

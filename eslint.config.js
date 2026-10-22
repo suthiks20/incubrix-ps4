@@ -26,6 +26,18 @@ const globals = {
   Headers: 'readonly'
 };
 
+const tsGlobals = {
+  ...globals,
+  setInterval: 'readonly',
+  clearInterval: 'readonly',
+  setTimeout: 'readonly',
+  clearTimeout: 'readonly',
+  process: 'readonly',
+  Buffer: 'readonly',
+  console: 'readonly',
+  URL: 'readonly'
+};
+
 module.exports = [
   {
     files: ['**/*.js'],
@@ -36,16 +48,33 @@ module.exports = [
   {
     files: ['**/*.ts'],
     ignores: ['node_modules/**', 'coverage/**', 'dist/**'],
-    languageOptions: { ecmaVersion: 2022, sourceType: 'module', globals, parser: tseslint.parser },
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: tsGlobals,
+      parser: tseslint.parser
+    },
     plugins: { '@typescript-eslint': tseslint.plugin },
     rules: {
       ...rules,
+      'no-undef': 'off',
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }]
     }
   },
   {
     files: ['tests/**/*.js', '**/__mocks__/**/*.js'],
-    languageOptions: { globals: { jest: 'readonly', test: 'readonly', expect: 'readonly', beforeAll: 'readonly', beforeEach: 'readonly', afterAll: 'readonly', afterEach: 'readonly', process: 'readonly' } }
+    languageOptions: {
+      globals: {
+        jest: 'readonly',
+        test: 'readonly',
+        expect: 'readonly',
+        beforeAll: 'readonly',
+        beforeEach: 'readonly',
+        afterAll: 'readonly',
+        afterEach: 'readonly',
+        process: 'readonly'
+      }
+    }
   }
 ];

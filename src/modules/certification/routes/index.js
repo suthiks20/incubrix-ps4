@@ -19,5 +19,7 @@ async function routes(app) {
     { schema: schemas.acknowledgeAlert },
     handlers.acknowledgeAlert
   );
+  app.post('/api/v1/certification/cleanup', { schema: schemas.cleanup }, handlers.cleanup);
+  app.get('/api/v1/certification/summary', { schema: schemas.summary }, handlers.getSummary);
 }
 module.exports = routes;

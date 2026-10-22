@@ -30,4 +30,23 @@ function list(knex, filters = {}) {
   return knex(TABLE).where(values).orderBy('started_at', 'desc').limit(limit).offset(offset);
 }
 
-module.exports = { insert, update, findById, list, findAll: list };
+function findDueForCleanup(knex, now) {
+  return knex(TABLE)
+    .where({ status: 'cleanup_pending' })
+    .where('cleanup_due_at', '<=', now)
+    .orderBy('cleanup_due_at', 'asc');
+}
+
+function listForSummary(knex) {
+  return knex(TABLE).select('*').orderBy('connector_key', 'asc');
+}
+
+module.exports = {
+  insert,
+  update,
+  findById,
+  list,
+  findAll: list,
+  findDueForCleanup,
+  listForSummary
+};

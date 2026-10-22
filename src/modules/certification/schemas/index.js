@@ -8,5 +8,7 @@ module.exports = {
   run: require('./run'),
   evidence: require('./evidence'),
   alerts: require('./alerts'),
-  acknowledgeAlert: require('./acknowledgeAlert')
+  acknowledgeAlert: require('./acknowledgeAlert'),
+  cleanup: require('./cleanup'),
+  summary: require('./summary')
 };

@@ -17,6 +17,10 @@ function findById(knex, id) {
   return knex(TABLE).where({ id }).first();
 }
 
+function findByRunAndKind(knex, runId, kind) {
+  return knex(TABLE).where({ run_id: runId, kind }).first();
+}
+
 async function acknowledge(knex, id) {
   const rows = await knex(TABLE)
     .where({ id })
@@ -25,4 +29,4 @@ async function acknowledge(knex, id) {
   return rows[0];
 }
 
-module.exports = { insert, findAll, findById, acknowledge };
+module.exports = { insert, findAll, findById, findByRunAndKind, acknowledge };
