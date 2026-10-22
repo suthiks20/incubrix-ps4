@@ -2,7 +2,7 @@
  * Defines stable error codes and their default transport behaviour.
  * Services use these values so API clients get predictable envelopes.
  */
-module.exports = Object.freeze({
+const codes = Object.freeze({
   DEST_SPEC_VIOLATION: { statusCode: 400, retryable: false },
   DEST_RULE_FREQUENCY_CAP: { statusCode: 429, retryable: true, retry_hint: 'later' },
   CONNECTION_AUTH_EXPIRED: { statusCode: 401, retryable: true, retry_hint: 'after reconnect' },
@@ -30,3 +30,5 @@ module.exports = Object.freeze({
   CERT_HOST_NOT_ALLOWED: { statusCode: 409, retryable: false },
   DUPLICATE_DESTINATION: { statusCode: 409, retryable: false }
 });
+
+export = codes;

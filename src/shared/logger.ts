@@ -2,9 +2,9 @@
  * Provides Fastify/Pino logger options with consistent, safe JSON output.
  * Redaction protects credentials even when they are nested in logged objects.
  */
-const config = require('../config');
+import config = require('../config');
 
-module.exports = {
+const loggerOptions = {
   level: config.LOG_LEVEL,
   timestamp: () => `,"time":"${new Date().toISOString()}"`,
   formatters: {
@@ -40,3 +40,5 @@ module.exports = {
     censor: '[REDACTED]'
   }
 };
+
+export = loggerOptions;

@@ -2,10 +2,10 @@
  * Protects versioned API routes with an optional bearer token.
  * Public health paths remain available for orchestration and diagnostics.
  */
-const crypto = require('crypto');
-const AppError = require('../errors/AppError');
+import crypto from 'crypto';
+import AppError = require('../errors/AppError');
 
-async function auth(app, options) {
+async function auth(app: any, options: { apiToken?: string }): Promise<void> {
   const expectedToken = options.apiToken || '';
   app.addHook('onRequest', async (request) => {
     if (!expectedToken) return;
@@ -22,4 +22,4 @@ async function auth(app, options) {
   });
 }
 
-module.exports = auth;
+export = auth;

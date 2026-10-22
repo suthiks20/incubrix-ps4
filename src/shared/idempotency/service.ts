@@ -2,33 +2,39 @@
  * Coordinates ownership, waiting, replay, and cleanup for idempotent requests.
  * The repository remains responsible only for individual Knex operations.
  */
-const AppError = require('../errors/AppError');
-const repository = require('./repository');
-const { setTimeout } = require('timers');
+import AppError = require('../errors/AppError');
+import * as repository from './repository';
+import { setTimeout } from 'timers';
 
-function conflictError() {
+interface IdempotencyConfig {
+  IDEMPOTENCY_LOCK_TTL_SECONDS: number;
+  IDEMPOTENCY_TTL_HOURS: number;
+  IDEMPOTENCY_WAIT_MS: number;
+}
+
+function conflictError(): AppError {
   return new AppError('IDEMPOTENCY_KEY_CONFLICT', 'This idempotency key was already used with a different request', { statusCode: 409 });
 }
 
-function inProgressError(waitMs) {
+function inProgressError(waitMs: number): AppError {
   return new AppError('IDEMPOTENCY_REQUEST_IN_PROGRESS', 'A request with this idempotency key is still in progress', {
     statusCode: 409, retryable: true, details: { retry_after_ms: waitMs }
   });
 }
 
-function isExpired(row) {
+function isExpired(row: any): boolean {
   return new Date(row.expires_at).getTime() < Date.now();
 }
 
-function isStale(row, lockTtlSeconds) {
+function isStale(row: any, lockTtlSeconds: number): boolean {
   return row.state === 'in_progress' && new Date(row.updated_at).getTime() < Date.now() - lockTtlSeconds * 1000;
 }
 
-function pause(milliseconds) {
+function pause(milliseconds: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-async function begin(knex, config, request) {
+async function begin(knex: any, config: IdempotencyConfig, request: any): Promise<any> {
   const identity = { key: request.key, method: request.method, path: request.path };
   const lockTtl = config.IDEMPOTENCY_LOCK_TTL_SECONDS;
   for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -64,7 +70,8 @@ async function begin(knex, config, request) {
   throw inProgressError(config.IDEMPOTENCY_WAIT_MS);
 }
 
-async function finish(knex, context, { statusCode, body, contentType }) {
+async function finish(knex: any, context: any, response: any): Promise<void> {
+  const { statusCode, body, contentType } = response;
   if (statusCode >= 500) {
     await repository.release(knex, context.key, context.method, context.path);
     return;
@@ -74,4 +81,4 @@ async function finish(knex, context, { statusCode, body, contentType }) {
   });
 }
 
-module.exports = { begin, finish };
+export { begin, finish };

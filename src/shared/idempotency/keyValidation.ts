@@ -2,9 +2,9 @@
  * Validates the client-provided idempotency key before a POST is processed.
  * Invalid keys use the same public error envelope as other request validation failures.
  */
-const AppError = require('../errors/AppError');
+import AppError = require('../errors/AppError');
 
-function assertValidKey(value) {
+function assertValidKey(value: unknown): string {
   if (value === undefined || value === null || value === '') {
     throw new AppError('IDEMPOTENCY_KEY_REQUIRED', 'Idempotency-Key header is required', { statusCode: 400 });
   }
@@ -17,4 +17,4 @@ function assertValidKey(value) {
   return value;
 }
 
-module.exports = { assertValidKey };
+export { assertValidKey };

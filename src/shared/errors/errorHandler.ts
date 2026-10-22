@@ -2,18 +2,18 @@
  * Registers the one error-envelope format used by every HTTP failure.
  * Unexpected errors are logged server-side without exposing internals.
  */
-const AppError = require('./AppError');
-const codes = require('./codes');
+import AppError = require('./AppError');
+import codes = require('./codes');
 
-function send(reply, statusCode, code, message, retryable, details) {
+function send(reply: any, statusCode: number, code: string, message: string, retryable: boolean, details: any) {
   return reply.status(statusCode).send({ error: { code, message, retryable, details } });
 }
 
-function validationFields(validation) {
+function validationFields(validation: any[]): Array<{ path: string; message: string }> {
   return validation.map((item) => ({ path: item.instancePath || item.params?.missingProperty || '', message: item.message }));
 }
 
-function registerErrorHandlers(app) {
+function registerErrorHandlers(app: any): void {
   app.setErrorHandler((error, request, reply) => {
     if (error instanceof AppError) {
       if (error.code === 'PLATFORM_RATE_LIMIT' && error.details.retry_after_seconds !== undefined) reply.header('Retry-After', String(error.details.retry_after_seconds));
@@ -37,4 +37,4 @@ function registerErrorHandlers(app) {
   app.setNotFoundHandler((_request, reply) => send(reply, codes.NOT_FOUND.statusCode, 'NOT_FOUND', 'Route not found', false, {}));
 }
 
-module.exports = registerErrorHandlers;
+export = registerErrorHandlers;

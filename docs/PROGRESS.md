@@ -2,6 +2,9 @@
 
 ## Current step
 
+T2 shared-layer conversion is done and Docker-verified. Config, database bootstrap, shared infrastructure,
+the application factory and server entry point now compile from TypeScript; 41 suites / 182 tests and lint pass.
+
 T1 TypeScript tooling is done and Docker-verified. JavaScript source remains unchanged; the build emits
 CommonJS to `dist/src` and copies connector YAML manifests so the compiled server can load them at runtime.
 The container command is `node dist/src/server.js`; Docker tests passed 41 suites / 182 tests and lint passed.

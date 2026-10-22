@@ -2,7 +2,7 @@
 # IncuBrix Long-Tail Destination Network: agent instructions
 Candidate submission for IncuBrix Assessment 4 ("Distribution: Long-Tail Destination Network"). Deadline Sun 25 Oct 2026 11:59 PM IST. The student must explain every line live: keep code simple.
 ## Rules
-- Plain JavaScript CommonJS, Node 22, Fastify 5, Knex + Postgres, Jest, Docker Compose. No new dependencies without stopping to explain.
+- TypeScript, Node 22, CommonJS output, strict off for now, Fastify 5, Knex + Postgres, Jest, Docker Compose. No new dependencies without stopping to explain.
 - Route -> handler -> service -> repository. Services throw AppError. Error envelope {error:{code,message,retryable,details}}; codes live in src/shared/errors/codes.js and are listed in README.md.
 - Small single-purpose files; 2-3 line header comment on every new file.
 - No secrets in code, logs, responses, ledger, evidence, fixtures or DB rows. Test secrets are obviously fake. The logger redacts connection fields.

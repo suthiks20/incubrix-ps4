@@ -2,7 +2,35 @@
  * Reads and validates all environment settings in one place at startup.
  * Other modules import this frozen object instead of reading process.env.
  */
-function requireValue(env, name) {
+interface AppConfig {
+  NODE_ENV: string;
+  PORT: number;
+  HOST: string;
+  LOG_LEVEL: string;
+  DATABASE_URL: string;
+  PUBLIC_BASE_URL: string;
+  SIMULATION_MODE: boolean;
+  DB_AUTO_MIGRATE: boolean;
+  API_TOKEN: string;
+  TEST_DATABASE_URL: string;
+  IDEMPOTENCY_TTL_HOURS: number;
+  IDEMPOTENCY_WAIT_MS: number;
+  IDEMPOTENCY_LOCK_TTL_SECONDS: number;
+  CONNECTOR_HTTP_TIMEOUT_MS: number;
+  CONNECTOR_MAX_BACKOFF_MS: number;
+  CIRCUIT_FAILURE_THRESHOLD: number;
+  CIRCUIT_COOLDOWN_SECONDS: number;
+  CERT_TEST_POST_TTL_MINUTES: number;
+  CERT_JANITOR_INTERVAL_SECONDS: number;
+  CERT_ALLOWED_HOSTS: string[];
+  STORAGE_DRIVER: string;
+  STORAGE_DIR: string;
+  CONNECTORS_DISABLED: string[];
+}
+
+type Environment = Record<string, string | undefined>;
+
+function requireValue(env: Environment, name: string): string {
   const value = env[name];
   if (!value) {
     throw new Error(`${name} is required`);
@@ -10,7 +38,7 @@ function requireValue(env, name) {
   return value;
 }
 
-function parsePort(value) {
+function parsePort(value: string): number {
   const port = Number(value);
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
     throw new Error('PORT must be an integer between 1 and 65535');
@@ -18,7 +46,7 @@ function parsePort(value) {
   return port;
 }
 
-function parseIntegerSetting(name, value, defaultValue, minimum) {
+function parseIntegerSetting(name: string, value: string, defaultValue: number, minimum: number): number {
   if (value === undefined) return defaultValue;
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < minimum) {
@@ -27,14 +55,14 @@ function parseIntegerSetting(name, value, defaultValue, minimum) {
   return parsed;
 }
 
-function parseBoolean(name, value, defaultValue) {
+function parseBoolean(name: string, value: string, defaultValue: boolean): boolean {
   if (value === undefined) return defaultValue;
   if (value === 'true') return true;
   if (value === 'false') return false;
   throw new Error(`${name} must be true or false`);
 }
 
-function validateUrl(name, value) {
+function validateUrl(name: string, value: string): string {
   try {
     return new URL(value).toString().replace(/\/$/, '');
   } catch {
@@ -42,7 +70,7 @@ function validateUrl(name, value) {
   }
 }
 
-function loadConfig(env = process.env) {
+function loadConfig(env: Environment = process.env): Readonly<AppConfig> {
   return Object.freeze({
     NODE_ENV: env.NODE_ENV || 'development',
     PORT: parsePort(env.PORT || '8000'),
@@ -70,4 +98,4 @@ function loadConfig(env = process.env) {
   });
 }
 
-module.exports = loadConfig();
+export = loadConfig();

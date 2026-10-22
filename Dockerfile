@@ -6,7 +6,8 @@ RUN mkdir -p /app/data/storage && chown -R node:node /app/data
 COPY package*.json ./
 RUN npm ci
 COPY --chown=node:node . .
-RUN npm run build
+RUN chown -R node:node /app
 USER node
+RUN npm run build
 EXPOSE 8000
 CMD ["node", "dist/src/server.js"]

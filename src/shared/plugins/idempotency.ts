@@ -2,15 +2,15 @@
  * Claims and replays keys for versioned API POST requests using Fastify hooks.
  * It runs after authentication so rejected requests never leave stored claims.
  */
-const { assertValidKey } = require('../idempotency/keyValidation');
-const { requestHash } = require('../idempotency/hash');
-const service = require('../idempotency/service');
+import { assertValidKey } from '../idempotency/keyValidation';
+import { requestHash } from '../idempotency/hash';
+import * as service from '../idempotency/service';
 
-function requestPath(request) {
+function requestPath(request: any): string {
   return request.raw.url.split('?')[0];
 }
 
-function parsePayload(payload) {
+function parsePayload(payload: any): any {
   const value = Buffer.isBuffer(payload) ? payload.toString() : payload;
   if (typeof value !== 'string') return value === undefined ? null : value;
   try {
@@ -20,7 +20,7 @@ function parsePayload(payload) {
   }
 }
 
-function idempotency(app, config) {
+function idempotency(app: any, config: any): void {
   app.addHook('preValidation', async (request, reply) => {
     const path = requestPath(request);
     if (request.method !== 'POST' || !path.startsWith('/api/v1')) return;
@@ -57,4 +57,4 @@ function idempotency(app, config) {
 
 // /connector/v1 is excluded because its connector contract carries idempotency_key in JSON;
 // the connector runtime will enforce that contract in a later phase.
-module.exports = idempotency;
+export = idempotency;

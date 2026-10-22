@@ -2,9 +2,9 @@
  * Builds stable hashes for requests regardless of object key order.
  * Stable request hashes let the service distinguish replays from key conflicts.
  */
-const crypto = require('crypto');
+import crypto from 'crypto';
 
-function sortValue(value) {
+function sortValue(value: any): any {
   if (Array.isArray(value)) return value.map(sortValue);
   if (value && typeof value === 'object') {
     return Object.keys(value).sort().reduce((sorted, key) => {
@@ -15,14 +15,14 @@ function sortValue(value) {
   return value;
 }
 
-function canonicalJson(value) {
+function canonicalJson(value: any): string {
   return JSON.stringify(sortValue(value));
 }
 
-function requestHash(method, path, query, body) {
+function requestHash(method: string, path: string, query: string, body: any): string {
   const canonicalBody = body === undefined || body === null || body === '' ? null : body;
   const value = canonicalJson({ method, path, query, body: canonicalBody });
   return crypto.createHash('sha256').update(value).digest('hex');
 }
 
-module.exports = { canonicalJson, requestHash };
+export { canonicalJson, requestHash };
