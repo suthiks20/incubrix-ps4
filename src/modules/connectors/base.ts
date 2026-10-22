@@ -2,9 +2,12 @@
  * Provides manifest validation, safe HTTP calls, retries, and circuit breaking.
  * Platform connectors supply only their endpoint-specific request and response logic.
  */
-const AppError = require('../../shared/errors/AppError');
+import AppError = require('../../shared/errors/AppError');
+import config = require('../../config');
+import codes = require('../../shared/errors/codes');
+import type { Connection, Destination, ErrorCode, Manifest, Rendition, Violation } from './types';
 
-function requireFields(value, fields) {
+function requireFields(value: any, fields: any[]): any {
   const missing = fields.filter((entry) => {
     const field = typeof entry === 'string' ? entry : entry.name;
     const expected = typeof entry === 'string' ? null : entry.type;
@@ -16,14 +19,15 @@ function requireFields(value, fields) {
   return value;
 }
 
-function createBase(manifest, options = {}) {
+function createBase(manifest: Manifest, options: any = {}): any {
   const circuits = new Map();
   const now = options.now || Date.now;
   const sleep = options.sleep || ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
   const fetchImpl = options.fetch || fetch;
-  const config = options.config || require('../../config');
-  function validate(rendition, surfaceKey) {
-    const surfaces = Array.isArray(manifest.surfaces) ? manifest.surfaces : Object.entries(manifest.surfaces).map(([key, value]) => ({ key, ...value }));
+  const runtimeConfig = options.config || config;
+  function validate(rendition: Rendition, surfaceKey?: string): Violation[] {
+    const surfaces = Array.isArray(manifest.surfaces) ? manifest.surfaces :
+      Object.entries(manifest.surfaces).map(([key, value]) => ({ key, ...(value as any) }));
     const surface = surfaces.find((entry) => entry.key === surfaceKey) || surfaces[0];
     const spec = surface.spec;
     const violations = [];
@@ -38,9 +42,10 @@ function createBase(manifest, options = {}) {
     }
     return violations;
   }
-  function platformError(status, message, headers) {
-    const code = manifest.error_map[String(status)] || (status === 403 ? 'CONNECTION_AUTH_EXPIRED' : undefined);
-    const details = { platform_status: status, ...(message ? { platform_message: message } : {}) };
+  function platformError(status: number, message: string, headers: Headers): AppError {
+    const code: ErrorCode | undefined = manifest.error_map[String(status)] ||
+      (status === 403 ? 'CONNECTION_AUTH_EXPIRED' : undefined);
+    const details: any = { platform_status: status, ...(message ? { platform_message: message } : {}) };
     if (status === 429) {
       const retryHeader = headers.get('retry-after');
       const resetHeader = headers.get('x-ratelimit-reset');
@@ -49,25 +54,29 @@ function createBase(manifest, options = {}) {
         : resetHeader !== null && Number.isFinite(Number(resetHeader))
           ? Math.max(0, Number(resetHeader) - Math.floor(now() / 1000))
           : undefined;
-      details.retry_after_seconds = retryAfter === undefined ? Math.ceil(config.CONNECTOR_MAX_BACKOFF_MS / 1000) : retryAfter;
+      details.retry_after_seconds = retryAfter === undefined ? Math.ceil(runtimeConfig.CONNECTOR_MAX_BACKOFF_MS / 1000) : retryAfter;
       details.action = 'Wait for retry_after_seconds before trying again.';
     }
-    if (code) return new AppError(code, `Platform returned HTTP ${status}`, { statusCode: require('../../shared/errors/codes')[code].statusCode, retryable: require('../../shared/errors/codes')[code].retryable, details });
+    if (code) return new AppError(code, `Platform returned HTTP ${status}`, {
+      statusCode: codes[code].statusCode,
+      retryable: codes[code].retryable,
+      details
+    });
     if (status >= 500) return new AppError('PLATFORM_UNAVAILABLE', 'Platform is temporarily unavailable', { statusCode: 503, retryable: true });
     return new AppError('PLATFORM_CONTENT_REJECTED', 'Platform rejected the request', { statusCode: 422, details });
   }
-  async function request(destination, connection, url, init = {}) {
+  async function request(destination: Destination, connection: Connection, url: string, init: any = {}): Promise<any> {
     const baseUrl = destination.config && destination.config.base_url || destination.base_url || destination.url;
     const key = `${manifest.key}:${baseUrl}`;
     const circuit = circuits.get(key) || { failures: 0, openedAt: null };
-    if (circuit.openedAt !== null && now() - circuit.openedAt < config.CIRCUIT_COOLDOWN_SECONDS * 1000) {
+    if (circuit.openedAt !== null && now() - circuit.openedAt < runtimeConfig.CIRCUIT_COOLDOWN_SECONDS * 1000) {
       throw new AppError('PLATFORM_UNAVAILABLE', 'Connector circuit is open', { statusCode: 503, retryable: true, details: { circuit_open: true } });
     }
     if (circuit.openedAt !== null) { circuit.openedAt = null; circuit.failures = 0; }
     let attempt = 0;
     while (true) {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), config.CONNECTOR_HTTP_TIMEOUT_MS);
+      const timer = setTimeout(() => controller.abort(), runtimeConfig.CONNECTOR_HTTP_TIMEOUT_MS);
       let response;
       try {
         const authHeaders = options.authHeaders ? options.authHeaders(connection, init) : {};
@@ -75,7 +84,7 @@ function createBase(manifest, options = {}) {
       } catch {
         clearTimeout(timer);
         circuit.failures += 1;
-        if (circuit.failures >= config.CIRCUIT_FAILURE_THRESHOLD) circuit.openedAt = now();
+        if (circuit.failures >= runtimeConfig.CIRCUIT_FAILURE_THRESHOLD) circuit.openedAt = now();
         circuits.set(key, circuit);
         throw new AppError('PLATFORM_UNAVAILABLE', 'Request to the platform timed out or the connection dropped', { statusCode: 503, retryable: true });
       }
@@ -91,10 +100,10 @@ function createBase(manifest, options = {}) {
       const error = platformError(response.status, message, response.headers);
       if (error.code === 'PLATFORM_UNAVAILABLE') {
         circuit.failures += 1;
-        if (circuit.failures >= config.CIRCUIT_FAILURE_THRESHOLD) circuit.openedAt = now();
+        if (circuit.failures >= runtimeConfig.CIRCUIT_FAILURE_THRESHOLD) circuit.openedAt = now();
         circuits.set(key, circuit);
       }
-      if (response.status === 429 && hasRetryDelay && attempt === 0 && error.details.retry_after_seconds * 1000 <= config.CONNECTOR_MAX_BACKOFF_MS) {
+      if (response.status === 429 && hasRetryDelay && attempt === 0 && error.details.retry_after_seconds * 1000 <= runtimeConfig.CONNECTOR_MAX_BACKOFF_MS) {
         if (options.logger) options.logger.info({ retry_after_seconds: error.details.retry_after_seconds }, 'Retrying connector request after rate limit');
         await sleep(error.details.retry_after_seconds * 1000);
         attempt += 1;
@@ -103,11 +112,11 @@ function createBase(manifest, options = {}) {
       throw error;
     }
   }
-  async function readJson(response) {
+  async function readJson(response: any): Promise<any> {
     try { return await response.json(); }
     catch { throw new AppError('SCHEMA_DRIFT', 'Platform returned an invalid response', { statusCode: 502, details: { missing_fields: ['<json>'] } }); }
   }
   return { validate, request, requireFields, readJson };
 }
 
-module.exports = { createBase, requireFields };
+export { createBase, requireFields };

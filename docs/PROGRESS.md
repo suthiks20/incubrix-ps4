@@ -2,6 +2,9 @@
 
 ## Current step
 
+T3 connector, rules and ledger conversion is in progress. Batch 1 covers connector contracts, manifest loading,
+registry and shared connector helpers; Docker tests are required before Batch 2.
+
 T2 shared-layer conversion is done and Docker-verified. Config, database bootstrap, shared infrastructure,
 the application factory and server entry point now compile from TypeScript; 41 suites / 182 tests and lint pass.
 

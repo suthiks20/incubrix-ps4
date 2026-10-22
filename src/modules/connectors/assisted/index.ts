@@ -2,15 +2,25 @@
  * Builds a human-ready posting pack for destinations that forbid automation.
  * It deliberately has no platform HTTP calls and no publish-ledger interaction.
  */
-const AppError = require('../../../shared/errors/AppError');
-const { createBase } = require('../base');
-const { loadManifest } = require('../manifestLoader');
+import AppError = require('../../../shared/errors/AppError');
+import { createBase } from '../base';
+import { loadManifest } from '../manifestLoader';
+import type { Destination, Rendition } from '../types';
 const manifest = loadManifest(__dirname + '/manifest.yaml');
-function unsupported() { throw new AppError('CONNECTOR_NOT_IMPLEMENTED', 'A person posts with this connector; use build_assist_pack.', { statusCode: 501 }); }
-function truncateWords(value, max) { if (!max || value.length <= max) return value; const cut = value.slice(0, max + 1); const index = cut.lastIndexOf(' '); return (index > 0 ? cut.slice(0, index) : cut.slice(0, max)).trim(); }
-function createAssisted(options = {}) {
+function unsupported(): never {
+  throw new AppError('CONNECTOR_NOT_IMPLEMENTED', 'A person posts with this connector; use build_assist_pack.', { statusCode: 501 });
+}
+
+function truncateWords(value: string, max: number): string {
+  if (!max || value.length <= max) return value;
+  const cut = value.slice(0, max + 1);
+  const index = cut.lastIndexOf(' ');
+  return (index > 0 ? cut.slice(0, index) : cut.slice(0, max)).trim();
+}
+
+function createAssisted(options: any = {}): any {
   const base = createBase(manifest, options);
-  function build_assist_pack(rendition, destination) {
+  function build_assist_pack(rendition: Rendition, destination: Destination): any {
     const config = destination.config || {}; let caption = `${rendition.title || ''}\n\n${rendition.body || ''}`;
     if (destination.disclosure_required && rendition.ai_generated) caption += `\n\n${config.disclosure_text || 'Disclosure: this post was created with AI assistance.'}`;
     caption = truncateWords(caption, config.caption_max_chars);
@@ -26,4 +36,4 @@ function createAssisted(options = {}) {
   }
   return { key: manifest.key, manifest, validate: base.validate, build_assist_pack, publish: unsupported, get_status: unsupported, delete: unsupported, findByMarker: unsupported };
 }
-module.exports = { manifest, createAssisted, createConnector: createAssisted, unsupported };
+export { manifest, createAssisted, createAssisted as createConnector, unsupported };

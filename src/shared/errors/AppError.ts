@@ -9,12 +9,12 @@ interface AppErrorOptions {
 }
 
 class AppError extends Error {
-  code: string;
+  code: ErrorCode;
   statusCode: number;
   retryable: boolean;
   details: Record<string, any>;
 
-  constructor(code: string, message: string, { statusCode = 500, retryable = false, details = {} }: AppErrorOptions = {}) {
+  constructor(code: ErrorCode, message: string, { statusCode = 500, retryable = false, details = {} }: AppErrorOptions = {}) {
     super(message);
     this.name = 'AppError';
     this.code = code;
@@ -25,3 +25,5 @@ class AppError extends Error {
 }
 
 export = AppError;
+import type { ErrorCode } from '../../modules/connectors/types';
+
