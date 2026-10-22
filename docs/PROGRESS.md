@@ -2,8 +2,13 @@
 
 ## Current step
 
-T3 connector, rules and ledger conversion is in progress. Batch 1 covers connector contracts, manifest loading,
-registry and shared connector helpers; Docker tests are required before Batch 2.
+WP0 Baseline — DONE (22 Oct 2026). Docker verified: 44 suites / 187 tests, lint clean, build clean.
+Added the missing certification overlay: stable marker helper, one-attempt immediate-cleanup helper, and local
+Discourse `delete_fails_once` / `delete_fails_twice` scenarios with `delete_attempts`. The helper is deliberately
+not yet wired into run persistence; that integration, cleanup_pending, janitor, routes and summary are WP1.
+
+Next: WP1 Finish certification, section C step 1 — integrate immediate cleanup after failure, marker recovery,
+cleanup_pending and cleanup_due_at with tests first. Do not start later WP1 sections until that step is green.
 
 T2 shared-layer conversion is done and Docker-verified. Config, database bootstrap, shared infrastructure,
 the application factory and server entry point now compile from TypeScript; 41 suites / 182 tests and lint pass.

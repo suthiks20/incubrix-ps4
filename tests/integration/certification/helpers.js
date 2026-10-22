@@ -11,7 +11,7 @@ const { createTestDatabase } = require('../testDatabase');
 const { createLocal } = require('../../../src/shared/storage/local');
 
 const MOCK_SCENARIOS = {
-  discourse: ['normal', 'renamed_field', 'unavailable', 'expired_token'],
+  discourse: ['normal', 'renamed_field', 'unavailable', 'expired_token', 'delete_fails_once', 'delete_fails_twice'],
   webhook: ['normal', 'renamed_field']
 };
 

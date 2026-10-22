@@ -5,7 +5,9 @@
 const AppError = require('../shared/errors/AppError');
 const scenarios = new Map();
 function stateFor(name) {
-  if (!scenarios.has(name)) scenarios.set(name, { posts: [], nextId: 1, rateLimited: false, post_attempts: 0 });
+  if (!scenarios.has(name)) {
+    scenarios.set(name, { posts: [], nextId: 1, rateLimited: false, post_attempts: 0, delete_attempts: 0 });
+  }
   return scenarios.get(name);
 }
 async function mock(app) {
@@ -36,6 +38,13 @@ async function mock(app) {
   });
   app.delete('/mock/discourse/:scenario/t/:id.json', async (request, _reply) => {
     const state = stateFor(request.params.scenario);
+    state.delete_attempts += 1;
+    if (request.params.scenario === 'delete_fails_once' && state.delete_attempts === 1) {
+      return _reply.code(503).send({ error: 'temporarily unavailable' });
+    }
+    if (request.params.scenario === 'delete_fails_twice' && state.delete_attempts <= 2) {
+      return _reply.code(503).send({ error: 'temporarily unavailable' });
+    }
     state.posts = state.posts.filter((item) => String(item.topic_id) !== request.params.id);
     return { success: true };
   });
