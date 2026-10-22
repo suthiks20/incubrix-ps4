@@ -11,7 +11,14 @@ const { createTestDatabase } = require('../testDatabase');
 const { createLocal } = require('../../../src/shared/storage/local');
 
 const MOCK_SCENARIOS = {
-  discourse: ['normal', 'renamed_field', 'unavailable', 'expired_token', 'delete_fails_once', 'delete_fails_twice'],
+  discourse: [
+    'normal',
+    'renamed_field',
+    'unavailable',
+    'expired_token',
+    'delete_fails_once',
+    'delete_fails_twice'
+  ],
   webhook: ['normal', 'renamed_field']
 };
 
@@ -23,6 +30,7 @@ async function createContext(options = {}) {
     knex,
     apiToken: options.apiToken || '',
     config,
+    logger: options.logger,
     storage: createLocal(directory),
     now: options.now || (() => new Date()),
     connectorFactory: options.connectorFactory

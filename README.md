@@ -94,6 +94,77 @@ In Windows Command Prompt, use `/mock/discourse/timeout_after_success` for the a
 curl.exe -X POST http://localhost:8000/connector/v1/discourse/publish -H "Content-Type: application/json" --data-raw "{\"idempotency_key\":\"demo-publish-001\",\"destination_ref\":\"http://localhost:8000/mock/discourse/timeout_after_success\",\"connection\":{\"api_key\":\"demo\",\"api_username\":\"tester\"},\"rendition\":{\"title\":\"An example topic title\",\"body\":\"Hello community\"}}"
 ```
 
+## Certification
+
+Certification validates a destination with a temporary local test post. Native and protocol connectors run six
+steps in order: `validate`, `publish`, `confirm_live`, `read_status`, `delete`, and `verify_gone`. Assisted
+destinations run validation and build an assist pack; their platform steps are recorded as skipped with no
+network call.
+
+Certification awards L1 to `assisted`, L2 to `feed` and `bridge`, and L3 to `native` and `protocol`
+connectors. A failed run has completed cleanup and remains `failed`; a `cleanup_pending` run still has a test
+post and is retried by the janitor. The initial cleanup deadline is 10 minutes (`CERT_TEST_POST_TTL_MINUTES`).
+The server runs the janitor at startup and every `CERT_JANITOR_INTERVAL_SECONDS`; failed janitor retries move
+the deadline forward by one minute and create only one `cleanup_failed` alert per run.
+
+For safety, a non-assisted destination must have `config.base_url` and its host must be listed in
+`CERT_ALLOWED_HOSTS`, unless the destination's config explicitly enables `sandbox`. Certification refuses an
+unapproved host before it creates a run, sends a platform request, alerts, or demotes a destination.
+
+Certification-specific errors are `CERT_CONFIG_INVALID`, `CERT_HOST_NOT_ALLOWED`, and
+`DESTINATION_DEMOTED`; all use the common `{error:{code,message,retryable,details}}` envelope.
+
+This evidence excerpt is copied from a passing local Docker run on 22 Oct 2026. It contains no connection
+values:
+
+```json
+{
+  "run_id": "81d61b2d-43bb-4724-9edc-7518d3ad0c3a",
+  "platform_post_id": "1",
+  "deletion_confirmed": true,
+  "verdict": "passed",
+  "totals": { "duration_ms": 75 },
+  "destination": {
+    "name": "Docker Evidence Discourse",
+    "url": "http://127.0.0.1:8000/mock/discourse/normal",
+    "connector_key": "discourse",
+    "platform_key": "discourse"
+  },
+  "connector": { "key": "discourse", "version": "1.0.0" },
+  "steps": [{ "name": "validate", "status": "passed", "duration_ms": 0 }]
+}
+```
+
+In Windows Command Prompt, use these routes after creating a destination. `Idempotency-Key` is required for
+the POST routes; it is included below on the reads as a harmless trace header for a copy-paste-friendly set.
+
+```bat
+set DESTINATION_ID=replace-with-destination-uuid
+set RUN_ID=replace-with-run-uuid
+
+curl.exe -X POST "http://localhost:8000/api/v1/destinations/%DESTINATION_ID%/certify" ^
+  -H "Content-Type: application/json" ^
+  -H "Idempotency-Key: certify-001" ^
+  --data "{}"
+
+curl.exe "http://localhost:8000/api/v1/certification/runs" ^
+  -H "Idempotency-Key: runs-001"
+
+curl.exe "http://localhost:8000/api/v1/certification/runs/%RUN_ID%/evidence" ^
+  -H "Idempotency-Key: evidence-001"
+
+curl.exe "http://localhost:8000/api/v1/alerts" ^
+  -H "Idempotency-Key: alerts-001"
+
+curl.exe -X POST "http://localhost:8000/api/v1/certification/cleanup" ^
+  -H "Content-Type: application/json" ^
+  -H "Idempotency-Key: cleanup-001" ^
+  --data "{}"
+
+curl.exe "http://localhost:8000/api/v1/certification/summary" ^
+  -H "Idempotency-Key: summary-001"
+```
+
 ## Settings
 
 | Setting | Default | Purpose |
@@ -116,10 +187,10 @@ curl.exe -X POST http://localhost:8000/connector/v1/discourse/publish -H "Conten
 | CIRCUIT_FAILURE_THRESHOLD | 5 | Consecutive unavailable responses before opening a connector circuit |
 | CIRCUIT_COOLDOWN_SECONDS | 60 | Seconds before an open circuit can retry |
 | STORAGE_DRIVER | local | Certification evidence storage driver |
-| STORAGE_DIR | ./data/storage | Directory for local certification evidence |
+| STORAGE_DIR | ./data/storage; /app/data/storage in Compose | Directory for local certification evidence |
 | CERT_TEST_POST_TTL_MINUTES | 10 | Maximum lifetime of a certification test post |
-| CERT_JANITOR_INTERVAL_SECONDS | 60 | Future certification cleanup interval in seconds |
-| CERT_ALLOWED_HOSTS | localhost,127.0.0.1 | Hosts allowed to receive certification posts |
+| CERT_JANITOR_INTERVAL_SECONDS | 60 | Seconds between certification janitor cleanup attempts |
+| CERT_ALLOWED_HOSTS | 127.0.0.1,localhost | Hosts allowed to receive certification posts |
 | CONNECTORS_DISABLED | empty | Comma-separated connector keys disabled by configuration |
 
 ## Error codes
