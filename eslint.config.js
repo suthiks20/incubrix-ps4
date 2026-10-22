@@ -5,7 +5,7 @@
 module.exports = [
   {
     files: ['**/*.js'],
-    ignores: ['node_modules/**', 'coverage/**'],
+    ignores: ['node_modules/**', 'coverage/**', 'dist/**'],
     languageOptions: { ecmaVersion: 2022, sourceType: 'commonjs', globals: { process: 'readonly', URL: 'readonly', crypto: 'readonly', Buffer: 'readonly', __dirname: 'readonly', fetch: 'readonly', AbortController: 'readonly', setTimeout: 'readonly', clearTimeout: 'readonly', URLSearchParams: 'readonly', Headers: 'readonly' } },
     rules: {
       'no-undef': 'error',

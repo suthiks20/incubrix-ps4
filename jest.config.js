@@ -6,9 +6,10 @@ module.exports = {
   testEnvironment: 'node',
   setupFiles: ['<rootDir>/tests/setup/silenceLogs.js'],
   roots: ['<rootDir>/tests'],
-  testMatch: ['<rootDir>/tests/**/*.test.js'],
+  testMatch: ['<rootDir>/tests/**/*.test.[jt]s'],
   globalSetup: '<rootDir>/tests/setup/globalSetup.js',
   clearMocks: true,
+  transform: { '^.+\\.[jt]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.json' }] },
   transformIgnorePatterns: ['/node_modules/(?!(cookie)/)'],
   moduleNameMapper: { '^cookie$': '<rootDir>/tests/mocks/cookie.js' }
 };

@@ -1,5 +1,6 @@
 # Local dependencies and generated output do not belong in source control.
 node_modules/
+dist/
 .env
 data/
 coverage/

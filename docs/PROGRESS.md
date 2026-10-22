@@ -2,6 +2,10 @@
 
 ## Current step
 
+T1 TypeScript tooling is done and Docker-verified. JavaScript source remains unchanged; the build emits
+CommonJS to `dist/src` and copies connector YAML manifests so the compiled server can load them at runtime.
+The container command is `node dist/src/server.js`; Docker tests passed 41 suites / 182 tests and lint passed.
+
 Certification Block A, steps S1 to S4 (partial) are done and verified against a real Postgres 16.
 Docker totals to confirm on your machine: Test Suites: 41 passed, Tests: 182 passed; lint clean.
 
