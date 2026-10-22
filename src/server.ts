@@ -7,8 +7,10 @@ import config = require('./config');
 import { runMigrations } from './db/migrate';
 import { purgeExpired } from './shared/idempotency/repository';
 import { runCleanup } from './modules/certification/services/cleanup';
+import { runPending } from './modules/jobs/worker';
 const app = buildApp();
 let cleanupTimer: ReturnType<typeof setInterval> | undefined;
+let jobsTimer: ReturnType<typeof setInterval> | undefined;
 
 function cleanupDeps(): any {
   return {
@@ -35,9 +37,15 @@ function startJanitor(): void {
   cleanupTimer.unref();
 }
 
+function startJobs(): void {
+  jobsTimer = setInterval(() => { void runPending(cleanupDeps()); }, app.config.JOBS_POLL_INTERVAL_MS);
+  jobsTimer.unref();
+}
+
 async function closeServer(signal: string): Promise<void> {
   app.log.info({ signal }, 'Closing server');
   if (cleanupTimer) clearInterval(cleanupTimer);
+  if (jobsTimer) clearInterval(jobsTimer);
   await app.close();
   await app.knex.destroy();
   process.exit(0);
@@ -49,7 +57,9 @@ async function startServer(): Promise<void> {
   const purgedCount = await purgeExpired(app.knex);
   app.log.info({ purged_count: purgedCount }, 'Expired idempotency keys purged');
   await runJanitor();
+  await repositoryRecover();
   startJanitor();
+  startJobs();
   await app.listen({ port: config.PORT, host: config.HOST });
 }
 
@@ -58,3 +68,8 @@ startServer().catch(async (error: any) => {
   await app.knex.destroy();
   process.exit(1);
 });
+
+async function repositoryRecover(): Promise<void> {
+  const repository = await import('./modules/jobs/repository');
+  await repository.recoverStale(app.knex, app.config);
+}

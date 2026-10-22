@@ -29,6 +29,7 @@ const codes = Object.freeze({
   DESTINATION_DEMOTED: { statusCode: 409, retryable: false },
   CERT_HOST_NOT_ALLOWED: { statusCode: 409, retryable: false },
   CERT_CONFIG_INVALID: { statusCode: 409, retryable: false },
+  JOB_TYPE_UNKNOWN: { statusCode: 400, retryable: false },
   DUPLICATE_DESTINATION: { statusCode: 409, retryable: false }
 });
 

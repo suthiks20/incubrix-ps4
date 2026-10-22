@@ -20,6 +20,7 @@ import webhookMock = require('./mocks/webhook');
 import config = require('./config');
 import { createStorage } from './shared/storage';
 import certificationRoutes = require('./modules/certification/routes');
+import jobRoutes = require('./modules/jobs/routes');
 
 function buildApp(opts: any = {}): any {
   const appConfig = opts.config || config;
@@ -51,6 +52,7 @@ function buildApp(opts: any = {}): any {
   app.register(connectorRoutes);
   app.register(rulesRoutes);
   app.register(certificationRoutes);
+  app.register(jobRoutes);
   if (appConfig.SIMULATION_MODE) { app.register(discourseMock); app.register(webhookMock); }
   return app;
 }

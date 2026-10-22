@@ -26,6 +26,11 @@ interface AppConfig {
   STORAGE_DRIVER: string;
   STORAGE_DIR: string;
   CONNECTORS_DISABLED: string[];
+  JOBS_POLL_INTERVAL_MS: number;
+  JOBS_MAX_ATTEMPTS: number;
+  JOBS_STALE_SECONDS: number;
+  JOBS_CALLBACK_SECRET: string;
+  JOBS_CALLBACK_TIMEOUT_MS: number;
 }
 
 type Environment = Record<string, string | undefined>;
@@ -94,7 +99,17 @@ function loadConfig(env: Environment = process.env): Readonly<AppConfig> {
     CERT_ALLOWED_HOSTS: (env.CERT_ALLOWED_HOSTS || 'localhost,127.0.0.1').split(',').map((host) => host.trim()).filter(Boolean),
     STORAGE_DRIVER: env.STORAGE_DRIVER || 'local',
     STORAGE_DIR: env.STORAGE_DIR || './data/storage',
-    CONNECTORS_DISABLED: (env.CONNECTORS_DISABLED || '').split(',').map((key) => key.trim()).filter(Boolean)
+    CONNECTORS_DISABLED: (env.CONNECTORS_DISABLED || '').split(',').map((key) => key.trim()).filter(Boolean),
+    JOBS_POLL_INTERVAL_MS: parseIntegerSetting('JOBS_POLL_INTERVAL_MS', env.JOBS_POLL_INTERVAL_MS, 1000, 1),
+    JOBS_MAX_ATTEMPTS: parseIntegerSetting('JOBS_MAX_ATTEMPTS', env.JOBS_MAX_ATTEMPTS, 3, 1),
+    JOBS_STALE_SECONDS: parseIntegerSetting('JOBS_STALE_SECONDS', env.JOBS_STALE_SECONDS, 300, 1),
+    JOBS_CALLBACK_SECRET: env.JOBS_CALLBACK_SECRET || 'dev-callback-secret',
+    JOBS_CALLBACK_TIMEOUT_MS: parseIntegerSetting(
+      'JOBS_CALLBACK_TIMEOUT_MS',
+      env.JOBS_CALLBACK_TIMEOUT_MS,
+      5000,
+      1
+    )
   });
 }
 

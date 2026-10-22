@@ -135,6 +135,23 @@ values:
 }
 ```
 
+## Jobs
+
+`POST /api/v1/jobs` queues durable work and returns `202` immediately. Jobs move from `queued` to `running`,
+then `succeeded` or `failed`; certification is the first supported type. A repeated idempotency key for the
+same body returns the same `job_id`. Unknown types return `JOB_TYPE_UNKNOWN`.
+
+Callbacks receive `{job_id,status,result,error}`. The API signs its exact JSON body with
+`X-IncuBrix-Signature: sha256=<HMAC-SHA256(timestamp.body)>` and sends the Unix timestamp in
+`X-IncuBrix-Timestamp`.
+
+```bat
+curl.exe -X POST http://localhost:8000/api/v1/jobs -H "Content-Type: application/json" ^
+  -H "Idempotency-Key: job-001" --data "{\"type\":\"certify\",\"input\":{\"destination_id\":\"UUID\"}}"
+curl.exe http://localhost:8000/api/v1/jobs/JOB_UUID -H "Idempotency-Key: job-read-001"
+curl.exe http://localhost:8000/api/v1/jobs?status=queued -H "Idempotency-Key: jobs-list-001"
+```
+
 In Windows Command Prompt, use these routes after creating a destination. `Idempotency-Key` is required for
 the POST routes; it is included below on the reads as a harmless trace header for a copy-paste-friendly set.
 
@@ -192,6 +209,11 @@ curl.exe "http://localhost:8000/api/v1/certification/summary" ^
 | CERT_JANITOR_INTERVAL_SECONDS | 60 | Seconds between certification janitor cleanup attempts |
 | CERT_ALLOWED_HOSTS | 127.0.0.1,localhost | Hosts allowed to receive certification posts |
 | CONNECTORS_DISABLED | empty | Comma-separated connector keys disabled by configuration |
+| JOBS_POLL_INTERVAL_MS | 1000 | Milliseconds between queued-job polls |
+| JOBS_MAX_ATTEMPTS | 3 | Maximum stale-job retry attempts |
+| JOBS_STALE_SECONDS | 300 | Running-job stale threshold in seconds |
+| JOBS_CALLBACK_SECRET | dev-callback-secret | HMAC secret for job callbacks |
+| JOBS_CALLBACK_TIMEOUT_MS | 5000 | Callback request timeout in milliseconds |
 
 ## Error codes
 
@@ -199,6 +221,7 @@ curl.exe "http://localhost:8000/api/v1/certification/summary" ^
 | --- | --- |
 | Connector | DEST_SPEC_VIOLATION, DEST_RULE_FREQUENCY_CAP, CONNECTION_AUTH_EXPIRED, PLATFORM_RATE_LIMIT, PLATFORM_QUOTA_EXHAUSTED, PLATFORM_CONTENT_REJECTED, PLATFORM_UNAVAILABLE, CONNECTOR_DISABLED |
 | Connector framework extensions | SCHEMA_DRIFT, DEST_RULE_VIOLATION, DESTINATION_DEMOTED, CERT_HOST_NOT_ALLOWED, CERT_CONFIG_INVALID |
+| Jobs | JOB_TYPE_UNKNOWN |
 | Platform | VALIDATION_ERROR, UNSUPPORTED_MEDIA_TYPE, PAYLOAD_TOO_LARGE, NOT_FOUND, UNAUTHORIZED, IDEMPOTENCY_KEY_REQUIRED, IDEMPOTENCY_KEY_CONFLICT, IDEMPOTENCY_REQUEST_IN_PROGRESS, RATE_LIMITED, NOT_READY, INTERNAL_ERROR, CONNECTOR_NOT_IMPLEMENTED, DESTINATION_DISABLED |
 | Destinations | DUPLICATE_DESTINATION |
 

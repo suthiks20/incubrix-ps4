@@ -2,10 +2,12 @@
 
 ## Current step
 
-P0 - PARTIAL (blocked, 22 Oct 2026). Added the TypeScript script/bootstrap include roots, safe malformed
-connection JSON handling, simulation connection fallbacks, and the exact non-leak unit test. Remaining: Docker
-is not returning output for `docker version` or the Compose gate commands, so rerun the full Docker gate and
-record real totals before marking P0 DONE.
+WP2a - DONE (23 Oct 2026). Jobs have real-Postgres API, worker, callback, logging and HMAC-vector coverage.
+Docker verified: 55 suites / 243 tests, lint clean, build clean. The local hand proof returned one idempotent
+certify job with status `succeeded` and progress `100`.
+
+P0 - DONE (22 Oct 2026). TypeScript script/bootstrap include roots, safe malformed connection JSON handling,
+and simulation fallbacks are Docker-verified: 51 suites / 226 tests, lint clean, build clean.
 
 WP1 - DONE (22 Oct 2026). Certification now includes safety preconditions, durable step evidence, immediate
 and janitor cleanup, HTTP reads and summaries, Docker storage configuration, and secret-leak coverage. Docker
@@ -25,4 +27,4 @@ T2 shared-layer conversion and T1 TypeScript tooling are done and Docker-verifie
 
 ## Next
 
-P0 prerequisites (blocked: Docker verification has no daemon output).
+WP3a: Dev.to connector.
