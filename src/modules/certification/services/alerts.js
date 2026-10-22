@@ -5,7 +5,7 @@
 const AppError = require('../../../shared/errors/AppError');
 const repository = require('../repository/alerts');
 
-function list(knex, filters) {
+function list(knex, filters = {}) {
   return repository.findAll(knex, filters);
 }
 

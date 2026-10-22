@@ -16,6 +16,6 @@ Candidate submission for IncuBrix Assessment 4 ("Distribution: Long-Tail Destina
 - Mocks (Discourse, webhook) mount only when SIMULATION_MODE is true and have fault scenarios. The webhook test secret is "test-signing-secret".
 - Tests: npm test runs Jest --runInBand against a real Postgres test database. Test cleanup must TRUNCATE ... CASCADE because destinations is referenced by foreign keys.
 ## Roadmap (update as you go)
-The work-package order and source of truth are in docs/MASTER_PLAN.md. WP0 baseline is done
-(44 suites, 187 tests). Next: WP1 certification completion, starting with immediate cleanup.
+The work-package order and source of truth are in docs/MASTER_PLAN.md. WP1 Steps 1-2 are done
+(47 suites, 206 tests). Next: WP1 Step 3, certification janitor and summary.
 ---

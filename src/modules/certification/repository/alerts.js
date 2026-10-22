@@ -18,7 +18,10 @@ function findById(knex, id) {
 }
 
 async function acknowledge(knex, id) {
-  const rows = await knex(TABLE).where({ id }).update({ acknowledged: true }).returning('*');
+  const rows = await knex(TABLE)
+    .where({ id })
+    .update({ acknowledged: true, acknowledged_at: knex.fn.now() })
+    .returning('*');
   return rows[0];
 }
 

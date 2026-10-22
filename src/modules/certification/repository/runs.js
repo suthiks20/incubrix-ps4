@@ -22,7 +22,12 @@ function findById(knex, id) {
 
 function list(knex, filters = {}) {
   const entries = Object.entries(filters).filter(([key]) => ALLOWED_RUN_FILTERS.includes(key));
-  return knex(TABLE).where(Object.fromEntries(entries)).orderBy('started_at', 'desc');
+  const values = Object.fromEntries(entries);
+  const limit = values.limit || 50;
+  const offset = values.offset || 0;
+  delete values.limit;
+  delete values.offset;
+  return knex(TABLE).where(values).orderBy('started_at', 'desc').limit(limit).offset(offset);
 }
 
 module.exports = { insert, update, findById, list, findAll: list };

@@ -28,6 +28,7 @@ const codes = Object.freeze({
   DEST_RULE_VIOLATION: { statusCode: 422, retryable: false },
   DESTINATION_DEMOTED: { statusCode: 409, retryable: false },
   CERT_HOST_NOT_ALLOWED: { statusCode: 409, retryable: false },
+  CERT_CONFIG_INVALID: { statusCode: 409, retryable: false },
   DUPLICATE_DESTINATION: { statusCode: 409, retryable: false }
 });
 

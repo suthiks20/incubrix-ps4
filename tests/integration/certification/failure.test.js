@@ -103,3 +103,34 @@ test('HARD CASE recertification clears the demotion', async () => {
   const published = await publishViaConnector(destination.id, 'works-again');
   expect(published.statusCode).toBe(200);
 });
+
+test('certification without config.base_url returns CERT_CONFIG_INVALID', async () => {
+  const destination = await createDestination(ctx, 'discourse', 'normal', { config: JSON.stringify({}) });
+  const response = await certify(ctx, destination.id, 'missing-base-url');
+  expect(response.statusCode).toBe(409);
+  expect(response.json().error.code).toBe('CERT_CONFIG_INVALID');
+  expect(await ctx.knex('certification_runs').where({ destination_id: destination.id })).toHaveLength(0);
+});
+
+test('certification of a disabled connector returns CONNECTOR_DISABLED', async () => {
+  const destination = await createDestination(ctx, 'discourse', 'normal');
+  ctx.app.config.CONNECTORS_DISABLED = ['discourse'];
+  const response = await certify(ctx, destination.id, 'disabled-connector');
+  expect(response.statusCode).toBe(409);
+  expect(response.json().error.code).toBe('CONNECTOR_DISABLED');
+  ctx.app.config.CONNECTORS_DISABLED = [];
+});
+
+test('certification of an unavailable platform fails with PLATFORM_UNAVAILABLE', async () => {
+  const destination = await createDestination(ctx, 'discourse', 'unavailable');
+  const response = await certify(ctx, destination.id, 'unavailable-platform');
+  expect(response.statusCode).toBe(200);
+  expect(response.json()).toEqual(expect.objectContaining({ status: 'failed', failure_code: 'PLATFORM_UNAVAILABLE' }));
+});
+
+test('certification with an expired token fails with CONNECTION_AUTH_EXPIRED', async () => {
+  const destination = await createDestination(ctx, 'discourse', 'expired_token');
+  const response = await certify(ctx, destination.id, 'expired-token');
+  expect(response.statusCode).toBe(200);
+  expect(response.json()).toEqual(expect.objectContaining({ status: 'failed', failure_code: 'CONNECTION_AUTH_EXPIRED' }));
+});
