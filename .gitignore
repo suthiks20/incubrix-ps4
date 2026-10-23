@@ -6,3 +6,4 @@ data/
 coverage/
 batch-results/
 *.log
+spike/out.json

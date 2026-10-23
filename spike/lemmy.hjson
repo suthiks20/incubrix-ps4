@@ -1,0 +1,23 @@
+# Minimal Lemmy server config from the official Docker installation structure.
+# The local hostname matches the published API port used by bootstrap and verify.
+hostname: "localhost:8536"
+bind: "0.0.0.0"
+port: 8536
+tls_enabled: false
+database: {
+  host: "lemmy-db"
+  port: 5432
+  database: "lemmy"
+  user: "lemmy"
+  password: "lemmy-spike-password"
+  pool_size: 5
+}
+pictrs: {
+  url: "http://pictrs:8080/"
+}
+registration_mode: "Open"
+setup: {
+  admin_username: "incubrixadmin"
+  admin_password: "spike-lemmy-password-only-local"
+  site_name: "IncuBrix Spike"
+}
