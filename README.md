@@ -50,7 +50,7 @@ If authentication is enabled, add `-H "Authorization: Bearer YOUR_API_TOKEN"` to
 
 ## Idempotency
 
-Every `POST` whose path starts with `/api/v1` requires an `Idempotency-Key` header containing 1–255 printable ASCII characters. A repeat with the same key, method, path, and request content replays the stored status and body and adds `Idempotent-Replay: true`. Reusing the same key for different request content returns `409 IDEMPOTENCY_KEY_CONFLICT`. If the original request is still running, the duplicate waits up to `IDEMPOTENCY_WAIT_MS`, then returns retryable `409 IDEMPOTENCY_REQUEST_IN_PROGRESS` if it has not finished. Completed keys are retained for `IDEMPOTENCY_TTL_HOURS`; abandoned in-progress claims can be reclaimed after `IDEMPOTENCY_LOCK_TTL_SECONDS`. `/connector/v1` is excluded because its connector contract carries `idempotency_key` in the JSON body, to be handled by the connector runtime later. Health routes and non-POST methods are also excluded.
+Every `POST` whose path starts with `/api/v1` requires an `Idempotency-Key` header containing 1–255 printable ASCII characters. A repeat with the same key, method, path, and request content replays the stored status and body and adds `Idempotent-Replay: true`. Reusing the same key for different request content returns `409 IDEMPOTENCY_KEY_CONFLICT`. If the original request is still running, the duplicate waits up to `IDEMPOTENCY_WAIT_MS`, then returns retryable `409 IDEMPOTENCY_REQUEST_IN_PROGRESS` if it has not finished. Completed keys are retained for `IDEMPOTENCY_TTL_HOURS`; abandoned in-progress claims can be reclaimed after `IDEMPOTENCY_LOCK_TTL_SECONDS`. Connector publish accepts the same header or the legacy JSON `idempotency_key`; when both are supplied they must match. Health routes and non-POST methods are excluded.
 
 ## Connector contract
 
@@ -92,6 +92,31 @@ In Windows Command Prompt, use `/mock/discourse/timeout_after_success` for the a
 
 ```bat
 curl.exe -X POST http://localhost:8000/connector/v1/discourse/publish -H "Content-Type: application/json" --data-raw "{\"idempotency_key\":\"demo-publish-001\",\"destination_ref\":\"http://localhost:8000/mock/discourse/timeout_after_success\",\"connection\":{\"api_key\":\"demo\",\"api_username\":\"tester\"},\"rendition\":{\"title\":\"An example topic title\",\"body\":\"Hello community\"}}"
+```
+
+## Dev.to connector
+
+Dev.to is a native `article` connector with title and body limits of 128 and 100000 characters. It sends the
+connection API key as `api-key`, publishes a hidden `<!-- ix_ref:<marker> -->` comment in `body_markdown`, and
+uses that marker to reconcile an ambiguous timeout. Dev.to has no hard-delete endpoint: delete sets
+`published:false`, and the connector treats an unpublished article as gone only after `get_status` confirms it.
+
+| Simulation scenario | Result |
+| --- | --- |
+| normal | Publishes, reads, and unpublishes an article |
+| timeout_after_success | Creates once and drops the create response |
+| renamed_field | Replaces `url` with `article_url` to trigger `SCHEMA_DRIFT` |
+| rate_limit_short / rate_limit_long | Returns 429 with Retry-After 1 / 120 |
+| expired_token / content_rejected / unavailable | Returns 401 / 422 / 503 |
+| delete_fails_once / delete_fails_twice | Fails one or two unpublish attempts |
+
+Windows Command Prompt example (the key can be in the header or JSON body, but not differently in both):
+
+```bat
+curl.exe -X POST http://localhost:8000/connector/v1/devto/publish ^
+  -H "Content-Type: application/json" ^
+  -H "Idempotency-Key: devto-publish-001" ^
+  --data "{\"destination_ref\":\"http://localhost:8000/mock/devto/normal\",\"connection\":{\"api_key\":\"fake-devto-key\"},\"rendition\":{\"title\":\"Example Devto article\",\"body\":\"A local simulation article.\",\"canonical_url\":\"https://example.test/original\"}}"
 ```
 
 ## Certification

@@ -19,6 +19,14 @@ const MOCK_SCENARIOS = {
     'delete_fails_once',
     'delete_fails_twice'
   ],
+  devto: [
+    'normal',
+    'renamed_field',
+    'unavailable',
+    'expired_token',
+    'delete_fails_once',
+    'delete_fails_twice'
+  ],
   webhook: ['normal', 'renamed_field']
 };
 

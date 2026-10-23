@@ -2,6 +2,10 @@
 
 ## Current step
 
+WP3a - DONE (23 Oct 2026). Added the native Dev.to connector, manifest, simulation-only mock, certification
+coverage, connector catalogue contract coverage, and header-based connector idempotency. Docker verified:
+59 suites / 261 tests, lint clean, build clean. Next: WP2b, storage and output manifests.
+
 WP2a - DONE (23 Oct 2026). Jobs have real-Postgres API, worker, callback, logging and HMAC-vector coverage.
 Docker verified: 55 suites / 243 tests, lint clean, build clean. The local hand proof returned one idempotent
 certify job with status `succeeded` and progress `100`.
@@ -27,4 +31,4 @@ T2 shared-layer conversion and T1 TypeScript tooling are done and Docker-verifie
 
 ## Next
 
-WP3a: Dev.to connector.
+WP2b: Storage and output manifests.

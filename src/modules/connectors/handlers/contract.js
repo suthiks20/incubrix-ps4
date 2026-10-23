@@ -4,7 +4,13 @@
  */
 const { execute } = require('../services/contract');
 async function handler(request, reply) {
-  const result = await execute(request.server, request.params.key, request.params.method, request.body || {});
+  const result = await execute(
+    request.server,
+    request.params.key,
+    request.params.method,
+    request.body || {},
+    request.headers['idempotency-key']
+  );
   if (result.replay) reply.header('Idempotent-Replay', 'true');
   if (Object.prototype.hasOwnProperty.call(result, 'replay')) {
     const body = { ...result };

@@ -16,6 +16,7 @@ import connectorRoutes = require('./modules/connectors/routes');
 import rulesRoutes = require('./modules/rules/routes');
 import { loadManifests } from './modules/connectors/manifestLoader';
 import discourseMock = require('./mocks/discourse');
+import devtoMock = require('./mocks/devto');
 import webhookMock = require('./mocks/webhook');
 import config = require('./config');
 import { createStorage } from './shared/storage';
@@ -53,7 +54,11 @@ function buildApp(opts: any = {}): any {
   app.register(rulesRoutes);
   app.register(certificationRoutes);
   app.register(jobRoutes);
-  if (appConfig.SIMULATION_MODE) { app.register(discourseMock); app.register(webhookMock); }
+  if (appConfig.SIMULATION_MODE) {
+    app.register(discourseMock);
+    app.register(devtoMock);
+    app.register(webhookMock);
+  }
   return app;
 }
 
