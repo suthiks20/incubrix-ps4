@@ -1,0 +1,3 @@
+{ "name": "Local Lemmy", "url": "http://lemmy:8536", "platform_key": "lemmy",
+  "connector_key": "lemmy", "connection_ref": "LEMMY_LOCAL",
+  "config": { "base_url": "http://lemmy:8536" }, "language": "en" }

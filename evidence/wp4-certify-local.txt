@@ -1,0 +1,6 @@
+
+> incubrix-longtail@1.0.0 certify:local
+> node bootstrap/verify.js all
+
+{"lemmy":{"post_id":2,"body":"ix-local-1792764101564","delete_status":200,"deleted":true}}
+{"ghost":{"post_id":"6adb68c7a536560001a34a75","slug":"ix-local-1792764102039","delete_status":204,"after_status":404}}

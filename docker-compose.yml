@@ -25,7 +25,7 @@ services:
       CONNECTOR_MAX_BACKOFF_MS: ${CONNECTOR_MAX_BACKOFF_MS:-5000}
       CIRCUIT_FAILURE_THRESHOLD: ${CIRCUIT_FAILURE_THRESHOLD:-5}
       CIRCUIT_COOLDOWN_SECONDS: ${CIRCUIT_COOLDOWN_SECONDS:-60}
-      STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-s3}
       STORAGE_DIR: ${STORAGE_DIR:-/app/data/storage}
       S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
       S3_REGION: ${S3_REGION:-us-east-1}
@@ -41,11 +41,16 @@ services:
       JOBS_STALE_SECONDS: ${JOBS_STALE_SECONDS:-300}
       JOBS_CALLBACK_SECRET: ${JOBS_CALLBACK_SECRET:-dev-callback-secret}
       JOBS_CALLBACK_TIMEOUT_MS: ${JOBS_CALLBACK_TIMEOUT_MS:-5000}
+      CONNECTION_LEMMY_LOCAL: ${CONNECTION_LEMMY_LOCAL:-}
+      CONNECTION_GHOST_LOCAL: ${CONNECTION_GHOST_LOCAL:-}
+      
     volumes:
       - certdata:/app/data
     depends_on:
       postgres:
         condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:8000/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
       interval: 10s
@@ -65,7 +70,7 @@ services:
       timeout: 5s
       retries: 5
   minio:
-    image: chrislusf/seaweedfs:latest
+    image: chrislusf/seaweedfs:4.48
     command: server -dir=/data -s3 -s3.port=9000
     environment:
       AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-minioadmin}
