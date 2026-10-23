@@ -42,7 +42,7 @@ uses SQLite in development mode for this local test stack. Its Compose URL is `h
 certification uses the in-Compose hostname and does not redirect to the host machine.
 
 Connections reach the API through a `CONNECTION_<REF>` JSON environment variable. For example, these are
-obviously fake values for documentation only: `CONNECTION_LEMMY_LOCAL={"api_key":"fake-local-jwt"}` and
+obviously fake values for documentation only: `CONNECTION_LEMMY_LOCAL={"api_username":"fake-user","api_key":"fake-password"}` and
 `CONNECTION_GHOST_LOCAL={"api_key":"fake-id:00112233445566778899aabbccddeeff"}`. Never put the real
 bootstrap output in `.env`, source control, responses, logs, evidence, or a destination record.
 
@@ -110,6 +110,24 @@ In Windows Command Prompt, use `/mock/discourse/timeout_after_success` for the a
 
 ```bat
 curl.exe -X POST http://localhost:8000/connector/v1/discourse/publish -H "Content-Type: application/json" --data-raw "{\"idempotency_key\":\"demo-publish-001\",\"destination_ref\":\"http://localhost:8000/mock/discourse/timeout_after_success\",\"connection\":{\"api_key\":\"demo\",\"api_username\":\"tester\"},\"rendition\":{\"title\":\"An example topic title\",\"body\":\"Hello community\"}}"
+```
+
+## Lemmy and Ghost connectors
+
+Lemmy logs in once with `api_username` and `api_key` (the local password), then caches its Bearer JWT for that
+connector instance. Posts contain an opaque `ix_ref` marker and soft deletion is confirmed only when
+`get_status` reads `post_view.post.deleted: true`. Ghost signs a five-minute Admin API JWT from the `id:hex`
+`api_key`, sends `Authorization: Ghost <jwt>`, converts the text body to escaped HTML, and uses `ix-<marker>`
+as the draft slug. Ghost deletion is confirmed only after its later read returns 404. Both simulations enforce
+their production-shaped authorization headers and provide timeout, rate-limit-reset, expired/auth, rejection,
+and renamed-field scenarios.
+
+After the optional local instances are running, create their local-only credentials and verify a marker create,
+read, and delete flow without printing credentials:
+
+```bat
+npm run bootstrap:local
+npm run certify:local
 ```
 
 ## Dev.to connector

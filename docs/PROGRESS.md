@@ -2,6 +2,10 @@
 
 ## Current step
 
+WP4 - DONE (23 Oct 2026). Completed the Lemmy and Ghost native connectors, production-shaped simulation
+mocks, registry/catalogue coverage, logger redaction, local verification alias, and Dev.to cleanup-failure
+tests. Docker verified: 61 suites / 289 tests, lint clean, build clean. Next: WP2b, storage and output manifests.
+
 WP3a - DONE (23 Oct 2026). Added the native Dev.to connector, manifest, simulation-only mock, certification
 coverage, connector catalogue contract coverage, and header-based connector idempotency. Docker verified:
 59 suites / 261 tests, lint clean, build clean. Next: WP2b, storage and output manifests.

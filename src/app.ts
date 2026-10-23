@@ -18,6 +18,8 @@ import { loadManifests } from './modules/connectors/manifestLoader';
 import discourseMock = require('./mocks/discourse');
 import devtoMock = require('./mocks/devto');
 import webhookMock = require('./mocks/webhook');
+import lemmyMock = require('./mocks/lemmy');
+import ghostMock = require('./mocks/ghost');
 import config = require('./config');
 import { createStorage } from './shared/storage';
 import certificationRoutes = require('./modules/certification/routes');
@@ -58,6 +60,8 @@ function buildApp(opts: any = {}): any {
     app.register(discourseMock);
     app.register(devtoMock);
     app.register(webhookMock);
+    app.register(lemmyMock);
+    app.register(ghostMock);
   }
   return app;
 }

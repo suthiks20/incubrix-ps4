@@ -17,7 +17,9 @@ const scenarios = [
   'rate_limit_long',
   'expired_token',
   'content_rejected',
-  'unavailable'
+  'unavailable',
+  'delete_fails_once',
+  'delete_fails_twice'
 ];
 let app;
 let knex;
@@ -158,6 +160,23 @@ test('devto delete is an unpublish and get_status reports deleted afterwards', a
   expect(deleted.json()).toEqual({ deleted: true });
   const current = await app.inject({ method: 'POST', url: '/connector/v1/devto/get_status', payload: shared });
   expect(current.json()).toEqual({ status: 'deleted', live_url: null });
+});
+
+test('devto delete_fails_once exposes the first cleanup failure then succeeds', async () => {
+  const request = payload('devto-delete-once-1', { scenario: 'delete_fails_once' });
+  const published = await app.inject({ method: 'POST', url: '/connector/v1/devto/publish', payload: request });
+  const shared = { destination_ref: request.destination_ref, connection: request.connection, platform_post_id: published.json().platform_post_id };
+  expectError(await app.inject({ method: 'POST', url: '/connector/v1/devto/delete', payload: shared }), 503, 'PLATFORM_UNAVAILABLE');
+  expect((await app.inject({ method: 'POST', url: '/connector/v1/devto/delete', payload: shared })).json()).toEqual({ deleted: true });
+});
+
+test('devto delete_fails_twice records two explicit cleanup failures', async () => {
+  const request = payload('devto-delete-twice-1', { scenario: 'delete_fails_twice' });
+  const published = await app.inject({ method: 'POST', url: '/connector/v1/devto/publish', payload: request });
+  const shared = { destination_ref: request.destination_ref, connection: request.connection, platform_post_id: published.json().platform_post_id };
+  expectError(await app.inject({ method: 'POST', url: '/connector/v1/devto/delete', payload: shared }), 503, 'PLATFORM_UNAVAILABLE');
+  expectError(await app.inject({ method: 'POST', url: '/connector/v1/devto/delete', payload: shared }), 503, 'PLATFORM_UNAVAILABLE');
+  expect((await state(request.destination_ref)).delete_attempts).toBe(2);
 });
 
 test('devto unavailable returns PLATFORM_UNAVAILABLE', async () => {

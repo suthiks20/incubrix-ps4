@@ -78,8 +78,8 @@ function createBase(manifest: Manifest, options: any = {}): any {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), runtimeConfig.CONNECTOR_HTTP_TIMEOUT_MS);
       let response;
+      const authHeaders = options.authHeaders ? options.authHeaders(connection, init) : {};
       try {
-        const authHeaders = options.authHeaders ? options.authHeaders(connection, init) : {};
         response = await fetchImpl(url, { ...init, signal: controller.signal, headers: { ...(init.headers || {}), ...authHeaders } });
       } catch {
         clearTimeout(timer);
