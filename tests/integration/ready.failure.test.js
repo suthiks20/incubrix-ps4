@@ -15,5 +15,5 @@ afterAll(async () => { await app.close(); await knex.destroy(); });
 test('returns NOT_READY when the database cannot be reached', async () => {
   const response = await app.inject('/ready');
   expect(response.statusCode).toBe(503);
-  expect(response.json()).toEqual({ error: { code: 'NOT_READY', message: 'Service is not ready', retryable: false, details: { checks: { db: 'down', storage: 'ok' } } } });
+  expect(response.json()).toEqual({ error: { code: 'NOT_READY', message: 'Service is not ready', retryable: true, details: { checks: { db: 'down', storage: 'ok' } } } });
 });

@@ -21,7 +21,7 @@ test('missing DATABASE_URL names the setting', () => {
 });
 test('applies documented defaults', () => {
   const config = loadConfig({ DATABASE_URL: 'postgres://ix:ix@localhost:5432/ix', PORT: undefined, HOST: undefined, NODE_ENV: undefined, LOG_LEVEL: undefined, PUBLIC_BASE_URL: undefined, SIMULATION_MODE: undefined });
-  expect(config).toMatchObject({ NODE_ENV: 'development', PORT: 8000, HOST: '0.0.0.0', LOG_LEVEL: 'info', PUBLIC_BASE_URL: 'http://localhost:8000', SIMULATION_MODE: true, DB_AUTO_MIGRATE: true, API_TOKEN: '', TEST_DATABASE_URL: '', IDEMPOTENCY_TTL_HOURS: 24, IDEMPOTENCY_WAIT_MS: 5000, IDEMPOTENCY_LOCK_TTL_SECONDS: 60, CONNECTOR_HTTP_TIMEOUT_MS: 10000, CONNECTOR_MAX_BACKOFF_MS: 5000, CIRCUIT_FAILURE_THRESHOLD: 5, CIRCUIT_COOLDOWN_SECONDS: 60, CONNECTORS_DISABLED: [] });
+  expect(config).toMatchObject({ NODE_ENV: 'development', PORT: 8000, HOST: '0.0.0.0', LOG_LEVEL: 'info', PUBLIC_BASE_URL: 'http://localhost:8000', SIMULATION_MODE: true, DB_AUTO_MIGRATE: true, API_TOKEN: '', TEST_DATABASE_URL: '', IDEMPOTENCY_TTL_HOURS: 24, IDEMPOTENCY_WAIT_MS: 5000, IDEMPOTENCY_LOCK_TTL_SECONDS: 60, CONNECTOR_HTTP_TIMEOUT_MS: 10000, CONNECTOR_MAX_BACKOFF_MS: 5000, CIRCUIT_FAILURE_THRESHOLD: 5, CIRCUIT_COOLDOWN_SECONDS: 60, STORAGE_DRIVER: 's3', CONNECTORS_DISABLED: [] });
 });
 test('parses SIMULATION_MODE as a boolean', () => {
   expect(loadConfig({ DATABASE_URL: 'postgres://ix:ix@localhost:5432/ix', SIMULATION_MODE: 'false' }).SIMULATION_MODE).toBe(false);
@@ -36,6 +36,9 @@ test('reads API_TOKEN and TEST_DATABASE_URL from the supplied environment', () =
   const config = loadConfig({ DATABASE_URL: 'postgres://ix:ix@localhost:5432/ix', API_TOKEN: 'test-token', TEST_DATABASE_URL: 'postgres://ix:ix@localhost:5432/ix_test' });
   expect(config.API_TOKEN).toBe('test-token');
   expect(config.TEST_DATABASE_URL).toBe('postgres://ix:ix@localhost:5432/ix_test');
+});
+test('defaults storage to the configured S3-compatible driver', () => {
+  expect(loadConfig({ DATABASE_URL: 'postgres://localhost:5432/ix' }).STORAGE_DRIVER).toBe('s3');
 });
 test('parses idempotency numeric settings and rejects invalid values', () => {
   const base = { DATABASE_URL: 'postgres://ix:ix@localhost:5432/ix' };

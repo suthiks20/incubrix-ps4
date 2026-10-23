@@ -21,7 +21,7 @@ module.exports = Object.freeze({
   IDEMPOTENCY_KEY_CONFLICT: { statusCode: 409, retryable: false },
   IDEMPOTENCY_REQUEST_IN_PROGRESS: { statusCode: 409, retryable: true },
   RATE_LIMITED: { statusCode: 429, retryable: false },
-  NOT_READY: { statusCode: 503, retryable: false },
+  NOT_READY: { statusCode: 503, retryable: true },
   INTERNAL_ERROR: { statusCode: 500, retryable: false },
   CONNECTOR_NOT_IMPLEMENTED: { statusCode: 501, retryable: false },
   DESTINATION_DISABLED: { statusCode: 409, retryable: false },

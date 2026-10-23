@@ -13,6 +13,10 @@ async function getReady(knex, storage) {
     await storage.ready();
   } catch { checks.storage = 'down'; }
   if (checks.db === 'ok' && checks.storage === 'ok') return { status: 'ready', checks };
-  throw new AppError('NOT_READY', 'Service is not ready', { statusCode: 503, details: { checks } });
+  throw new AppError('NOT_READY', 'Service is not ready', {
+    statusCode: 503,
+    retryable: true,
+    details: { checks }
+  });
 }
 module.exports = { getReady };

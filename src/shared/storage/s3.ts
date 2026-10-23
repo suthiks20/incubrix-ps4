@@ -23,7 +23,12 @@ function createS3(config: any): Storage {
       const response = await client.send(new ListObjectsV2Command({ Bucket: bucket, Prefix: prefix }));
       return (response.Contents || []).flatMap((item) => item.Key ? [item.Key] : []);
     },
-    async ready() { await client.send(new HeadBucketCommand({ Bucket: bucket })); }
+    async ready() {
+      await client.send(
+        new HeadBucketCommand({ Bucket: bucket }),
+        { abortSignal: AbortSignal.timeout(2000) }
+      );
+    }
   };
 }
 

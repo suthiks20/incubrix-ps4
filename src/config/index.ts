@@ -102,7 +102,7 @@ function loadConfig(env: Environment = process.env): Readonly<AppConfig> {
     CERT_TEST_POST_TTL_MINUTES: parseIntegerSetting('CERT_TEST_POST_TTL_MINUTES', env.CERT_TEST_POST_TTL_MINUTES, 10, 1),
     CERT_JANITOR_INTERVAL_SECONDS: parseIntegerSetting('CERT_JANITOR_INTERVAL_SECONDS', env.CERT_JANITOR_INTERVAL_SECONDS, 60, 1),
     CERT_ALLOWED_HOSTS: (env.CERT_ALLOWED_HOSTS || 'localhost,127.0.0.1').split(',').map((host) => host.trim()).filter(Boolean),
-    STORAGE_DRIVER: env.STORAGE_DRIVER || 'local',
+    STORAGE_DRIVER: env.STORAGE_DRIVER || 's3',
     STORAGE_DIR: env.STORAGE_DIR || './data/storage',
     S3_ENDPOINT: env.S3_ENDPOINT || '',
     S3_REGION: env.S3_REGION || 'us-east-1',
