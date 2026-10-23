@@ -10,6 +10,7 @@ export interface Storage {
   get(key: string): Promise<Buffer>;
   exists(key: string): Promise<boolean>;
   list(prefix?: string): Promise<string[]>;
+  ready(): Promise<void>;
 }
 
 function safe(key: string): string {
@@ -46,7 +47,8 @@ function createLocal(root: string): Storage {
       }
       await walk(root);
       return output;
-    }
+    },
+    async ready(): Promise<void> { await fs.mkdir(root, { recursive: true }); }
   };
 }
 

@@ -4,12 +4,15 @@
  */
 const AppError = require('../../../shared/errors/AppError');
 const { pingDb } = require('../repository/health');
-async function getReady(knex) {
+async function getReady(knex, storage) {
+  const checks = { db: 'ok', storage: 'ok' };
   try {
     await pingDb(knex);
-    return { status: 'ready', checks: { db: 'ok' } };
-  } catch {
-    throw new AppError('NOT_READY', 'Service is not ready', { statusCode: 503, details: { checks: { db: 'down' } } });
-  }
+  } catch { checks.db = 'down'; }
+  try {
+    await storage.ready();
+  } catch { checks.storage = 'down'; }
+  if (checks.db === 'ok' && checks.storage === 'ok') return { status: 'ready', checks };
+  throw new AppError('NOT_READY', 'Service is not ready', { statusCode: 503, details: { checks } });
 }
 module.exports = { getReady };

@@ -77,4 +77,12 @@ describe('jobs worker', () => {
     expect(failed.error).toEqual(expect.objectContaining({ code: 'INTERNAL_ERROR' }));
     expect(failed.status).toBe('failed');
   });
+test('worker child logs include durable job and correlation identifiers', async () => {
+  const destination = await createDestination(ctx, 'discourse', 'normal');
+  const created = await postJob(ctx, jobPayload(destination.id), 'worker-log-1');
+  const entries = [];
+  const logger = { child(fields) { return { info(message) { entries.push({ fields, message }); }, warn() {} }; } };
+  await runPending({ ...workerDeps(ctx), logger });
+  expect(entries).toEqual(expect.arrayContaining([expect.objectContaining({ fields: expect.objectContaining({ job_id: created.json().job_id, correlation_id: expect.any(String) }) })]));
+});
 });

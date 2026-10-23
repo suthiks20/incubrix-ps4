@@ -6,6 +6,7 @@ import AppError = require('../../shared/errors/AppError');
 import * as repository from './repository';
 import types = require('./types');
 import { sign } from './callbackSign';
+import { buildOutputManifest } from '../manifest/build';
 
 function errorBody(error: any): any {
   if (error instanceof AppError) return { code: error.code, message: error.message, retryable: error.retryable, details: error.details };
@@ -30,10 +31,17 @@ async function callback(deps: any, job: any, status: string, result: any, error:
 async function process(deps: any, job: any): Promise<void> {
   const logger = deps.logger.child({ job_id: job.id, correlation_id: job.correlation_id });
   const progress = async (value: number) => repository.update(deps.knex, job.id, { progress: value });
+  const startedAt = Date.now();
   try {
     const result = await types[job.type]({ ...deps, logger }, job.input, progress);
-    await repository.update(deps.knex, job.id, { status: 'succeeded', progress: 100, result, finished_at: new Date() });
-    await callback(deps, job, 'succeeded', result, null);
+    const outputKey = `jobs/${job.id}/output.json`;
+    const manifestKey = `jobs/${job.id}/manifest.json`;
+    const manifest = buildOutputManifest(deps.config, startedAt);
+    await deps.storage.put(outputKey, JSON.stringify(result));
+    await deps.storage.put(manifestKey, JSON.stringify(manifest));
+    const stored = { ...result, output_key: outputKey, manifest_key: manifestKey };
+    await repository.update(deps.knex, job.id, { status: 'succeeded', progress: 100, result: stored, finished_at: new Date() });
+    await callback(deps, job, 'succeeded', stored, null);
     logger.info('Job succeeded');
   } catch (error) {
     const safe = errorBody(error);

@@ -12,7 +12,7 @@ afterAll(async () => { await app.close(); await app.knex.destroy(); });
 test('health and readiness aliases return success contracts', async () => {
   for (const url of ['/health', '/ready', '/api/v1/health', '/api/v1/ready']) expect((await app.inject({ method: 'GET', url })).statusCode).toBe(200);
   expect((await app.inject('/health')).json().status).toBe('ok');
-  expect((await app.inject('/ready')).json()).toEqual({ status: 'ready', checks: { db: 'ok' } });
+  expect((await app.inject('/ready')).json()).toEqual({ status: 'ready', checks: { db: 'ok', storage: 'ok' } });
 });
 test('returns and echoes a correlation ID', async () => {
   expect((await app.inject('/health')).headers['x-correlation-id']).toBeTruthy();

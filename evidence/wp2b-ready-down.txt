@@ -1,0 +1,9 @@
+HTTP/1.1 503 Service Unavailable
+x-correlation-id: b8e2c30f-6c26-4440-a9cb-31adc1362246
+content-type: application/json; charset=utf-8
+content-length: 131
+Date: Fri, 23 Oct 2026 13:41:33 GMT
+Connection: keep-alive
+Keep-Alive: timeout=72
+
+{"error":{"code":"NOT_READY","message":"Service is not ready","retryable":false,"details":{"checks":{"db":"ok","storage":"down"}}}}

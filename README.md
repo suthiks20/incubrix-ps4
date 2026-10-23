@@ -28,6 +28,18 @@ docker compose run --rm api npm run lint
 
 The single command that runs all tests is `docker compose run --rm api npm test`.
 
+## MinIO storage and job outputs
+
+The Compose stack provisions an S3-compatible MinIO bucket named by `S3_BUCKET`. Use `STORAGE_DRIVER=s3` to
+store job output JSON and its reproducibility manifest in that bucket; `mock` is an in-memory, keyless test
+driver and `local` remains the default. Every completed job returns API download links for its output and
+manifest. Job input may carry either `source.url` (recorded, never fetched automatically) or a base64
+`source.upload`, which is saved before queueing. `GET /ready` checks both PostgreSQL and the selected storage
+driver, while `GET /health` remains a liveness-only route.
+
+For local MinIO, set `STORAGE_DRIVER=s3`, then open `http://localhost:9001` and use the credentials in your
+local `.env`; the `incubrix` bucket is created by the `minio-init` service.
+
 ## Local instances
 
 The optional local-instance profile starts Lemmy, its Postgres database, pict-rs, and Ghost without making
@@ -264,8 +276,13 @@ curl.exe "http://localhost:8000/api/v1/certification/summary" ^
 | CONNECTOR_MAX_BACKOFF_MS | 5000 | Maximum automatic wait for one rate-limit retry |
 | CIRCUIT_FAILURE_THRESHOLD | 5 | Consecutive unavailable responses before opening a connector circuit |
 | CIRCUIT_COOLDOWN_SECONDS | 60 | Seconds before an open circuit can retry |
-| STORAGE_DRIVER | local | Certification evidence storage driver |
+| STORAGE_DRIVER | local | Storage driver: local, mock, or s3 |
 | STORAGE_DIR | ./data/storage; /app/data/storage in Compose | Directory for local certification evidence |
+| S3_ENDPOINT | empty; http://minio:9000 in Compose | S3-compatible endpoint |
+| S3_REGION | us-east-1 | S3 region used by the client |
+| S3_BUCKET | incubrix | Bucket for outputs and evidence |
+| S3_ACCESS_KEY | empty; minioadmin in Compose | S3 access key |
+| S3_SECRET_KEY | empty; minioadmin in Compose | S3 secret key |
 | CERT_TEST_POST_TTL_MINUTES | 10 | Maximum lifetime of a certification test post |
 | CERT_JANITOR_INTERVAL_SECONDS | 60 | Seconds between certification janitor cleanup attempts |
 | CERT_ALLOWED_HOSTS | 127.0.0.1,localhost | Hosts allowed to receive certification posts |

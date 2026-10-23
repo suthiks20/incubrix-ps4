@@ -5,6 +5,7 @@
 async function correlationId(app: any): Promise<void> {
   app.addHook('onRequest', async (request, reply) => {
     reply.header('X-Correlation-Id', request.id);
+    request.log = request.log.child({ correlation_id: request.id });
   });
 }
 

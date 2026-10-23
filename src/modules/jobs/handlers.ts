@@ -20,4 +20,10 @@ async function list(request: any): Promise<any> {
   return Promise.all(rows.map((row: any) => service.get(request.server.knex, row.id)));
 }
 
-export { create, get, list };
+async function download(request: any, reply: any): Promise<any> {
+  const value = await service.download(request.server, request.params.id, request.params.kind);
+  reply.type('application/json');
+  return reply.send(value);
+}
+
+export { create, get, list, download };

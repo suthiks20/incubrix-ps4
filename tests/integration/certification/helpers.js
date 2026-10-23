@@ -39,7 +39,7 @@ async function createContext(options = {}) {
     apiToken: options.apiToken || '',
     config,
     logger: options.logger,
-    storage: createLocal(directory),
+    storage: options.storage || createLocal(directory),
     now: options.now || (() => new Date()),
     connectorFactory: options.connectorFactory
   });

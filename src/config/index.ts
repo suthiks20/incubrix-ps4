@@ -25,6 +25,11 @@ interface AppConfig {
   CERT_ALLOWED_HOSTS: string[];
   STORAGE_DRIVER: string;
   STORAGE_DIR: string;
+  S3_ENDPOINT: string;
+  S3_REGION: string;
+  S3_BUCKET: string;
+  S3_ACCESS_KEY: string;
+  S3_SECRET_KEY: string;
   CONNECTORS_DISABLED: string[];
   JOBS_POLL_INTERVAL_MS: number;
   JOBS_MAX_ATTEMPTS: number;
@@ -99,6 +104,11 @@ function loadConfig(env: Environment = process.env): Readonly<AppConfig> {
     CERT_ALLOWED_HOSTS: (env.CERT_ALLOWED_HOSTS || 'localhost,127.0.0.1').split(',').map((host) => host.trim()).filter(Boolean),
     STORAGE_DRIVER: env.STORAGE_DRIVER || 'local',
     STORAGE_DIR: env.STORAGE_DIR || './data/storage',
+    S3_ENDPOINT: env.S3_ENDPOINT || '',
+    S3_REGION: env.S3_REGION || 'us-east-1',
+    S3_BUCKET: env.S3_BUCKET || 'incubrix',
+    S3_ACCESS_KEY: env.S3_ACCESS_KEY || '',
+    S3_SECRET_KEY: env.S3_SECRET_KEY || '',
     CONNECTORS_DISABLED: (env.CONNECTORS_DISABLED || '').split(',').map((key) => key.trim()).filter(Boolean),
     JOBS_POLL_INTERVAL_MS: parseIntegerSetting('JOBS_POLL_INTERVAL_MS', env.JOBS_POLL_INTERVAL_MS, 1000, 1),
     JOBS_MAX_ATTEMPTS: parseIntegerSetting('JOBS_MAX_ATTEMPTS', env.JOBS_MAX_ATTEMPTS, 3, 1),
