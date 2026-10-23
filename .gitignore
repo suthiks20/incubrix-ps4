@@ -7,3 +7,4 @@ coverage/
 batch-results/
 *.log
 spike/out.json
+bootstrap-output.json

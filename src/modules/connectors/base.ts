@@ -43,7 +43,7 @@ function createBase(manifest: Manifest, options: any = {}): any {
     return violations;
   }
   function platformError(status: number, message: string, headers: Headers): AppError {
-    const code: ErrorCode | undefined = manifest.error_map[String(status)] ||
+    const code: ErrorCode | undefined = options.errorCode?.(status, message) || manifest.error_map[String(status)] ||
       (status === 403 ? 'CONNECTION_AUTH_EXPIRED' : undefined);
     const details: any = { platform_status: status, ...(message ? { platform_message: message } : {}) };
     if (status === 429) {

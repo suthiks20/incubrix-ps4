@@ -76,5 +76,10 @@ module.exports = [
         process: 'readonly'
       }
     }
+  },
+  {
+    files: ['bootstrap/**/*.js', 'spike/**/*.js'],
+    languageOptions: { globals: { console: 'readonly' } },
+    rules: { 'no-console': 'off' }
   }
 ];

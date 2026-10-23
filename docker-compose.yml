@@ -1,6 +1,6 @@
 # Compose reads an optional .env for overrides; defaults below keep clean clones runnable.
-# Phase 1 contains only the API and its PostgreSQL dependency.
-# Later phases will add MinIO, Lemmy, Ghost, and their required databases here.
+# The default simulation stack contains only the API and PostgreSQL.
+# Local Lemmy and Ghost instances are opt-in through the local-instances profile.
 services:
   api:
     build: .
@@ -28,7 +28,7 @@ services:
       STORAGE_DIR: ${STORAGE_DIR:-/app/data/storage}
       CERT_TEST_POST_TTL_MINUTES: ${CERT_TEST_POST_TTL_MINUTES:-10}
       CERT_JANITOR_INTERVAL_SECONDS: ${CERT_JANITOR_INTERVAL_SECONDS:-60}
-      CERT_ALLOWED_HOSTS: ${CERT_ALLOWED_HOSTS:-127.0.0.1,localhost}
+      CERT_ALLOWED_HOSTS: ${CERT_ALLOWED_HOSTS:-127.0.0.1,localhost,lemmy,ghost}
       CONNECTORS_DISABLED: ${CONNECTORS_DISABLED:-}
       JOBS_POLL_INTERVAL_MS: ${JOBS_POLL_INTERVAL_MS:-1000}
       JOBS_MAX_ATTEMPTS: ${JOBS_MAX_ATTEMPTS:-3}
@@ -58,6 +58,75 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  lemmy-db:
+    profiles: [local-instances]
+    image: postgres:16.10-alpine
+    environment:
+      POSTGRES_DB: lemmy
+      POSTGRES_USER: lemmy
+      POSTGRES_PASSWORD: lemmy-spike-password
+    mem_limit: 512m
+    volumes:
+      - lemmy-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lemmy -d lemmy"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+  pictrs:
+    profiles: [local-instances]
+    image: asonix/pictrs:0.5.19
+    mem_limit: 256m
+    volumes:
+      - pictrs:/mnt
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+  lemmy:
+    profiles: [local-instances]
+    image: dessalines/lemmy:0.19.12
+    depends_on:
+      lemmy-db:
+        condition: service_healthy
+      pictrs:
+        condition: service_started
+    mem_limit: 512m
+    ports:
+      - "8536:8536"
+    volumes:
+      - ./bootstrap/lemmy.hjson:/config/config.hjson:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1:8536/api/v3/site >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+  ghost:
+    profiles: [local-instances]
+    image: ghost:6.0.10-alpine
+    mem_limit: 1g
+    ports:
+      - "2368:2368"
+    environment:
+      NODE_ENV: development
+      url: http://ghost:2368
+      database__client: sqlite3
+      database__connection__filename: /var/lib/ghost/content/data/ghost.db
+    volumes:
+      - ghost-data:/var/lib/ghost/content
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          node -e "fetch('http://127.0.0.1:2368/').then((response) =>
+          process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 15s
+      retries: 40
 volumes:
   pgdata:
   certdata:
+  lemmy-db:
+  pictrs:
+  ghost-data:

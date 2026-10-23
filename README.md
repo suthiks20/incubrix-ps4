@@ -28,6 +28,24 @@ docker compose run --rm api npm run lint
 
 The single command that runs all tests is `docker compose run --rm api npm test`.
 
+## Local instances
+
+The optional local-instance profile starts Lemmy, its Postgres database, pict-rs, and Ghost without making
+the API depend on any of them. Start the normal simulation stack with `docker compose up --build -d`; add
+the local platforms with `docker compose --profile local-instances up -d`. Lemmy is available at port 8536
+and Ghost at port 2368. The measured steady memory use is about 88 MiB for Lemmy, 60 MiB for its database,
+28 MiB for pict-rs, and 157 MiB for Ghost; their configured limits are 512 MiB, 512 MiB, 256 MiB, and 1 GiB.
+
+After the services are healthy, run `npm run bootstrap:local` and `npm run verify:local`. The first command
+writes local credentials only to gitignored `bootstrap-output.json`; it never prints them. Ghost intentionally
+uses SQLite in development mode for this local test stack. Its Compose URL is `http://ghost:2368`, so API
+certification uses the in-Compose hostname and does not redirect to the host machine.
+
+Connections reach the API through a `CONNECTION_<REF>` JSON environment variable. For example, these are
+obviously fake values for documentation only: `CONNECTION_LEMMY_LOCAL={"api_key":"fake-local-jwt"}` and
+`CONNECTION_GHOST_LOCAL={"api_key":"fake-id:00112233445566778899aabbccddeeff"}`. Never put the real
+bootstrap output in `.env`, source control, responses, logs, evidence, or a destination record.
+
 ## Destinations API
 
 All destination endpoints are under `/api/v1/destinations`. When `API_TOKEN` is set, requests require `Authorization: Bearer <token>`; `/health` and the versioned health routes remain public.

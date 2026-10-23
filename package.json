@@ -16,7 +16,9 @@
     "test:integration": "jest --runInBand tests/integration",
     "lint": "eslint .",
     "migrate": "knex --knexfile knexfile.js migrate:latest",
-    "migrate:rollback": "knex --knexfile knexfile.js migrate:rollback"
+    "migrate:rollback": "knex --knexfile knexfile.js migrate:rollback",
+    "bootstrap:local": "node bootstrap/bootstrap.js all",
+    "verify:local": "node bootstrap/verify.js all"
   },
   "dependencies": {
     "fastify": "^5.2.1",
