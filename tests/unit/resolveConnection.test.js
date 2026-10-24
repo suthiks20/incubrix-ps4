@@ -47,6 +47,21 @@ test('resolveConnection merges file connections under environment overrides', ()
   });
 });
 
+test('empty CONNECTION_* env values do not mask the connections file', () => {
+  connectionsDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'ix-connections-'));
+  const connectionsFile = path.join(connectionsDirectory, 'connections.json');
+  fs.writeFileSync(connectionsFile, JSON.stringify({
+    mixed_ref_2: { api_key: 'file-key', api_username: 'file-user' }
+  }));
+  process.env.CONNECTIONS_FILE = connectionsFile;
+  process.env[environmentName] = '';
+  const connection = resolveConnection(
+    { connection_ref: 'mixed.ref-2', connector_key: 'discourse' },
+    { SIMULATION_MODE: false, CONNECTIONS_FILE: connectionsFile }
+  );
+  expect(connection).toEqual({ api_key: 'file-key', api_username: 'file-user' });
+});
+
 test('resolveConnection maps Ghost admin_api_key to api_key for the connector', () => {
   connectionsDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'ix-connections-'));
   const connectionsFile = path.join(connectionsDirectory, 'connections.json');

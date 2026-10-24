@@ -7,7 +7,7 @@ auth: none
 surfaces:
   - key: pack
     content_types: [text]
-    spec: {title_max_chars: 300, body_max_chars: 20000, links_allowed: true}
+    spec: {title_max_chars: 300, body_max_chars: 20000, links_allowed: true, media_types: ["*/*"]}
 rate_limits:
   per_connection: {requests: 60, per_seconds: 60}
 capabilities: [assist]

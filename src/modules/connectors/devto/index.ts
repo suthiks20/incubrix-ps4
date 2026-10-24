@@ -68,6 +68,28 @@ function createDevto(options: any = {}): any {
     return { status: 'published', live_url: result.url };
   }
 
+  async function fetch_metrics(destination: Destination, connection: Connection, id: string): Promise<any> {
+    const response = await base.request(
+      destination,
+      connection,
+      apiUrl(destination, `/api/articles/${encodeURIComponent(id)}`)
+    );
+    const result = base.requireFields(await base.readJson(response), [
+      { name: 'page_views_count', type: 'number' },
+      { name: 'public_reactions_count', type: 'number' },
+      { name: 'comments_count', type: 'number' }
+    ]);
+    return {
+      views: result.page_views_count,
+      likes: result.public_reactions_count,
+      comments: result.comments_count,
+      shares: 0,
+      saves: 0,
+      watch_time_s: 0,
+      clicks: 0
+    };
+  }
+
   async function remove(destination: Destination, connection: Connection, id: string): Promise<any> {
     try {
       await base.request(destination, connection, apiUrl(destination, `/api/articles/${encodeURIComponent(id)}`), {
@@ -96,7 +118,10 @@ function createDevto(options: any = {}): any {
     return { platform_post_id: String(article.id), live_url: article.url, status: 'published' };
   }
 
-  return { key: manifest.key, manifest, validate: base.validate, publish, get_status, delete: remove, findByMarker };
+  return {
+    key: manifest.key, manifest, validate: base.validate, publish, get_status,
+    delete: remove, findByMarker, fetch_metrics
+  };
 }
 
 const unsupported = async (): Promise<never> => {

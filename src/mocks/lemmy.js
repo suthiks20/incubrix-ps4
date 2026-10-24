@@ -5,7 +5,11 @@
 const scenarios = new Map();
 
 function stateFor(name) {
-  if (!scenarios.has(name)) scenarios.set(name, { posts: [], nextId: 1, logins: 0, post_attempts: 0, rateLimited: false });
+  if (!scenarios.has(name)) {
+    scenarios.set(name, {
+      posts: [], nextId: 1, logins: 0, post_attempts: 0, delete_attempts: 0, rateLimited: false
+    });
+  }
   return scenarios.get(name);
 }
 function error(reply, status, message) { return reply.code(status).send({ error: message }); }
@@ -35,12 +39,14 @@ async function mock(app) {
     if (!authenticate(request, reply)) return reply;
     const state = stateFor(request.params.scenario);
     state.post_attempts += 1;
-    if (request.params.scenario === 'content_rejected') return error(reply, 422, 'Post rejected');
-    if (request.params.scenario === 'rate_limit_long') {
+    const scenario = request.params.scenario;
+    if (scenario === 'unavailable') return error(reply, 503, 'Service unavailable');
+    if (scenario === 'content_rejected') return error(reply, 422, 'Post rejected');
+    if (scenario === 'rate_limit_long') {
       reply.header('X-RateLimit-Reset', resetTime(120));
       return error(reply, 429, 'Rate limited');
     }
-    if (request.params.scenario === 'rate_limit_short' && !state.rateLimited) {
+    if (['rate_limit', 'rate_limit_short'].includes(scenario) && !state.rateLimited) {
       state.rateLimited = true;
       reply.header('X-RateLimit-Reset', resetTime(1));
       return error(reply, 429, 'Rate limited');
@@ -59,7 +65,15 @@ async function mock(app) {
   });
   app.post('/mock/lemmy/:scenario/api/v3/post/delete', async (request, reply) => {
     if (!authenticate(request, reply)) return reply;
-    const post = stateFor(request.params.scenario).posts.find((entry) => entry.id === request.body.post_id);
+    const state = stateFor(request.params.scenario);
+    state.delete_attempts += 1;
+    if (request.params.scenario === 'delete_fails_once' && state.delete_attempts === 1) {
+      return error(reply, 503, 'Service unavailable');
+    }
+    if (request.params.scenario === 'delete_fails_twice' && state.delete_attempts <= 2) {
+      return error(reply, 503, 'Service unavailable');
+    }
+    const post = state.posts.find((entry) => entry.id === request.body.post_id);
     if (!post) return error(reply, 404, 'Post not found');
     post.deleted = Boolean(request.body.deleted);
     return { post_view: { post } };

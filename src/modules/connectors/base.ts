@@ -25,7 +25,7 @@ function createBase(manifest: Manifest, options: any = {}): any {
   const sleep = options.sleep || ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
   const fetchImpl = options.fetch || fetch;
   const runtimeConfig = options.config || config;
-  function validate(rendition: Rendition, surfaceKey?: string): Violation[] {
+  function validate(rendition: Rendition, surfaceKey?: string, destination?: Destination): Violation[] {
     const surfaces = Array.isArray(manifest.surfaces) ? manifest.surfaces :
       Object.entries(manifest.surfaces).map(([key, value]) => ({ key, ...(value as any) }));
     const surface = surfaces.find((entry) => entry.key === surfaceKey) || surfaces[0];
@@ -39,6 +39,31 @@ function createBase(manifest: Manifest, options: any = {}): any {
       violations.push({ field: 'links', code: 'invalid', message: 'Links must be an array of strings' });
     } else if (!spec.links_allowed && (rendition.links || []).length) {
       violations.push({ field: 'links', code: 'not_allowed', message: 'Links are not allowed' });
+    }
+    if (manifest.tier !== 'assisted' && Array.isArray(rendition.media)) {
+      const allowed = Array.isArray(destination?.config?.media_types)
+        ? destination.config.media_types
+        : Array.isArray(spec.media_types) ? spec.media_types : [];
+      rendition.media.forEach((media, index) => {
+        const mediaType = typeof media.type === 'string' ? media.type.toLowerCase() : '';
+        const accepted = allowed.some((type: string) => {
+          const normalized = String(type).toLowerCase();
+          return normalized === '*/*' || normalized === mediaType ||
+            (normalized.endsWith('/*') && mediaType.startsWith(normalized.slice(0, -1)));
+        });
+        if (!accepted) {
+          const reason = mediaType
+            ? `Media type ${media.type} is not accepted`
+            : 'Media type is required';
+          violations.push({
+            field: `media[${index}].type`,
+            code: 'not_allowed',
+            message: reason,
+            reason,
+            allowed
+          });
+        }
+      });
     }
     return violations;
   }

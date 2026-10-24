@@ -172,8 +172,18 @@ test('unknown connector returns NOT_FOUND', async () => {
   expectErrorEnvelope(await app.inject({ method: 'POST', url: '/connector/v1/missing/publish', payload: {} }), 404, 'NOT_FOUND');
 });
 
-test('fetch_metrics returns CONNECTOR_NOT_IMPLEMENTED', async () => {
-  expectErrorEnvelope(await app.inject({ method: 'POST', url: '/connector/v1/discourse/fetch_metrics', payload: { idempotency_key: 'hard-metrics' } }), 501, 'CONNECTOR_NOT_IMPLEMENTED');
+test('fetch_metrics requires a platform post id', async () => {
+  const response = await app.inject({
+    method: 'POST',
+    url: '/connector/v1/discourse/fetch_metrics',
+    payload: {
+      destination_ref: baseUrl,
+      connection: { api_key: 'fake-key', api_username: 'tester' }
+    }
+  });
+  expect(response.statusCode).toBe(400);
+  expect(response.json().error.code).toBe('VALIDATION_ERROR');
+  expect(response.json().error.details.fields).toContain('platform_post_id');
 });
 
 test('secrets never appear in logs, responses or ledger', async () => {

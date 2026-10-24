@@ -71,6 +71,8 @@ export interface Violation {
   field: string;
   code: string;
   message: string;
+  reason?: string;
+  allowed?: string[];
 }
 
 export interface PublishResult {

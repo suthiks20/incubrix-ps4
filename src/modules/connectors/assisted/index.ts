@@ -34,6 +34,6 @@ function createAssisted(options: any = {}): any {
     checklist.push({ item: 'Delete or report the post URL back to IncuBrix', required: true, done: false });
     return { files: (rendition.media || []).map((media, index) => ({ name: media.name || `media-${index + 1}`, url: media.url, type: media.type })), caption, deep_link: config.submit_url || destination.url, checklist };
   }
-  return { key: manifest.key, manifest, validate: base.validate, build_assist_pack, publish: unsupported, get_status: unsupported, delete: unsupported, findByMarker: unsupported };
+  return { key: manifest.key, manifest, validate: base.validate, build_assist_pack };
 }
 export { manifest, createAssisted, createAssisted as createConnector, unsupported };

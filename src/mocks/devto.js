@@ -42,6 +42,11 @@ async function mock(app) {
       return error(reply, 422, 'Article content was rejected');
     }
     if (scenario === 'unavailable') return error(reply, 503, 'Service unavailable');
+    if (scenario === 'rate_limit' && !state.rateLimited) {
+      state.rateLimited = true;
+      reply.header('Retry-After', '1');
+      return error(reply, 429, 'Rate limited');
+    }
     if (scenario === 'rate_limit_long') {
       reply.header('Retry-After', '120');
       return error(reply, 429, 'Rate limited');
@@ -57,7 +62,10 @@ async function mock(app) {
       url: apiUrl(request, id),
       published: request.body.article.published,
       body_markdown: request.body.article.body_markdown,
-      title: request.body.article.title
+      title: request.body.article.title,
+      page_views_count: 321,
+      public_reactions_count: 17,
+      comments_count: 6
     };
     state.articles.push(article);
     if (scenario === 'timeout_after_success') {
@@ -84,6 +92,12 @@ async function mock(app) {
     if (!authenticate(request, reply)) return reply;
     const state = stateFor(request.params.scenario);
     state.delete_attempts += 1;
+    if (request.params.scenario === 'delete_fails_once' && state.delete_attempts === 1) {
+      return error(reply, 503, 'Service unavailable');
+    }
+    if (request.params.scenario === 'delete_fails_twice' && state.delete_attempts <= 2) {
+      return error(reply, 503, 'Service unavailable');
+    }
     if (request.params.scenario === 'delete_fails_once' && state.delete_attempts === 1) {
       return error(reply, 503, 'Service unavailable');
     }

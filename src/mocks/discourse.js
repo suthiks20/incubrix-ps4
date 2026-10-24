@@ -34,7 +34,17 @@ async function mock(app) {
   app.get('/mock/discourse/:scenario/t/:id.json', async (request, reply) => {
     const post = stateFor(request.params.scenario).posts.find((item) => String(item.topic_id) === request.params.id);
     if (!post) return reply.code(404).send({ errors: ['not found'] });
-    return { id: post.id, slug: post.topic_slug };
+    return {
+      id: post.id,
+      slug: post.topic_slug,
+      views: 321,
+      like_count: 17,
+      reply_count: 6,
+      shares_count: 3,
+      saves_count: 2,
+      watch_time_s: 45,
+      clicks: 9
+    };
   });
   app.delete('/mock/discourse/:scenario/t/:id.json', async (request, _reply) => {
     const state = stateFor(request.params.scenario);

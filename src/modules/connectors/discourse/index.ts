@@ -31,6 +31,23 @@ function createDiscourse(options: any = {}): any {
     const result = base.requireFields(await base.readJson(response), [{ name: 'id', type: 'number' }, { name: 'slug', type: 'string' }]);
     return { status: 'published', live_url: `${destination.config.base_url.replace(/\/$/, '')}/t/${result.slug}/${result.id}` };
   }
+  async function fetch_metrics(destination: Destination, connection: Connection, id: string): Promise<any> {
+    const response = await base.request(destination, connection, apiUrl(destination, `/t/${encodeURIComponent(id)}.json`));
+    const result = base.requireFields(await base.readJson(response), [
+      { name: 'views', type: 'number' },
+      { name: 'like_count', type: 'number' },
+      { name: 'reply_count', type: 'number' }
+    ]);
+    return {
+      views: result.views,
+      likes: result.like_count,
+      comments: result.reply_count,
+      shares: result.shares_count || 0,
+      saves: result.saves_count || 0,
+      watch_time_s: result.watch_time_s || 0,
+      clicks: result.clicks || 0
+    };
+  }
   async function remove(destination: Destination, connection: Connection, id: string): Promise<any> {
     try { await base.request(destination, connection, apiUrl(destination, `/t/${encodeURIComponent(id)}.json`), { method: 'DELETE' }); }
     catch (error) { if (error.code !== 'PLATFORM_CONTENT_REJECTED' || error.details.platform_status !== 404) throw error; }
@@ -45,7 +62,10 @@ function createDiscourse(options: any = {}): any {
     if (post) base.requireFields(post, [{ name: 'raw', type: 'string' }, { name: 'topic_id', type: 'number' }, { name: 'topic_slug', type: 'string' }]);
     return post ? { platform_post_id: String(post.topic_id), live_url: `${destination.config.base_url.replace(/\/$/, '')}/t/${post.topic_slug}/${post.topic_id}`, status: 'published' } : null;
   }
-  return { key: manifest.key, manifest, validate: base.validate, publish, get_status, delete: remove, findByMarker };
+  return {
+    key: manifest.key, manifest, validate: base.validate, publish, get_status,
+    delete: remove, findByMarker, fetch_metrics
+  };
 }
 
 const unsupported = async (): Promise<never> => {

@@ -51,10 +51,11 @@ function fileConnection(
 function resolveConnection(destination: any, config: any): Record<string, any> {
   const name = String(destination.connection_ref || '').toUpperCase().replace(/[^A-Z0-9]/g, '_');
   const envName = `CONNECTION_${name}`;
+  const environmentValue = process.env[envName];
   const stored = fileConnection(destination.connection_ref || '', destination.connector_key, config);
-  if (name && process.env[envName]) {
+  if (name && environmentValue !== undefined && environmentValue !== '') {
     try {
-      const connection = JSON.parse(process.env[envName] as string);
+      const connection = JSON.parse(environmentValue);
       if (!connection || typeof connection !== 'object' || Array.isArray(connection)) {
         throw new Error('invalid connection value');
       }

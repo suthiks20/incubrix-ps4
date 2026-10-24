@@ -44,6 +44,38 @@ function createGhost(options: any = {}): any {
       return { status: 'published', live_url: `${destination.config.base_url}/p/${post.slug}/` };
     } catch (error) { if (deleted(error)) return { status: 'deleted', live_url: null }; throw error; }
   }
+  async function fetch_metrics(destination: Destination, connection: Connection, id: string): Promise<any> {
+    const response = await base.request(
+      destination,
+      connection,
+      apiUrl(destination, `/ghost/api/admin/posts/${encodeURIComponent(id)}/?formats=html`)
+    );
+    const result = base.requireFields(await base.readJson(response), [{ name: 'posts', type: 'object' }]);
+    if (!Array.isArray(result.posts) || !result.posts[0]) {
+      throw new AppError('SCHEMA_DRIFT', 'Platform response is missing required fields', {
+        statusCode: 502,
+        details: { missing_fields: ['posts[0]'] }
+      });
+    }
+    const post = base.requireFields(result.posts[0], [
+      { name: 'views', type: 'number' },
+      { name: 'likes', type: 'number' },
+      { name: 'comments', type: 'number' },
+      { name: 'shares', type: 'number' },
+      { name: 'saves', type: 'number' },
+      { name: 'watch_time_s', type: 'number' },
+      { name: 'clicks', type: 'number' }
+    ]);
+    return {
+      views: post.views,
+      likes: post.likes,
+      comments: post.comments,
+      shares: post.shares,
+      saves: post.saves,
+      watch_time_s: post.watch_time_s,
+      clicks: post.clicks
+    };
+  }
   async function remove(destination: Destination, connection: Connection, id: string): Promise<any> {
     try { await base.request(destination, connection, apiUrl(destination, `/ghost/api/admin/posts/${encodeURIComponent(id)}/`), { method: 'DELETE' }); }
     catch (error) { if (!deleted(error)) throw error; }
@@ -59,7 +91,10 @@ function createGhost(options: any = {}): any {
       return { platform_post_id: post.id, live_url: `${destination.config.base_url}/p/${post.slug}/`, status: 'published' };
     } catch (error) { if (deleted(error)) return null; throw error; }
   }
-  return { key: manifest.key, manifest, validate: base.validate, publish, get_status, delete: remove, findByMarker };
+  return {
+    key: manifest.key, manifest, validate: base.validate, publish, get_status,
+    delete: remove, findByMarker, fetch_metrics
+  };
 }
 
 const unsupported = async (): Promise<never> => { throw new AppError('CONNECTOR_NOT_IMPLEMENTED', 'This connector method is not implemented', { statusCode: 501 }); };

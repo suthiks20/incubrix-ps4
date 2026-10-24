@@ -109,6 +109,14 @@ The Phase 4 request shapes are `rendition: { title, body, language?, is_promotio
 
 The Discourse manifest is the source of destination limits and platform error mappings. Publishing validates the title/body against the manifest and uses a hidden `ix-ref` marker for recovery. The ledger distinguishes `in_flight`, `published`, `unknown`, and `failed`; after a network failure the next request searches by marker before attempting another create.
 
+Each connector surface also declares accepted `media_types` as exact MIME types or prefixes
+such as `image/*`. A saved destination may override that list with `config.media_types`.
+Unsupported media is rejected before publishing with `DEST_SPEC_VIOLATION` and a field-level
+reason. Discourse, Dev.to, and Ghost implement
+`POST /connector/v1/{key}/fetch_metrics`, returning the shared counters
+`views`, `likes`, `comments`, `shares`, `saves`, `watch_time_s`, and `clicks`. Unsupported
+connectors keep the standard `CONNECTOR_NOT_IMPLEMENTED` response.
+
 | Simulation scenario | Result |
 | --- | --- |
 | normal | Creates and reads posts normally |

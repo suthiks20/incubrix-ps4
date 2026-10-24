@@ -4,13 +4,13 @@
 
 | Phase | Status | Proof and remaining work |
 |---|---|---|
-| 1 — Core certification, mocks, media and metrics | PARTIAL | Lemmy and Ghost both passed real API certification at L3; secret-free evidence is in `evidence/cert-lemmy-real.json` and `evidence/cert-ghost-real.json`, including direct deletion checks. Phase 1 remains partial because connector `fetch_metrics` implementations are not present. |
+| 1 — Core certification, mocks, media and metrics | DONE | Lemmy and Ghost passed real API certification at L3; secret-free evidence is in `evidence/cert-lemmy-real.json` and `evidence/cert-ghost-real.json`, including direct deletion checks. All mock fault scenarios are available, all connector manifests define media MIME types, media violations identify the field/reason/allowed types, and Discourse, Dev.to, and Ghost return normalized metrics. |
 | 2 — Integration Standard, first half | DONE | The six named manifest, rate-limit, OpenAPI and job-type tests pass in `tests/integration/phase2.integration.test.js`. |
 | 3 — Integration Standard, second half | PARTIAL | `scripts/ix-batch.ts` and URL-input storage tests exist. The required end-to-end proof and named batch/log/config tests are not present. |
 | 4 — Hidden-test readiness | NOT DONE | `src/modules/jobs/types/index.ts` still returns `JOB_TYPE_NOT_READY` for selftest; demo seeding and the selftest hard-case runner remain unimplemented. |
 | 5 — Tailoring, relevance and rules capture | DONE | All eight required test names, plus supporting regression tests, pass in `tests/integration/phase5.tailoring.test.js`. |
 | 6 — MRSS, Slack and Hashnode | NOT DONE | No connector implementations/manifests exist under `src/modules/connectors/` for these three platforms. |
-| 7 — Catalogue import | PARTIAL | Import route/job, CSV parser, deduplication, validation, row-level error report and fixture are covered in `tests/integration/catalogue/catalogue.import.test.js`. Latest Docker API import evidence: 1,000 rows, 880 imported, 100 duplicates, 120 errors, 2.325 seconds; see `evidence/catalogue-1000-import.json`. The complete Phase 7 gate remains blocked by unfinished Phase 4 and Phase 6 work. |
+| 7 — Catalogue import | PARTIAL | Import route/job, CSV parser, deduplication, validation, row-level error report and fixture are covered in `tests/integration/catalogue/catalogue.import.test.js`. Latest Docker API import evidence: 1,000 rows, 880 imported, 100 duplicates, 120 errors, 2.517 seconds; see `evidence/catalogue-1000-import.json`. The complete Phase 7 gate remains blocked by unfinished Phase 4 and Phase 6 work. |
 
 ## Latest repair and verification
 
@@ -44,9 +44,27 @@ docker compose run --rm api npm run lint PASS
 docker compose run --rm api npm run build PASS
 ```
 
-The resolver unit test uses an isolated temporary connection file so a real certification
-volume cannot affect test expectations. The broader Phase 1 remains PARTIAL because metrics
-implementations are still missing.
+The resolver unit tests use isolated temporary connection files so a real certification
+volume cannot affect expectations; empty per-connection environment variables now fall
+through to stored file credentials. Connector mock parity, media rejection and overrides,
+normalized metrics, and manifest/method capability parity are covered in
+`tests/integration/phase1.remainder.test.js`. Discourse, Dev.to, and Ghost implement
+`fetch_metrics`; other connectors retain the shared unsupported response. The OpenAPI route
+parity test also passes.
+
+Final Phase 1 Docker verification:
+
+```text
+docker compose up --build -d             PASS; default stack and bootstrap started
+docker compose run --rm api npm test     Test Suites: 69 passed, 69 total
+                                          Tests:       351 passed, 351 total
+docker compose run --rm api npm run lint PASS
+docker compose run --rm api npm run build PASS
+```
+
+The exact Phase 1 test names and `openapi.yaml matches the registered routes exactly` passed
+in verbose runs. Phase 1 items 1.1–1.5 are verified. The other project phases remain in their
+existing PARTIAL/NOT DONE states.
 
 Repaired the mock-route rate-limit exemption and test override, catalogue source schema,
 JSONB insert serialization and safe error-code logging, Phase 5 POST idempotency headers,

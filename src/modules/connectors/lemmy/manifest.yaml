@@ -9,6 +9,7 @@ surfaces:
       title_max_chars: 200
       body_max_chars: 10000
       links_allowed: true
+      media_types: [image/*, video/*]
 rate_limits:
   per_connection:
     requests: 30

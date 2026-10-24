@@ -54,11 +54,11 @@ async function execute(app, key, method, input, headerKey) {
   const rendition = input.rendition || {};
   if (key === 'assisted' && ['publish', 'get_status', 'delete', 'fetch_metrics', 'refresh_auth'].includes(method)) return connector[method] ? connector[method]() : entry.unsupported();
   if (method === 'validate') {
-    const violations = connector.validate(rendition, input.surface);
+    const violations = connector.validate(rendition, input.surface, resolvedDestination);
     return { ok: violations.length === 0, violations };
   }
   if (method === 'publish') {
-    const violations = connector.validate(rendition);
+    const violations = connector.validate(rendition, undefined, resolvedDestination);
     if (violations.length) throw new AppError('DEST_SPEC_VIOLATION', 'Content does not meet destination requirements', { statusCode: 400, details: { violations } });
     const ref = destinationRef(resolvedDestination);
     return withDestinationLock(app, `${connector.key}:${ref}`, async () => {
@@ -77,11 +77,20 @@ async function execute(app, key, method, input, headerKey) {
       return { ...result, warnings: rules.reasons.filter((reason) => reason.severity === 'fixed' || reason.severity === 'warn') };
     });
   }
-  if (['get_status', 'delete'].includes(method) && !destination && !input.destination_ref && !input.base_url) {
+  if (method === 'fetch_metrics' && !connector.fetch_metrics) return entry.unsupported();
+  if (method === 'refresh_auth' && !connector.refresh_auth) return entry.unsupported();
+  if (['get_status', 'delete', 'fetch_metrics'].includes(method) && !destination && !input.destination_ref && !input.base_url) {
     throw new AppError('VALIDATION_ERROR', 'A destination, destination_id, destination_ref, or base_url is required', { statusCode: 400, details: { fields: ['destination', 'destination_id', 'destination_ref', 'base_url'] } });
   }
   if (method === 'get_status') return connector.get_status(resolvedDestination, connection, input.platform_post_id);
   if (method === 'delete') return connector.delete(resolvedDestination, connection, input.platform_post_id);
+  if (method === 'fetch_metrics' && connector.fetch_metrics) {
+    if (!input.platform_post_id) throw new AppError('VALIDATION_ERROR', 'platform_post_id is required', {
+      statusCode: 400,
+      details: { fields: ['platform_post_id'] }
+    });
+    return connector.fetch_metrics(resolvedDestination, connection, input.platform_post_id);
+  }
   if (method === 'build_assist_pack') {
     if (key !== 'assisted') throw new AppError('CONNECTOR_NOT_IMPLEMENTED', 'build_assist_pack is available only on the assisted connector', { statusCode: 501 });
     return connector.build_assist_pack(rendition, resolvedDestination);
