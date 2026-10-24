@@ -8,6 +8,7 @@ import knex = require('./db/knex');
 import logger = require('./shared/logger');
 import correlationId = require('./shared/plugins/correlationId');
 import auth = require('./shared/plugins/auth');
+import rateLimit = require('./shared/plugins/rateLimit');
 import idempotency = require('./shared/plugins/idempotency');
 import registerErrorHandlers = require('./shared/errors/errorHandler');
 import healthRoutes = require('./modules/health/routes');
@@ -24,6 +25,8 @@ import config = require('./config');
 import { createStorage } from './shared/storage';
 import certificationRoutes = require('./modules/certification/routes');
 import jobRoutes = require('./modules/jobs/routes');
+import tailoringRoutes = require('./modules/tailoring/routes');
+import catalogueRoutes = require('./modules/catalogue/routes');
 
 function buildApp(opts: any = {}): any {
   const appConfig = opts.config || config;
@@ -40,14 +43,28 @@ function buildApp(opts: any = {}): any {
     // This label makes each request log carry the correlation_id field.
     logController: new LogController({ requestIdLogLabel: 'correlation_id' })
   });
+  const routeIndex = new Set<string>();
+  app.addHook('onRoute', (routeInfo: any) => {
+    const path = String(routeInfo.path || '').replace(/:([A-Za-z0-9_]+)/g, '{$1}');
+    if (path.startsWith('/mock/')) return;
+    const methods = Array.isArray(routeInfo.method) ? routeInfo.method : [routeInfo.method];
+    for (const method of methods) {
+      const name = String(method).toUpperCase();
+      if (name !== 'HEAD') routeIndex.add(`${name} ${path}`);
+    }
+  });
+  app.decorate('routeIndex', routeIndex);
   app.decorate('knex', opts.knex || knex);
   app.decorate('config', appConfig);
   app.decorate('storage', opts.storage || createStorage(appConfig));
   app.decorate('now', opts.now || (() => new Date()));
+  app.decorate('ruleProposals', new Map());
   app.decorate('connectorFactory', opts.connectorFactory || null);
+  app.decorate('catalogueOptions', opts.catalogueOptions || {});
   loadManifests();
   correlationId(app);
   auth(app, { apiToken: opts.apiToken === undefined ? appConfig.API_TOKEN : opts.apiToken });
+  rateLimit(app, appConfig);
   idempotency(app, appConfig);
   registerErrorHandlers(app);
   app.register(healthRoutes);
@@ -56,6 +73,8 @@ function buildApp(opts: any = {}): any {
   app.register(rulesRoutes);
   app.register(certificationRoutes);
   app.register(jobRoutes);
+  app.register(tailoringRoutes);
+  app.register(catalogueRoutes);
   if (appConfig.SIMULATION_MODE) {
     app.register(discourseMock);
     app.register(devtoMock);

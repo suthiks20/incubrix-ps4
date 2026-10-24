@@ -19,6 +19,7 @@ const globals = {
   Buffer: 'readonly',
   __dirname: 'readonly',
   fetch: 'readonly',
+  Response: 'readonly',
   AbortController: 'readonly',
   setTimeout: 'readonly',
   clearTimeout: 'readonly',

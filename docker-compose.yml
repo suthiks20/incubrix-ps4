@@ -41,11 +41,13 @@ services:
       JOBS_STALE_SECONDS: ${JOBS_STALE_SECONDS:-300}
       JOBS_CALLBACK_SECRET: ${JOBS_CALLBACK_SECRET:-dev-callback-secret}
       JOBS_CALLBACK_TIMEOUT_MS: ${JOBS_CALLBACK_TIMEOUT_MS:-5000}
+      RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-60}
       CONNECTION_LEMMY_LOCAL: ${CONNECTION_LEMMY_LOCAL:-}
       CONNECTION_GHOST_LOCAL: ${CONNECTION_GHOST_LOCAL:-}
       
     volumes:
       - certdata:/app/data
+      - ./evidence:/app/evidence
     depends_on:
       postgres:
         condition: service_healthy

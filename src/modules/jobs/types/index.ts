@@ -2,7 +2,9 @@
  * Registers job handlers separately from HTTP and queue plumbing.
  * Certification is the first durable operation and keeps its existing route unchanged.
  */
+import AppError = require('../../../shared/errors/AppError');
 import { runCertification } from '../../certification/services/run';
+import { importCatalogue } from '../../catalogue/service';
 
 async function certify(deps: any, input: any, progress: (value: number) => Promise<void>): Promise<any> {
   if (!input || typeof input.destination_id !== 'string') throw new Error('destination_id is required');
@@ -12,5 +14,21 @@ async function certify(deps: any, input: any, progress: (value: number) => Promi
   return { run_id: run.id, status: run.status, level: run.level_awarded, evidence_link: run.evidence_link };
 }
 
-const types: Record<string, any> = { certify };
+async function selftest(): Promise<never> {
+  throw new AppError('JOB_TYPE_NOT_READY', 'Self-test jobs are not ready yet', { statusCode: 501 });
+}
+
+async function catalogue_import(
+  deps: any,
+  input: any,
+  progress: (value: number) => Promise<void>
+): Promise<any> {
+  return importCatalogue(deps, input, progress);
+}
+
+async function batch_publish(): Promise<never> {
+  throw new AppError('JOB_TYPE_NOT_READY', 'Batch publish jobs are not ready yet', { statusCode: 501 });
+}
+
+const types: Record<string, any> = { certify, selftest, catalogue_import, batch_publish };
 export = types;

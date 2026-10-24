@@ -22,7 +22,7 @@ async function list(request: any): Promise<any> {
 
 async function download(request: any, reply: any): Promise<any> {
   const value = await service.download(request.server, request.params.id, request.params.kind);
-  reply.type('application/json');
+  reply.type(request.params.kind === 'errors' ? 'text/csv; charset=utf-8' : 'application/json');
   return reply.send(value);
 }
 

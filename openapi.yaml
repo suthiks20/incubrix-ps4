@@ -1,0 +1,572 @@
+openapi: 3.1.0
+info:
+  title: IncuBrix Long-Tail Destination Network API
+  version: 1.0.0
+  description: The service exposes health, destination catalogue, rules, certification and job orchestration routes.
+servers:
+  - url: http://localhost:8000
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /ready:
+    get:
+      summary: Readiness check
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          $ref: '#/components/responses/NotReady'
+  /api/v1/health:
+    get:
+      summary: API health
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /api/v1/ready:
+    get:
+      summary: API readiness
+      responses:
+        '200':
+          description: API ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          $ref: '#/components/responses/NotReady'
+  /api/v1/connectors:
+    get:
+      summary: List connector manifests
+      responses:
+        '200':
+          description: List of connectors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConnectorManifest'
+  /api/v1/destinations:
+    get:
+      summary: List destinations
+      responses:
+        '200':
+          description: Destination catalogue
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Destination'
+    post:
+      summary: Create destination
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DestinationPayload'
+      responses:
+        '202':
+          description: Accepted
+        '400':
+          $ref: '#/components/responses/ValidationError'
+  /api/v1/destinations/{id}:
+    get:
+      summary: Fetch destination by id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Destination record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Destination'
+    put:
+      summary: Update destination
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DestinationPayload'
+      responses:
+        '200':
+          description: Updated destination
+    delete:
+      summary: Delete destination
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XCorrelationId'
+      responses:
+        '200':
+          description: Destination removed
+  /api/v1/destinations/{id}/certify:
+    post:
+      summary: Run destination certification
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XCorrelationId'
+      responses:
+        '202':
+          description: Certification job accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobAccepted'
+  /api/v1/tailor:
+    post:
+      summary: Tailor a rendition for a destination
+      parameters:
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TailorRequest'
+      responses:
+        '200':
+          description: Tailored rendition result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TailorResponse'
+  /api/v1/destinations/{id}/rules/capture:
+    post:
+      summary: Capture a pending rule proposal
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RulesCaptureRequest'
+      responses:
+        '200':
+          description: Pending proposal captured
+  /api/v1/destinations/{id}/rules/confirm:
+    post:
+      summary: Confirm a pending rule proposal
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Proposal confirmed
+  /api/v1/certification/runs:
+    get:
+      summary: List certification runs
+      parameters:
+        - $ref: '#/components/parameters/XCorrelationId'
+      responses:
+        '200':
+          description: Certification run list
+  /api/v1/certification/runs/{id}:
+    get:
+      summary: Fetch one certification run
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Certification run record
+  /api/v1/certification/runs/{id}/evidence:
+    get:
+      summary: Download certification evidence
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Evidence JSON
+  /api/v1/alerts:
+    get:
+      summary: List certification alerts
+      parameters:
+        - $ref: '#/components/parameters/XCorrelationId'
+      responses:
+        '200':
+          description: Alerts list
+  /api/v1/alerts/{id}/acknowledge:
+    post:
+      summary: Acknowledge an alert
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/XCorrelationId'
+      responses:
+        '200':
+          description: Alert acknowledged
+  /api/v1/certification/cleanup:
+    post:
+      summary: Trigger cleanup of stale certification evidence
+      parameters:
+        - $ref: '#/components/parameters/XCorrelationId'
+      responses:
+        '200':
+          description: Cleanup request accepted
+  /api/v1/certification/summary:
+    get:
+      summary: Certification summary
+      responses:
+        '200':
+          description: Summary payload
+  /api/v1/rules/evaluate:
+    post:
+      summary: Evaluate rules without publishing
+      parameters:
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Evaluation result
+  /api/v1/jobs:
+    get:
+      summary: List jobs
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Jobs list
+    post:
+      summary: Create a job
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobRequest'
+      responses:
+        '202':
+          description: Job accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobAccepted'
+  /api/v1/jobs/{id}:
+    get:
+      summary: Fetch job by id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Job status and result
+  /api/v1/jobs/{id}/download/{kind}:
+    get:
+      summary: Download job output or manifest
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - in: path
+          name: kind
+          required: true
+          schema:
+            type: string
+            enum: [output, manifest, errors]
+      responses:
+        '200':
+          description: Downloaded job output, manifest, or catalogue error CSV
+  /api/v1/catalogue/import:
+    post:
+      summary: Import destinations from a CSV upload or URL
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatalogueImportRequest'
+      responses:
+        '202':
+          description: Catalogue import job accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobAccepted'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '413':
+          description: CSV exceeds the upload size limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /connector/v1/{key}/{method}:
+    post:
+      summary: Invoke a connector method by key and method name
+      parameters:
+        - in: path
+          name: key
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: method
+          required: true
+          schema:
+            type: string
+            enum: [validate, publish, get_status, delete, fetch_metrics, refresh_auth, build_assist_pack]
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectorRequest'
+      responses:
+        '200':
+          description: Connector response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectorResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+components:
+  parameters:
+    Id:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: string
+    IdempotencyKey:
+      in: header
+      name: Idempotency-Key
+      required: false
+      schema:
+        type: string
+    XCorrelationId:
+      in: header
+      name: X-Correlation-Id
+      required: false
+      schema:
+        type: string
+  responses:
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    RateLimited:
+      description: Rate limited
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    NotReady:
+      description: Service not ready
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    InternalError:
+      description: Internal error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+  schemas:
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, retryable, details]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            retryable:
+              type: boolean
+            details:
+              type: object
+              additionalProperties: true
+    HealthResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+    ConnectorManifest:
+      type: object
+      properties:
+        key:
+          type: string
+        version:
+          type: string
+        tier:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+        surfaces:
+          type: array
+          items:
+            type: string
+    Destination:
+      type: object
+      additionalProperties: true
+    DestinationPayload:
+      type: object
+      additionalProperties: true
+    ConnectorRequest:
+      type: object
+      properties:
+        rendition:
+          type: object
+          additionalProperties: true
+        destination:
+          type: object
+          additionalProperties: true
+        connection:
+          type: object
+          additionalProperties: true
+        destination_id:
+          type: string
+        idempotency_key:
+          type: string
+    ConnectorResponse:
+      type: object
+      additionalProperties: true
+    TailorRequest:
+      type: object
+      required: [destination, rendition]
+      properties:
+        destination:
+          type: object
+          additionalProperties: true
+        rendition:
+          type: object
+          additionalProperties: true
+    TailorResponse:
+      type: object
+      properties:
+        tailored_rendition:
+          type: object
+          additionalProperties: true
+        changes:
+          type: array
+          items:
+            type: object
+        relevance_score:
+          type: integer
+        relevance_reason:
+          type: string
+    RulesCaptureRequest:
+      type: object
+      properties:
+        rules_text:
+          type: string
+        url:
+          type: string
+    JobAccepted:
+      type: object
+      properties:
+        job_id:
+          type: string
+        status:
+          type: string
+        progress:
+          type: integer
+    JobRequest:
+      type: object
+      properties:
+        type:
+          type: string
+        input:
+          type: object
+          additionalProperties: true
+        callback_url:
+          type: string
+    CatalogueImportRequest:
+      type: object
+      additionalProperties: false
+      required: [source]
+      properties:
+        source:
+          oneOf:
+            - type: object
+              additionalProperties: false
+              required: [upload]
+              properties:
+                upload:
+                  type: object
+                  additionalProperties: false
+                  required: [name, content_base64]
+                  properties:
+                    name:
+                      type: string
+                    content_base64:
+                      type: string
+            - type: object
+              additionalProperties: false
+              required: [url]
+              properties:
+                url:
+                  type: string
+                  format: uri

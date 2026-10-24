@@ -6,7 +6,7 @@ const uuid = { type: 'string', format: 'uuid' };
 const create = { body: { type: 'object', required: ['type', 'input'], additionalProperties: false,
   properties: { type: { type: 'string' }, input: { type: 'object' }, callback_url: { type: 'string' } } } };
 const get = { params: { type: 'object', required: ['id'], properties: { id: uuid } } };
-const download = { params: { type: 'object', required: ['id', 'kind'], properties: { id: uuid, kind: { enum: ['output', 'manifest'] } } } };
+const download = { params: { type: 'object', required: ['id', 'kind'], properties: { id: uuid, kind: { enum: ['output', 'manifest', 'errors'] } } } };
 const list = { querystring: { type: 'object', additionalProperties: false, properties: {
   status: { enum: ['queued', 'running', 'succeeded', 'failed'] }, type: { type: 'string' },
   limit: { type: 'integer', minimum: 1, maximum: 200, default: 50 } } } };

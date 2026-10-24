@@ -18,7 +18,25 @@ function validSource(source: any): boolean {
 
 async function persistInput(storage: any, knex: any, job: any): Promise<any> {
   const source = job.input.source;
-  if (!source || !source.upload) return job;
+  if (!source) return job;
+
+  if (source.url) {
+    const response = await fetch(source.url, { signal: AbortSignal.timeout(5000) });
+    if (!response.ok) {
+      throw new AppError('VALIDATION_ERROR', 'Job input source URL could not be fetched', {
+        statusCode: 400,
+        details: { url: source.url, status: response.status }
+      });
+    }
+    const url = new URL(source.url);
+    const filename = (url.pathname.split('/').pop() || 'input.json').replace(/[^a-zA-Z0-9._-]/g, '_');
+    const key = `jobs/${job.id}/input/${filename}`;
+    await storage.put(key, Buffer.from(await response.arrayBuffer()));
+    const input = { ...job.input, source: { url: source.url, storage_key: key } };
+    return repository.update(knex, job.id, { input });
+  }
+
+  if (!source.upload) return job;
   const name = source.upload.name.replace(/[^a-zA-Z0-9._-]/g, '_');
   const key = `jobs/${job.id}/input/${name}`;
   await storage.put(key, Buffer.from(source.upload.content_base64, 'base64'));
@@ -45,9 +63,10 @@ async function create(deps: any, input: any, correlationId: string): Promise<any
 function links(job: any): any {
   const output = job.result?.output_key ? `/api/v1/jobs/${job.id}/download/output` : null;
   const manifest = job.result?.manifest_key ? `/api/v1/jobs/${job.id}/download/manifest` : null;
-  if (!job.result || !job.result.run_id) return { output, manifest };
+  const errors = job.result?.errors_key ? `/api/v1/jobs/${job.id}/download/errors` : null;
+  if (!job.result || !job.result.run_id) return { output, manifest, errors };
   const run = `/api/v1/certification/runs/${job.result.run_id}`;
-  return { run, evidence: `${run}/evidence`, output, manifest };
+  return { run, evidence: `${run}/evidence`, output, manifest, errors };
 }
 
 async function get(knex: any, id: string): Promise<any> {
@@ -60,7 +79,12 @@ async function get(knex: any, id: string): Promise<any> {
 async function download(deps: any, id: string, kind: string): Promise<Buffer> {
   const job = await repository.findById(deps.knex, id);
   if (!job) throw new AppError('NOT_FOUND', 'Job not found', { statusCode: 404 });
-  const key = kind === 'manifest' ? job.result?.manifest_key : job.result?.output_key;
+  const keys: Record<string, string | undefined> = {
+    manifest: job.result?.manifest_key,
+    output: job.result?.output_key,
+    errors: job.result?.errors_key
+  };
+  const key = keys[kind];
   if (!key) throw new AppError('NOT_FOUND', 'Job output not found', { statusCode: 404 });
   try { return await deps.storage.get(key); }
   catch { throw new AppError('NOT_FOUND', 'Job output not found', { statusCode: 404 }); }

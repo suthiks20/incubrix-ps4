@@ -2,6 +2,28 @@
 
 ## Current step
 
+Phase 7 / catalogue import — PARTIAL (24 Oct 2026). Added the catalogue-import job and API route,
+CSV parsing/validation, normalized platform+URL deduplication, bounded reachability checks, mock
+member-count enrichment, language detection, Phase 5 relevance scoring, and stored row-error CSV
+downloads. Added the 1,000-row fixture generator and 11 integration tests with the six required names.
+The fixture was generated and the pure CSV/language check reported 1,000 rows, 100 duplicate rows,
+20 invalid URLs, and Spanish detection. Local `npm run build` and `npm run lint` pass, and
+`docker compose config --quiet` passes.
+
+The database-backed tests and measured-import evidence are NOT verified. `docker compose up --build -d`
+failed while recreating `minio-init` because Docker Desktop reported a read-only containerd
+`metadata.db`; `docker compose run --rm api npm test ...` then remained stalled. A host Jest attempt
+could not load configuration without `DATABASE_URL`; with local test URLs it failed with
+`ECONNREFUSED 127.0.0.1:5432`. Therefore there are no suite/test totals and
+`evidence/catalogue-1000-import.json` has not been produced. The required selftest CSV behavior is
+exercised directly through the importer test, but the full selftest endpoint/job is still not wired.
+The other advanced connector prerequisite (MRSS, Slack, Hashnode) is also not verified, so the
+“all five Advanced items” gate remains PARTIAL.
+
+Next required action: restore Docker/Postgres availability, run the full four-command Docker gate,
+fix any red tests, and retain the measured evidence from the real Postgres import. Do not mark Phase 7
+DONE until that output is captured.
+
 Infrastructure stability fix (23 Oct 2026). Fixed the SeaweedFS S3 bucket init race by retrying the bucket creation on transient connection errors and switching the MinIO healthcheck to the S3 port used by the app. This keeps `docker compose up --build -d` from failing during the `minio-init` bootstrap step when the S3 listener is still coming online. Next: validate the stack and continue the project gate.
 
 WP4 - DONE (23 Oct 2026). Completed the Lemmy and Ghost native connectors, production-shaped simulation

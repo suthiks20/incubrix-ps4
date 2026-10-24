@@ -41,7 +41,8 @@ async function createContext(options = {}) {
     logger: options.logger,
     storage: options.storage || createLocal(directory),
     now: options.now || (() => new Date()),
-    connectorFactory: options.connectorFactory
+    connectorFactory: options.connectorFactory,
+    catalogueOptions: options.catalogueOptions
   });
   await app.listen({ port: 0, host: '127.0.0.1' });
   const port = app.server.address().port;

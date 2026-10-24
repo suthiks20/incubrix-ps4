@@ -36,6 +36,13 @@ interface AppConfig {
   JOBS_STALE_SECONDS: number;
   JOBS_CALLBACK_SECRET: string;
   JOBS_CALLBACK_TIMEOUT_MS: number;
+  RATE_LIMIT_PER_MINUTE: number;
+  CONNECTION_LEMMY_LOCAL: string;
+  CONNECTION_GHOST_LOCAL: string;
+  LLM_PROVIDER: string;
+  GEMINI_API_KEY: string;
+  GROQ_API_KEY: string;
+  OLLAMA_BASE_URL: string;
 }
 
 type Environment = Record<string, string | undefined>;
@@ -119,7 +126,14 @@ function loadConfig(env: Environment = process.env): Readonly<AppConfig> {
       env.JOBS_CALLBACK_TIMEOUT_MS,
       5000,
       1
-    )
+    ),
+    RATE_LIMIT_PER_MINUTE: parseIntegerSetting('RATE_LIMIT_PER_MINUTE', env.RATE_LIMIT_PER_MINUTE, 60, 1),
+    CONNECTION_LEMMY_LOCAL: env.CONNECTION_LEMMY_LOCAL || '',
+    CONNECTION_GHOST_LOCAL: env.CONNECTION_GHOST_LOCAL || '',
+    LLM_PROVIDER: env.LLM_PROVIDER || 'mock',
+    GEMINI_API_KEY: env.GEMINI_API_KEY || '',
+    GROQ_API_KEY: env.GROQ_API_KEY || '',
+    OLLAMA_BASE_URL: env.OLLAMA_BASE_URL || 'http://localhost:11434'
   });
 }
 

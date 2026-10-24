@@ -33,10 +33,10 @@ async function process(deps: any, job: any): Promise<void> {
   const progress = async (value: number) => repository.update(deps.knex, job.id, { progress: value });
   const startedAt = Date.now();
   try {
-    const result = await types[job.type]({ ...deps, logger }, job.input, progress);
+    const result = await types[job.type]({ ...deps, logger, job_id: job.id }, job.input, progress);
     const outputKey = `jobs/${job.id}/output.json`;
     const manifestKey = `jobs/${job.id}/manifest.json`;
-    const manifest = buildOutputManifest(deps.config, startedAt);
+    const manifest = buildOutputManifest(deps.config, startedAt, [], { type: job.type, connector_key: job.input?.destination_id ? 'certify' : 'job', llm_adapter: 'mock', version: '1.0.0' });
     await deps.storage.put(outputKey, JSON.stringify(result));
     await deps.storage.put(manifestKey, JSON.stringify(manifest));
     const stored = { ...result, output_key: outputKey, manifest_key: manifestKey };

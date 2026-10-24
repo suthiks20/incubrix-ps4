@@ -19,6 +19,12 @@ test('resolveConnection parses JSON from its named environment value', () => {
   expect(connection).toEqual({ api_key: 'fake-key', api_username: 'fake-user' });
 });
 
+test('resolveConnection maps Ghost admin_api_key to api_key for the connector', () => {
+  process.env[environmentName] = JSON.stringify({ admin_api_key: 'ghost-admin-key:abc123' });
+  const connection = resolveConnection({ connection_ref: 'mixed.ref-2', connector_key: 'ghost' }, { SIMULATION_MODE: false });
+  expect(connection).toEqual({ admin_api_key: 'ghost-admin-key:abc123', api_key: 'ghost-admin-key:abc123' });
+});
+
 test('resolveConnection uses simulation credentials when no environment value exists', () => {
   delete process.env[environmentName];
   const connection = resolveConnection(

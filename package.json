@@ -19,7 +19,9 @@
     "migrate:rollback": "knex --knexfile knexfile.js migrate:rollback",
     "bootstrap:local": "node bootstrap/bootstrap.js all",
     "certify:local": "node bootstrap/verify.js all",
-    "verify:local": "node bootstrap/verify.js all"
+    "verify:local": "node bootstrap/verify.js all",
+    "ix-batch": "node dist/scripts/ix-batch.js",
+    "gen-catalogue": "node dist/scripts/gen-catalogue.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1156.0",

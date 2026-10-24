@@ -4,5 +4,6 @@
  */
 module.exports = {
   create: require('./create'), getAll: require('./getAll'), getById: require('./getById'),
-  update: require('./update'), delete: require('./delete')
+  update: require('./update'), delete: require('./delete'),
+  captureRules: require('./rulesCapture'), confirmRules: require('./rulesConfirm')
 };
