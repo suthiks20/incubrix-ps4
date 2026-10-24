@@ -168,6 +168,13 @@ reason. Discourse, Dev.to, and Ghost implement
 `views`, `likes`, `comments`, `shares`, `saves`, `watch_time_s`, and `clicks`. Unsupported
 connectors keep the standard `CONNECTOR_NOT_IMPLEMENTED` response.
 
+The MRSS connector publishes video and image items into a service-hosted RSS 2.0 feed.
+Its `video` surface allows `video/mp4`, `video/webm`, `image/jpeg`, and `image/png`.
+Read a destination feed at `GET /feeds/{destination_id}.xml`; XML text and attributes
+are escaped by the feed renderer. Item guids are stable idempotency markers, so retrying
+an ambiguous publish does not add a duplicate item. The connector supports publish,
+status, and delete at level L2.
+
 | Simulation scenario | Result |
 | --- | --- |
 | normal | Creates and reads posts normally |
@@ -246,5 +253,5 @@ curl.exe -X POST http://localhost:8000/connector/v1/discourse/publish -H "Conten
 - Phase 3 — PARTIAL: Integration proof and batch CLI are in place; `batch_publish` scenarios remain unavailable.
 - Phase 4 — DONE: Idempotent simulation seeding and all 14 hidden-case selftests pass.
 - Phase 5 — DONE: Tailoring, relevance scoring, and rules capture.
-- Phase 6 — NOT DONE: MRSS, Slack, and Hashnode connectors remain to be implemented.
+- Phase 6 — PARTIAL: MRSS feed connector (Phase 6a) is done; Slack and Hashnode remain.
 - Phase 7 — PARTIAL: Catalogue import and 1,000-row evidence are present; full assessment closure still awaits Phase 6 and Phase 3 batch scenarios.

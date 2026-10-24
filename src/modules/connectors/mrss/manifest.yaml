@@ -1,0 +1,23 @@
+# Describes the MRSS video-feed connector contract.
+# Limits and MIME types are validated by the shared connector base.
+key: mrss
+version: 1.0.0
+tier: feed
+auth: api_key
+surfaces:
+  - key: video
+    content_types: [video]
+    spec:
+      title_max_chars: 200
+      body_max_chars: 10000
+      links_allowed: true
+      media_types: [video/mp4, video/webm, image/jpeg, image/png]
+rate_limits:
+  per_connection:
+    requests: 30
+    per_seconds: 30
+capabilities: [publish, status, delete]
+error_map:
+  '401': CONNECTION_AUTH_EXPIRED
+  '429': PLATFORM_RATE_LIMIT
+instance_param: base_url

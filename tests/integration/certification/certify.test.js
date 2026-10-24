@@ -71,6 +71,18 @@ test('certifies a webhook destination', async () => {
   expect((await mockState(ctx, 'webhook', 'normal')).posts).toHaveLength(0);
 });
 
+test('mrss passes certification against its mock', async () => {
+  const destination = await createDestination(ctx, 'mrss', 'normal');
+  const response = await certify(ctx, destination.id, 'cert-mrss-1');
+  expect(response.statusCode).toBe(200);
+  const run = response.json();
+  expect(run.status).toBe('passed');
+  expect(run.level_awarded).toBe('L2');
+  expect(run.steps.map((step) => step.name)).toEqual(SIX_STEPS);
+  expect(run.steps.every((step) => step.status === 'passed')).toBe(true);
+  expect((await mockState(ctx, 'mrss', 'normal')).posts).toHaveLength(0);
+});
+
 test('certifies an assisted destination as L1 with no network calls', async () => {
   const destination = await ctx.knex('destinations').insert({
     name: 'Assisted forum',

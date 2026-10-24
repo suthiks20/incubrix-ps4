@@ -17,10 +17,10 @@ Candidate submission for IncuBrix Assessment 4 ("Distribution: Long-Tail Destina
 - Tests: npm test runs Jest --runInBand against a real Postgres test database. Test cleanup must TRUNCATE ... CASCADE because destinations is referenced by foreign keys.
 ## Roadmap (update as you go)
 The work-package order and source of truth are in docs/MASTER_PLAN.md. Phase verification on
-24 Oct 2026: Phases 1, 2, 4 and 5 are DONE; Phases 3 and 7 are PARTIAL; Phase 6 is
-NOT DONE. Lemmy and Ghost passed real API certification at L3; secret-free results and
+24 Oct 2026: Phases 1, 2, 4 and 5 are DONE; Phases 3, 6 and 7 are PARTIAL. Phase 6a MRSS
+is DONE; Slack and Hashnode remain. Lemmy and Ghost passed real API certification at L3; secret-free results and
 deletion confirmations are in `evidence/cert-lemmy-real.json` and `evidence/cert-ghost-real.json`.
-The clean default Docker stack and latest verification gate passed: 71 suites / 367 tests, lint
+The clean default Docker stack and latest verification gate passed: 71 suites / 376 tests, lint
 clean, build clean. Phase 3 has assisted error-envelope, batch CLI, end-to-end, configuration,
 job-log, and proof-document coverage; batch publishing remains unavailable, so its scenario
 fixtures are not live platform tests. Phase 4 has idempotent mock-only seeding and a passing

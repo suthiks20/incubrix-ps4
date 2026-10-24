@@ -7,13 +7,21 @@ const AppError = require('../../../shared/errors/AppError');
 const SKIPPED_FOR_ASSISTED = ['publish', 'confirm_live', 'read_status', 'delete', 'verify_gone'];
 
 function testRendition(destination, runId) {
-  return {
+  const rendition = {
     title: `[IncuBrix certification test] ${runId.slice(0, 8)}`,
     body: 'Automated IncuBrix certification post. It will be deleted within 10 minutes.',
     language: destination.language,
     is_promotional: false,
     ai_generated: false
   };
+  if (destination.connector_key === 'mrss') {
+    rendition.media = [{
+      name: 'certification-video',
+      url: 'https://media.example.test/certification.mp4',
+      type: 'video/mp4'
+    }];
+  }
+  return rendition;
 }
 
 function unavailable(message) {

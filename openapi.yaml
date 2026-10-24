@@ -363,6 +363,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorEnvelope'
+  /feeds/{destination_id}.xml:
+    get:
+      summary: Read a destination's MRSS video feed
+      parameters:
+        - in: path
+          name: destination_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: RSS 2.0 feed with Media RSS items
+          content:
+            application/rss+xml:
+              schema:
+                type: string
+        '404':
+          description: Destination does not exist or is not an MRSS destination
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
   /connector/v1/{key}/{method}:
     post:
       summary: Invoke a connector method by key and method name

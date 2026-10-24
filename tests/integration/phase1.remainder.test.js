@@ -5,27 +5,40 @@
 const buildApp = require('../../src/app');
 const { createTestDatabase } = require('./testDatabase');
 const registry = require('../../src/modules/connectors/registry');
+const pino = require('pino');
+const { PassThrough } = require('stream');
+const loggerOptions = require('../../src/shared/logger');
 
-const connectorKeys = ['discourse', 'devto', 'lemmy', 'ghost', 'webhook'];
+const connectorKeys = ['discourse', 'devto', 'lemmy', 'ghost', 'webhook', 'mrss'];
 const credentials = {
   discourse: { api_key: 'fake-key', api_username: 'fake-user' },
   devto: { api_key: 'fake-key' },
   lemmy: { username: 'fake-user', password: 'lemmy-password' },
   ghost: { api_key: 'fake-ghost-id:00112233445566778899aabbccddeeff' },
-  webhook: { signing_secret: 'test-signing-secret' }
+  webhook: { signing_secret: 'test-signing-secret' },
+  mrss: { api_key: 'mrss-test-token' }
 };
 let app;
 let knex;
 let baseUrl;
+let logs = '';
+let logStream;
 
 beforeAll(async () => {
   knex = createTestDatabase();
-  app = buildApp({ knex, apiToken: '' });
+  logStream = new PassThrough();
+  logStream.on('data', (chunk) => { logs += chunk; });
+  app = buildApp({
+    knex,
+    apiToken: '',
+    logger: pino({ ...loggerOptions, level: 'info' }, logStream)
+  });
   await app.listen({ port: 0, host: '127.0.0.1' });
   baseUrl = `http://127.0.0.1:${app.server.address().port}`;
 });
 
 beforeEach(async () => {
+  logs = '';
   await knex('publish_ledger').del();
   await Promise.all(connectorKeys.map((key) =>
     fetch(`${baseUrl}/mock/${key}/normal/_reset`, { method: 'POST' })
@@ -35,6 +48,7 @@ beforeEach(async () => {
 afterAll(async () => {
   await app.close();
   await knex.destroy();
+  logStream.end();
 });
 
 function payload(key, connector, scenario, rendition = {}) {
@@ -178,6 +192,158 @@ test('manifest capabilities match implemented methods for every connector', () =
     for (const [capability, method] of Object.entries(methods)) {
       expect(entry.manifest.capabilities.includes(capability)).toBe(typeof connector[method] === 'function');
     }
+  }
+});
+
+const mrssRendition = {
+  title: 'Video update',
+  body: 'A short description',
+  canonical_url: 'https://videos.example.test/watch?a=1&b=2',
+  media: [{ name: 'clip', url: 'https://cdn.example.test/clip?x=1&y=2', type: 'video/mp4' }]
+};
+
+function mrssDestination(scenario, name = 'MRSS destination') {
+  const base = `${baseUrl}/mock/mrss/${scenario}`;
+  return knex('destinations').insert({
+    name,
+    url: `https://feeds.example.test/${scenario}`,
+    url_normalized: `https://feeds.example.test/${scenario}`,
+    platform_key: 'mrss',
+    connector_key: 'mrss',
+    language: 'en',
+    config: JSON.stringify({ base_url: base })
+  }).returning('*').then((rows) => rows[0]);
+}
+
+async function mrssState(base, destinationId) {
+  const query = new URLSearchParams({ destination_id: destinationId });
+  return fetch(`${base}/_state?${query}`).then((response) => response.json());
+}
+
+test('HARD CASE mrss timeout retry creates exactly one post', async () => {
+  const request = payload('mrss-timeout-key', 'mrss', 'timeout_after_success', mrssRendition);
+  const first = await app.inject({
+    method: 'POST',
+    url: '/connector/v1/mrss/publish',
+    payload: request
+  });
+  expect(first.statusCode).toBe(503);
+  expect(first.json().error.code).toBe('PLATFORM_UNAVAILABLE');
+  const firstState = await mrssState(request.destination_ref, request.destination_ref);
+  expect(firstState.posts).toHaveLength(1);
+  expect(firstState.post_attempts).toBe(1);
+  const retry = await app.inject({
+    method: 'POST',
+    url: '/connector/v1/mrss/publish',
+    payload: request
+  });
+  expect(retry.statusCode).toBe(200);
+  expect(retry.headers['idempotent-replay']).toBe('true');
+  const finalState = await mrssState(request.destination_ref, request.destination_ref);
+  expect(finalState.posts).toHaveLength(1);
+  expect(finalState.post_attempts).toBe(1);
+});
+
+test('HARD CASE mrss renamed field returns SCHEMA_DRIFT', async () => {
+  const response = await publish('mrss', 'renamed_field', 'mrss-renamed', mrssRendition);
+  expect(response.statusCode).toBe(502);
+  expect(response.json().error.code).toBe('SCHEMA_DRIFT');
+});
+
+test('mrss secrets never appear in logs', async () => {
+  const secret = 'mrss-secret-must-never-appear';
+  const response = await app.inject({
+    method: 'POST',
+    url: '/connector/v1/mrss/publish',
+    payload: {
+      ...payload('mrss-secret-key', 'mrss', 'normal', mrssRendition),
+      connection: { api_key: secret }
+    }
+  });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const ledger = await knex('publish_ledger');
+  expect(response.statusCode).toBe(200);
+  expect(`${logs}${response.body}${JSON.stringify(ledger)}`).not.toContain(secret);
+});
+
+test('mrss feed escapes xml and lists published items', async () => {
+  const title = 'Video & <News> "today" \'live\'';
+  const description = 'Description & <more> "text" \'quoted\'';
+  const destination = await mrssDestination('normal', 'Feed & <Channel> "one" \'two\'');
+  const response = await app.inject({
+    method: 'POST',
+    url: '/connector/v1/mrss/publish',
+    payload: {
+      destination_id: destination.id,
+      idempotency_key: 'mrss-feed-xml',
+      connection: credentials.mrss,
+      rendition: { ...mrssRendition, title, body: description }
+    }
+  });
+  expect(response.statusCode).toBe(200);
+  const feed = await app.inject(`/feeds/${destination.id}.xml`);
+  expect(feed.statusCode).toBe(200);
+  expect(feed.headers['content-type']).toContain('application/rss+xml');
+  expect(feed.body).toContain('<rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/">');
+  expect(feed.body).toContain('Video &amp; &lt;News&gt; &quot;today&quot; &apos;live&apos;');
+  expect(feed.body).toContain('Description &amp; &lt;more&gt; &quot;text&quot; &apos;quoted&apos;');
+  expect(feed.body).toContain('url="https://cdn.example.test/clip?x=1&amp;y=2"');
+  expect(feed.body).toContain('https://videos.example.test/watch?a=1&amp;b=2');
+  expect(feed.body).toMatch(/<guid isPermaLink="false">[a-f0-9]{16}<\/guid>/);
+});
+
+test('mrss mock maps rate limits and platform failures', async () => {
+  const cases = [
+    ['rate_limit_long', 429, 'PLATFORM_RATE_LIMIT'],
+    ['expired_token', 401, 'CONNECTION_AUTH_EXPIRED'],
+    ['content_rejected', 422, 'PLATFORM_CONTENT_REJECTED'],
+    ['unavailable', 503, 'PLATFORM_UNAVAILABLE']
+  ];
+  for (const [scenario, status, code] of cases) {
+    const response = await publish('mrss', scenario, `mrss-${scenario}`, mrssRendition);
+    expect(response.statusCode).toBe(status);
+    expect(response.json().error.code).toBe(code);
+  }
+});
+
+test('mrss mock supports one-time and repeated delete failures', async () => {
+  for (const [scenario, failures] of [['delete_fails_once', 1], ['delete_fails_twice', 2]]) {
+    const published = await publish('mrss', scenario, `mrss-${scenario}`, mrssRendition);
+    expect(published.statusCode).toBe(200);
+    for (let attempt = 0; attempt < failures; attempt += 1) {
+      const failed = await app.inject({
+        method: 'POST',
+        url: '/connector/v1/mrss/delete',
+        payload: {
+          destination_ref: `${baseUrl}/mock/mrss/${scenario}`,
+          connection: credentials.mrss,
+          platform_post_id: published.json().platform_post_id
+        }
+      });
+      expect(failed.statusCode).toBe(503);
+    }
+    const removed = await app.inject({
+      method: 'POST',
+      url: '/connector/v1/mrss/delete',
+      payload: {
+        destination_ref: `${baseUrl}/mock/mrss/${scenario}`,
+        connection: credentials.mrss,
+        platform_post_id: published.json().platform_post_id
+      }
+    });
+    expect(removed.statusCode).toBe(200);
+    expect(removed.json().deleted).toBe(true);
+  }
+});
+
+test('mrss validator accepts each declared video media type', async () => {
+  for (const type of ['video/mp4', 'video/webm', 'image/jpeg', 'image/png']) {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/connector/v1/mrss/validate',
+      payload: { rendition: { ...mrssRendition, media: [{ url: 'https://cdn.example.test/file', type }] } }
+    });
+    expect(response.json()).toEqual({ ok: true, violations: [] });
   }
 });
 

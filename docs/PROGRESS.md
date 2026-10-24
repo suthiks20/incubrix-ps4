@@ -9,10 +9,35 @@
 | 3 — Integration Standard, second half | PARTIAL | Assisted error envelopes, batch CLI output/auth, end-to-end flow, config parity, structured job logs, and ten proof rows are verified. The eight batch sample scenarios are labeled, but `batch_publish` remains `JOB_TYPE_NOT_READY`; see `docs/INTEGRATION_PROOF.md`. Docker gate: 70 suites / 357 tests; lint and build clean. |
 | 4 — Hidden-test readiness | DONE | `SEED_DEMO` startup and `npm run seed` create 17 idempotent mock-only destinations. `/api/v1/selftest` runs all 14 scenarios (or one reviewer-selected case), stores the report and links the report and manifest. All cases pass, test posts are cleaned, and certification demotion is restored. Verified in `tests/integration/phase4.selftest.test.js`. |
 | 5 — Tailoring, relevance and rules capture | DONE | All eight required test names, plus supporting regression tests, pass in `tests/integration/phase5.tailoring.test.js`. |
-| 6 — MRSS, Slack and Hashnode | NOT DONE | No connector implementations/manifests exist under `src/modules/connectors/` for these three platforms. |
-| 7 — Catalogue import | PARTIAL | Import route/job, CSV parser, deduplication, validation, row-level error report and fixture are covered in `tests/integration/catalogue/catalogue.import.test.js`. Latest Docker API import evidence: 1,000 rows, 880 imported, 100 duplicates, 120 errors, 2.517 seconds; see `evidence/catalogue-1000-import.json`. Overall advanced-item closure remains blocked by unfinished Phase 6. |
+| 6 — MRSS, Slack and Hashnode | PARTIAL | Phase 6a MRSS is implemented and passes timeout reconciliation, schema drift, XML escaping, secrets, and six-step L2 certification tests. Slack and Hashnode remain unimplemented. |
+| 7 — Catalogue import | PARTIAL | Import route/job, CSV parser, deduplication, validation, row-level error report and fixture are covered in `tests/integration/catalogue/catalogue.import.test.js`. Latest Docker API import evidence: 1,000 rows, 880 imported, 100 duplicates, 120 errors, 2.517 seconds; see `evidence/catalogue-1000-import.json`. Phase 6b still remains before overall closure. |
 
 ## Latest repair and verification
+
+### Phase 6a MRSS video feed connector (24 Oct 2026)
+
+Added the MRSS feed connector at level L2 with a video surface, strict response checks,
+marker-based reconciliation, and the required MIME types. Its simulation mock supports
+normal, timeout-after-success, renamed-field, long-rate-limit, expired-token, rejected-content,
+unavailable, and both delete-failure scenarios. `GET /feeds/{destination_id}.xml` builds RSS 2.0
+and Media RSS by hand; text and attribute values escape all five XML-sensitive characters.
+The connector is discoverable in the catalogue and contract test, and the feed route is in
+`openapi.yaml`. Slack and Hashnode remain for Phase 6b.
+
+Docker verification:
+
+```text
+docker compose up --build -d                  PASS
+docker compose run --rm api npm test          Test Suites: 71 passed, 71 total
+                                              Tests:       376 passed, 376 total
+docker compose run --rm api npm run lint      PASS
+docker compose run --rm api npm run build     PASS
+```
+
+The required verbose tests all passed: `HARD CASE mrss timeout retry creates exactly one post`,
+`HARD CASE mrss renamed field returns SCHEMA_DRIFT`, `mrss passes certification against its mock`,
+`mrss secrets never appear in logs`, and `mrss feed escapes xml and lists published items`.
+`openapi.yaml matches the registered routes exactly` and MRSS contract/catalogue assertions pass.
 
 ### Phase 4 hidden-test readiness (24 Oct 2026)
 

@@ -21,6 +21,7 @@ import devtoMock = require('./mocks/devto');
 import webhookMock = require('./mocks/webhook');
 import lemmyMock = require('./mocks/lemmy');
 import ghostMock = require('./mocks/ghost');
+import mrssMock = require('./mocks/mrss');
 import config = require('./config');
 import { createStorage } from './shared/storage';
 import certificationRoutes = require('./modules/certification/routes');
@@ -81,6 +82,7 @@ function buildApp(opts: any = {}): any {
     app.register(webhookMock);
     app.register(lemmyMock);
     app.register(ghostMock);
+    app.register(mrssMock);
   }
   return app;
 }
