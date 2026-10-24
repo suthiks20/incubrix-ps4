@@ -1,0 +1,8 @@
+{
+  "type": "batch_publish",
+  "input": {
+    "case": "no_promo_forum",
+    "scenario": "no_promo",
+    "idempotency_key": "sample-no-promo-forum"
+  }
+}

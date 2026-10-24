@@ -1,0 +1,8 @@
+{
+  "type": "batch_publish",
+  "input": {
+    "case": "expired_token",
+    "scenario": "expired_token",
+    "idempotency_key": "sample-expired-token"
+  }
+}

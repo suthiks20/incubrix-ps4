@@ -84,7 +84,7 @@ describe('jobs callbacks', () => {
     expect(job.callback_status).toBe('failed');
   });
 
-  test('job log lines contain job_id and correlation_id', async () => {
+  test('job log lines carry job_id and correlation_id', async () => {
     await ctx.close();
     const stream = new PassThrough();
     let logs = '';
@@ -95,7 +95,9 @@ describe('jobs callbacks', () => {
     const created = await postJob(ctx, jobPayload(destination.id), 'callback-logs-1');
     await runPending(workerDeps(ctx));
     const job = await ctx.knex('jobs').where({ id: created.json().job_id }).first();
-    expect(logs).toContain(job.id);
-    expect(logs).toContain(job.correlation_id);
+    const jobLogs = logs.split('\n').filter(Boolean).map((line) => JSON.parse(line))
+      .filter((line) => line.job_id === job.id);
+    expect(jobLogs.length).toBeGreaterThan(0);
+    expect(jobLogs.every((line) => line.correlation_id === job.correlation_id)).toBe(true);
   });
 });

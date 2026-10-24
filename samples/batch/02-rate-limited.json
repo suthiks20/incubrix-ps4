@@ -1,0 +1,8 @@
+{
+  "type": "batch_publish",
+  "input": {
+    "case": "rate_limited",
+    "scenario": "rate_limit",
+    "idempotency_key": "sample-rate-limited"
+  }
+}

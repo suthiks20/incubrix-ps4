@@ -1,0 +1,8 @@
+{
+  "type": "batch_publish",
+  "input": {
+    "case": "timeout_then_retry",
+    "scenario": "timeout_after_success",
+    "idempotency_key": "sample-timeout-retry"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "type": "batch_publish",
+  "input": {
+    "case": "frequency_cap",
+    "scenario": "frequency_cap",
+    "idempotency_key": "sample-frequency-cap"
+  }
+}

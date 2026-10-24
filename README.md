@@ -97,7 +97,17 @@ settings are needed for catalogue import.
 
 ## Idempotency
 
-Every `POST` whose path starts with `/api/v1` requires an `Idempotency-Key` header containing 1–255 printable ASCII characters. A repeat with the same key, method, path, and request content replays the stored status and body and adds `Idempotent-Replay: true`. Reusing the same key for different request content returns `409 IDEMPOTENCY_KEY_CONFLICT`. If the original request is still running, the duplicate waits up to `IDEMPOTENCY_WAIT_MS`, then returns retryable `409 IDEMPOTENCY_REQUEST_IN_PROGRESS` if it has not finished. Completed keys are retained for `IDEMPOTENCY_TTL_HOURS`; abandoned in-progress claims can be reclaimed after `IDEMPOTENCY_LOCK_TTL_SECONDS`. `/connector/v1` is excluded because its connector contract carries `idempotency_key` in the JSON body, to be handled by the connector runtime later. Health routes and non-POST methods are also excluded.
+Every `POST` whose path starts with `/api/v1` requires an `Idempotency-Key` header containing 1–255 printable ASCII characters. A repeat with the same key, method, path, and request content replays the stored status and body and adds `Idempotent-Replay: true`. Reusing the same key for different request content returns `409 IDEMPOTENCY_KEY_CONFLICT`. If the original request is still running, the duplicate waits up to `IDEMPOTENCY_WAIT_MS`, then returns retryable `409 IDEMPOTENCY_REQUEST_IN_PROGRESS` if it has not finished. Completed keys are retained for `IDEMPOTENCY_TTL_HOURS`; abandoned in-progress claims can be reclaimed after `IDEMPOTENCY_LOCK_TTL_SECONDS`. Connector publish accepts the standard `Idempotency-Key` header; a matching `idempotency_key` body value is also supported. Health routes and non-POST methods are excluded.
+
+## Batch job runner
+
+`npm run ix-batch -- --input samples/batch --out batch-out --api http://localhost:8000`
+submits each JSON job input with a unique idempotency key, polls until it finishes, and writes
+one result per input, any available manifest downloads, and `summary.json`. Add
+`--token "$API_TOKEN"` when the API requires bearer authentication. Inputs can be a JSON file
+or a folder of JSON files. The sample folder labels representative connector failure scenarios;
+the `batch_publish` worker itself remains `JOB_TYPE_NOT_READY` until the later batch publishing
+phase is implemented.
 
 ## Connector contract
 

@@ -9,4 +9,23 @@ const payload = { destination: { url: 'https://forum.test', config: { submit_url
 test('build_assist_pack returns files caption deep_link and generated checklist', async () => { const r = await app.inject({ method: 'POST', url: '/connector/v1/assisted/build_assist_pack', payload }); expect(r.statusCode).toBe(200); expect(r.json().files).toHaveLength(1); expect(r.json().caption.length).toBeLessThanOrEqual(30); expect(r.json().deep_link).toBe('https://forum.test/new'); expect(r.json().checklist.map((x) => x.item).join(' ')).toMatch(/Delete or report/); });
 test('build_assist_pack makes no network call', async () => { const original = global.fetch; global.fetch = jest.fn(); try { const r = await app.inject({ method: 'POST', url: '/connector/v1/assisted/build_assist_pack', payload }); expect(r.statusCode).toBe(200); expect(global.fetch).not.toHaveBeenCalled(); } finally { global.fetch = original; } });
 test('publish on assisted returns CONNECTOR_NOT_IMPLEMENTED', async () => { const r = await app.inject({ method: 'POST', url: '/connector/v1/assisted/publish', payload: { ...payload, idempotency_key: 'assist-publish' } }); expect(r.statusCode).toBe(501); expect(r.json().error.code).toBe('CONNECTOR_NOT_IMPLEMENTED'); });
+test('assisted connector unsupported methods return the shared error envelope', async () => {
+  for (const method of ['publish', 'get_status', 'delete', 'fetch_metrics', 'refresh_auth']) {
+    const response = await app.inject({
+      method: 'POST',
+      url: `/connector/v1/assisted/${method}`,
+      headers: method === 'publish' ? { 'idempotency-key': `assisted-${method}` } : {},
+      payload: { ...payload, idempotency_key: method === 'publish' ? `assisted-${method}` : undefined }
+    });
+    expect(response.statusCode).toBe(501);
+    expect(response.json()).toEqual({
+      error: {
+        code: 'CONNECTOR_NOT_IMPLEMENTED',
+        message: expect.any(String),
+        retryable: expect.any(Boolean),
+        details: expect.any(Object)
+      }
+    });
+  }
+});
 test('build_assist_pack on discourse returns CONNECTOR_NOT_IMPLEMENTED', async () => { const r = await app.inject({ method: 'POST', url: '/connector/v1/discourse/build_assist_pack', payload }); expect(r.statusCode).toBe(501); });

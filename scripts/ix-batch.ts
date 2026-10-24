@@ -34,10 +34,14 @@ async function fetchJson(url: string, init?: any): Promise<any> {
   catch { return { status: response.status, headers: Object.fromEntries(response.headers.entries()), body: text }; }
 }
 
-async function pollJob(api: string, jobId: string): Promise<any> {
+function requestHeaders(token?: string): Record<string, string> {
+  return token ? { authorization: `Bearer ${token}` } : {};
+}
+
+async function pollJob(api: string, jobId: string, token?: string): Promise<any> {
   const maxAttempts = 60;
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    const response = await fetchJson(`${api}/api/v1/jobs/${jobId}`);
+    const response = await fetchJson(`${api}/api/v1/jobs/${jobId}`, { headers: requestHeaders(token) });
     const payload = response.body;
     if (payload && (payload.status === 'succeeded' || payload.status === 'failed')) return payload;
     await new Promise((resolve) => setTimeout(resolve, 500));
@@ -45,8 +49,9 @@ async function pollJob(api: string, jobId: string): Promise<any> {
   throw new Error(`Timed out waiting for job ${jobId}`);
 }
 
-async function download(api: string, url: string, filePath: string): Promise<void> {
-  const response = await fetch(url);
+async function download(api: string, url: string, filePath: string, token?: string): Promise<void> {
+  const absoluteUrl = new URL(url, api).toString();
+  const response = await fetch(absoluteUrl, { headers: requestHeaders(token) });
   if (!response.ok) throw new Error(`Download failed: ${url} -> ${response.status}`);
   const buffer = Buffer.from(await response.arrayBuffer());
   await fs.mkdir(path.dirname(filePath), { recursive: true });
@@ -57,6 +62,7 @@ async function runBatch(options: any = {}): Promise<any> {
   const api = options.api || 'http://localhost:8000';
   const input = options.input || 'samples/batch';
   const out = options.out || 'batch-out';
+  const token = options.token;
   const files = await listInputs(input);
   const summary: any = { total: files.length, passed: 0, failed: 0, duration_ms: [], results: [] };
   await fs.mkdir(out, { recursive: true });
@@ -67,28 +73,41 @@ async function runBatch(options: any = {}): Promise<any> {
     const startedAt = Date.now();
     const response = await fetchJson(`${api}/api/v1/jobs`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'idempotency-key': `ix-batch-${Date.now()}-${index}` },
+      headers: {
+        ...requestHeaders(token),
+        'content-type': 'application/json',
+        'idempotency-key': `ix-batch-${Date.now()}-${index}`
+      },
       body: JSON.stringify(payload)
     });
 
     if (response.status !== 202) {
-      const result = { file: path.basename(filePath), status: 'failed', reason: response.body, duration_ms: Date.now() - startedAt };
+      const duration = Date.now() - startedAt;
+      const resultFile = path.join(out, `${String(index + 1).padStart(3, '0')}-${path.basename(filePath, path.extname(filePath))}.json`);
+      const result = {
+        file: path.basename(filePath),
+        status: 'failed',
+        passed: false,
+        reason: response.body,
+        duration_ms: duration,
+        output_path: resultFile
+      };
+      await fs.writeFile(resultFile, JSON.stringify(result, null, 2));
       summary.failed += 1;
-      summary.duration_ms.push(result.duration_ms);
+      summary.duration_ms.push(duration);
       summary.results.push(result);
       continue;
     }
 
     const job = response.body;
-    const reading = await pollJob(api, job.job_id);
+    const reading = await pollJob(api, job.job_id, token);
     const duration = Date.now() - startedAt;
-    const resultFile = path.join(out, `${job.job_id}.json`);
+    const resultFile = path.join(out, `${String(index + 1).padStart(3, '0')}-${path.basename(filePath, path.extname(filePath))}.json`);
     await fs.writeFile(resultFile, JSON.stringify(reading, null, 2));
 
     if (reading.links && reading.links.manifest) {
-      const manifestUrl = `${api}${reading.links.manifest}`;
-      const manifestPath = path.join(out, `${job.job_id}-manifest.json`);
-      await download(api, manifestUrl, manifestPath);
+      const manifestPath = path.join(out, `${String(index + 1).padStart(3, '0')}-${path.basename(filePath, path.extname(filePath))}-manifest.json`);
+      await download(api, reading.links.manifest, manifestPath, token);
       reading.manifest_path = manifestPath;
       await fs.writeFile(resultFile, JSON.stringify(reading, null, 2));
     }
@@ -116,12 +135,12 @@ async function main(): Promise<void> {
   const values: Record<string, string> = {};
   for (let index = 0; index < args.length; index += 1) {
     const current = args[index];
-    if ((current === '--input' || current === '--out' || current === '--api') && args[index + 1]) {
+    if ((current === '--input' || current === '--out' || current === '--api' || current === '--token') && args[index + 1]) {
       values[current.slice(2)] = args[index + 1];
       index += 1;
     }
   }
-  const result = await runBatch({ input: values.input, out: values.out, api: values.api });
+  const result = await runBatch({ input: values.input, out: values.out, api: values.api, token: values.token });
   process.stdout.write(`${JSON.stringify(result)}\n`);
 }
 

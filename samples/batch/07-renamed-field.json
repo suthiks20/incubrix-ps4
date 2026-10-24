@@ -1,0 +1,8 @@
+{
+  "type": "batch_publish",
+  "input": {
+    "case": "renamed_field",
+    "scenario": "renamed_field",
+    "idempotency_key": "sample-renamed-field"
+  }
+}

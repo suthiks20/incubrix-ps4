@@ -1,0 +1,8 @@
+{
+  "type": "batch_publish",
+  "input": {
+    "case": "media_rejected",
+    "scenario": "media_rejected",
+    "idempotency_key": "sample-media-rejected"
+  }
+}

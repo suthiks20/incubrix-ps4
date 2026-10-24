@@ -1,0 +1,8 @@
+{
+  "type": "batch_publish",
+  "input": {
+    "case": "spec_violation",
+    "scenario": "content_rejected",
+    "idempotency_key": "sample-spec-violation"
+  }
+}

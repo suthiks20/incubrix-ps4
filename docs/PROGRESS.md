@@ -6,13 +6,43 @@
 |---|---|---|
 | 1 — Core certification, mocks, media and metrics | DONE | Lemmy and Ghost passed real API certification at L3; secret-free evidence is in `evidence/cert-lemmy-real.json` and `evidence/cert-ghost-real.json`, including direct deletion checks. All mock fault scenarios are available, all connector manifests define media MIME types, media violations identify the field/reason/allowed types, and Discourse, Dev.to, and Ghost return normalized metrics. |
 | 2 — Integration Standard, first half | DONE | The six named manifest, rate-limit, OpenAPI and job-type tests pass in `tests/integration/phase2.integration.test.js`. |
-| 3 — Integration Standard, second half | PARTIAL | `scripts/ix-batch.ts` and URL-input storage tests exist. The required end-to-end proof and named batch/log/config tests are not present. |
+| 3 — Integration Standard, second half | PARTIAL | Assisted error envelopes, batch CLI output/auth, end-to-end flow, config parity, structured job logs, and ten proof rows are verified. The eight batch sample scenarios are labeled, but `batch_publish` remains `JOB_TYPE_NOT_READY`; see `docs/INTEGRATION_PROOF.md`. Docker gate: 70 suites / 357 tests; lint and build clean. |
 | 4 — Hidden-test readiness | NOT DONE | `src/modules/jobs/types/index.ts` still returns `JOB_TYPE_NOT_READY` for selftest; demo seeding and the selftest hard-case runner remain unimplemented. |
 | 5 — Tailoring, relevance and rules capture | DONE | All eight required test names, plus supporting regression tests, pass in `tests/integration/phase5.tailoring.test.js`. |
 | 6 — MRSS, Slack and Hashnode | NOT DONE | No connector implementations/manifests exist under `src/modules/connectors/` for these three platforms. |
 | 7 — Catalogue import | PARTIAL | Import route/job, CSV parser, deduplication, validation, row-level error report and fixture are covered in `tests/integration/catalogue/catalogue.import.test.js`. Latest Docker API import evidence: 1,000 rows, 880 imported, 100 duplicates, 120 errors, 2.517 seconds; see `evidence/catalogue-1000-import.json`. The complete Phase 7 gate remains blocked by unfinished Phase 4 and Phase 6 work. |
 
 ## Latest repair and verification
+
+### Phase 3 Integration Standard, second half (25 Oct 2026)
+
+Implemented shared error-envelope coverage for assisted unsupported methods; added optional bearer-token
+support to `ix-batch`, deterministic per-input result files (including submission failures), manifest
+downloads, and folder/single-file input coverage. Added eight named sample inputs for the requested
+hard-case labels. The sample job type `batch_publish` is still intentionally not ready, so the labels are
+fixtures rather than live platform scenario executions; Integration Standard point 10 remains PARTIAL.
+
+Completed the no-platform-key end-to-end flow through destination creation, mock publish/status/delete,
+certification job polling, and manifest download. The config parity test confirms all 41 typed settings
+are listed in `.env.example`. Job log coverage parses structured JSON and verifies `job_id` and
+`correlation_id`. Ten point-by-point Integration Standard rows are in `docs/INTEGRATION_PROOF.md`.
+
+Docker verification:
+
+```text
+docker compose up --build -d                  PASS
+docker compose build api                      PASS
+docker compose run --rm api npm test          Test Suites: 70 passed, 70 total
+                                              Tests:       357 passed, 357 total
+docker compose run --rm api npm run lint      PASS
+docker compose run --rm api npm run build     PASS
+```
+
+`npm run ix-batch -- --input samples/batch --out /tmp/ix-batch-phase3 --api http://api:8000`
+ran inside the Docker image and discovered all eight samples. All eight jobs reached terminal failure
+with `JOB_TYPE_NOT_READY`, as expected from the current `batch_publish` handler. Focused verbose runs
+passed the required assisted, batch, end-to-end, config, job-log, and OpenAPI parity test names.
+Phase 3 remains PARTIAL until those sample cases execute real platform scenarios.
 
 ### Phase 1 real local certification (24 Oct 2026)
 
