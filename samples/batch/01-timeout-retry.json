@@ -1,8 +1,21 @@
 {
   "type": "batch_publish",
   "input": {
-    "case": "timeout_then_retry",
-    "scenario": "timeout_after_success",
-    "idempotency_key": "sample-timeout-retry"
+    "items": [
+      {
+        "case": "timeout_then_retry",
+        "destination": "sim-timeout",
+        "rendition": {
+          "title": "Batch timeout retry sample",
+          "body": "This simulation post verifies marker-based retry."
+        },
+        "idempotency_key": "sample-timeout-retry",
+        "retry": "timeout",
+        "expected": {
+          "outcome": "published",
+          "code": "PLATFORM_UNAVAILABLE"
+        }
+      }
+    ]
   }
 }

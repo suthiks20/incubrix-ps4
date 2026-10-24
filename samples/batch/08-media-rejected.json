@@ -1,8 +1,26 @@
 {
   "type": "batch_publish",
   "input": {
-    "case": "media_rejected",
-    "scenario": "media_rejected",
-    "idempotency_key": "sample-media-rejected"
+    "items": [
+      {
+        "case": "media_rejected",
+        "destination": "sim-media-rejected",
+        "rendition": {
+          "title": "Batch media type sample",
+          "body": "This simulation rejects an unsupported media type.",
+          "media": [
+            {
+              "url": "https://example.invalid/sample.gif",
+              "type": "image/gif"
+            }
+          ]
+        },
+        "idempotency_key": "sample-media-rejected",
+        "expected": {
+          "outcome": "failed",
+          "code": "DEST_SPEC_VIOLATION"
+        }
+      }
+    ]
   }
 }

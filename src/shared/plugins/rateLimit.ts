@@ -10,7 +10,8 @@ function rateLimit(app: any, config: any): void {
 
   app.addHook('onRequest', async (request: any, reply: any) => {
     const path = String(request.raw.url.split('?')[0]);
-    if (path.startsWith('/mock/') || path === '/health' || path === '/ready' ||
+    if (path === '/' || path === '/openapi.yaml' || path.startsWith('/mock/') ||
+      path === '/health' || path === '/ready' ||
       path === '/api/v1/health' || path === '/api/v1/ready') {
       return;
     }

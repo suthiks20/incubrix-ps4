@@ -15,8 +15,8 @@ explicitly left for student confirmation instead of being assumed.
 | 5 | Partial | No spam; local/mock certification posts are deleted | `tests/integration/certification/certify.test.js`; `tests/integration/phase4.selftest.test.js`; Lemmy deletion is a soft delete, and no hosted-platform posting is claimed |
 | 6 | Yes | Same idempotency key does not create a second post after timeout | `tests/integration/connectors.test.js` test `HARD CASE timeout then retry creates exactly one post`; `tests/integration/phase1.remainder.test.js`; `evidence/metrics.json` |
 | 7 | Yes | Secrets are redacted; local mocks are simulation-only | `tests/integration/secrets.test.js`; `tests/integration/phase1.remainder.test.js`; `src/app.ts` |
-| 8 | Yes | One-command Docker start includes local services and works without `.env` | `docker-compose.yml`; `test-pack/logs/clean-clone-up.txt`; `/ready` showed DB and storage `ok` |
-| 9 | Partial | Integration Standard requirements | Points 1-9 are DONE in `docs/INTEGRATION_PROOF.md`; point 10 is PARTIAL because `batch_publish` is not implemented |
+| 8 | Yes | One-command Docker start includes local services and works without `.env` | `docker-compose.yml`; Phase 9 clean-clone startup and `/ready` DB/storage checks in `docs/PROGRESS.md` |
+| 9 | Yes | Integration Standard requirements | Points 1-10 are DONE in `docs/INTEGRATION_PROOF.md`; point 10 is proved by the three batch scenario and cleanup tests in `tests/integration/phase3.second-half.test.js` |
 
 ## Core connectors
 
@@ -45,7 +45,7 @@ explicitly left for student confirmation instead of being assumed.
 
 | Point | Status | Proof |
 |---|---|---|
-| 1 | Yes | Clean-clone startup and full tests: `test-pack/logs/clean-clone-up.txt`, `test-pack/logs/clean-clone-tests.txt`; 72 suites / 394 tests passed |
+| 1 | Yes | Clean-clone startup and full tests: `docs/PROGRESS.md` Phase 9 verification; 72 suites / 400 tests passed, with the batch summary at `test-pack/outputs/batch/summary.json` |
 | 2 | Yes | `openapi.yaml matches the registered routes exactly` in `tests/integration/phase2.integration.test.js` |
 | 3 | Yes | Job 202 response, polling, and callback tests in `tests/integration/jobs/` |
 | 4 | Yes | `HARD CASE same idempotency key returns the same job and runs the work once`; connector header idempotency tests |
@@ -54,7 +54,7 @@ explicitly left for student confirmation instead of being assumed.
 | 7 | Yes | `tests/integration/jobs/jobs.storage.test.js`; S3 storage adapter tests |
 | 8 | Yes | readiness/health tests and `job log lines carry job_id and correlation_id` |
 | 9 | Yes | `every job result links a manifest with all required keys` |
-| 10 | Partial | `ix-batch writes summary.json and one result per input`; sample run outputs are in `test-pack/outputs/batch/`. Publishing scenarios remain `JOB_TYPE_NOT_READY`. |
+| 10 | Yes | Batch job scenarios, report/manifest links, and cleanup are verified by `batch_publish returns the expected outcome for each sample input`, `ix-batch eight sample inputs each match their expected outcome`, and `batch_publish leaves no test posts behind` in `tests/integration/phase3.second-half.test.js`. |
 
 ## Hard cases
 

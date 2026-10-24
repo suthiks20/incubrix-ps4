@@ -6,5 +6,6 @@ data/
 coverage/
 batch-results/
 *.log
+*.zip
 spike/out.json
 bootstrap-output.json

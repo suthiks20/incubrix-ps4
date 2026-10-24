@@ -54,7 +54,7 @@ function simulationConnection(connectorKey: string): Record<string, any> {
   if (connectorKey === 'devto') return { api_key: 'sim-key' };
   if (connectorKey === 'lemmy') return { username: 'sim-user', password: 'lemmy-password' };
   if (connectorKey === 'ghost') {
-    return normaliseGhostConnection({ api_key: 'sim-id:00112233445566778899aabbccddeeff' });
+    return normaliseGhostConnection({ api_key: 'fake-ghost-id:00112233445566778899aabbccddeeff' });
   }
   if (connectorKey === 'mrss') return { api_key: 'mrss-test-token' };
   if (connectorKey === 'slack') return { bot_token: 'slack-test-token' };

@@ -1,8 +1,13 @@
 {
-  "measured_at": "2026-10-24T14:45:28.166Z",
+  "measured_at": "2026-10-24T15:41:38.831Z",
   "certifications": {
-    "source": "preserved real certification run records",
+    "source": "preserved local-instance certification run records",
     "total_real_runs": 2,
+    "local_instance_reliability": {
+      "n": 2,
+      "passed": 2,
+      "pass_rate": 1
+    },
     "per_connector": {
       "discourse": {
         "real_runs": 0,
@@ -56,24 +61,52 @@
     }
   },
   "simulation_publish": {
-    "logical_publications": 2,
-    "successful_publications": 2,
+    "n": 100,
+    "successes": 100,
+    "failures": 0,
     "success_rate": 1,
-    "duplicate_posts_under_retry": 0,
-    "outcomes": [
-      {
-        "scenario": "measure-1792853127873-11c3b2c54a9b68-normal",
-        "succeeded": true,
-        "publish_requests": 1,
-        "posts_after_retry": 1
+    "per_connector": {
+      "discourse": {
+        "n": 20,
+        "successes": 20,
+        "failures": 0
       },
-      {
-        "scenario": "timeout_after_success",
-        "succeeded": true,
-        "publish_requests": 2,
-        "posts_after_retry": 1
+      "lemmy": {
+        "n": 20,
+        "successes": 20,
+        "failures": 0
+      },
+      "devto": {
+        "n": 20,
+        "successes": 20,
+        "failures": 0
+      },
+      "ghost": {
+        "n": 20,
+        "successes": 20,
+        "failures": 0
+      },
+      "webhook": {
+        "n": 20,
+        "successes": 20,
+        "failures": 0
       }
-    ]
+    },
+    "publish_capable_core_connectors": [
+      "discourse",
+      "lemmy",
+      "devto",
+      "ghost",
+      "webhook"
+    ],
+    "assisted_note": "Assisted is a Core connector without automated publish or delete operations.",
+    "forced_timeout_retries": {
+      "n": 20,
+      "successes": 20,
+      "failures": 0,
+      "duplicate_posts": 0
+    },
+    "duplicate_posts_under_retry": 0
   },
   "rule_violations": {
     "fixture": "tests/fixtures/rule-cases.json",

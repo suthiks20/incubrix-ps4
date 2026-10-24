@@ -1,22 +1,41 @@
 {
-  "job_id": "d704e455-328d-4f93-a7b2-293f146b7a61",
+  "job_id": "2e0b07ed-7a7f-49e3-b1f6-75eccdf92fde",
   "type": "batch_publish",
-  "status": "failed",
-  "progress": 0,
-  "result": null,
-  "error": {
-    "code": "JOB_TYPE_NOT_READY",
-    "details": {},
-    "message": "Batch publish jobs are not ready yet",
-    "retryable": false
+  "status": "succeeded",
+  "progress": 100,
+  "result": {
+    "items": [
+      {
+        "code": "PLATFORM_RATE_LIMIT",
+        "item": {
+          "case": "rate_limited",
+          "destination": "sim-429"
+        },
+        "passed": true,
+        "message": "Platform returned HTTP 429",
+        "outcome": "failed",
+        "expected": {
+          "code": "PLATFORM_RATE_LIMIT",
+          "outcome": "failed"
+        }
+      }
+    ],
+    "total": 1,
+    "passed": 1,
+    "output_key": "jobs/2e0b07ed-7a7f-49e3-b1f6-75eccdf92fde/output.json",
+    "report_key": "jobs/2e0b07ed-7a7f-49e3-b1f6-75eccdf92fde/report.json",
+    "manifest_key": "jobs/2e0b07ed-7a7f-49e3-b1f6-75eccdf92fde/manifest.json"
   },
+  "error": null,
   "links": {
-    "output": null,
-    "manifest": null,
+    "output": "/api/v1/jobs/2e0b07ed-7a7f-49e3-b1f6-75eccdf92fde/download/output",
+    "manifest": "/api/v1/jobs/2e0b07ed-7a7f-49e3-b1f6-75eccdf92fde/download/manifest",
     "errors": null,
-    "report": null
+    "report": "/api/v1/jobs/2e0b07ed-7a7f-49e3-b1f6-75eccdf92fde/download/report"
   },
-  "created_at": "2026-10-24T14:49:24.011Z",
-  "started_at": "2026-10-24T14:49:24.539Z",
-  "finished_at": "2026-10-24T14:49:24.542Z"
+  "created_at": "2026-10-24T16:23:52.739Z",
+  "started_at": "2026-10-24T16:23:52.874Z",
+  "finished_at": "2026-10-24T16:23:52.926Z",
+  "manifest_path": "/out/002-02-rate-limited-manifest.json",
+  "report_path": "/out/002-02-rate-limited-report.json"
 }

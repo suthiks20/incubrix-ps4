@@ -10,6 +10,7 @@
   "scripts": {
     "build": "tsc && node scripts/copyAssets.js",
     "start": "node dist/src/server.js",
+    "pretest": "npm run build",
     "test": "jest --runInBand",
     "test:ci": "jest --runInBand --ci",
     "test:unit": "jest --runInBand tests/unit",
@@ -24,7 +25,8 @@
     "seed": "npm run build && node dist/scripts/seed.js",
     "ix-batch": "node dist/scripts/ix-batch.js",
     "gen-catalogue": "node dist/scripts/gen-catalogue.js",
-    "measure": "node dist/scripts/measure.js"
+    "measure": "node dist/scripts/measure.js",
+    "certify:mock": "node dist/scripts/certify-mock.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1156.0",

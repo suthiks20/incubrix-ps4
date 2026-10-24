@@ -1,0 +1,40 @@
+{
+  "connector_key": "assisted",
+  "destination_name": "sim-healthy-assisted",
+  "instance_type": "MOCK instance, not a real platform",
+  "run_id": "27ae99a2-7b38-4722-b554-a449ca297911",
+  "status": "passed",
+  "level": "L1",
+  "steps": [
+    {
+      "name": "validate",
+      "status": "passed"
+    },
+    {
+      "name": "build_assist_pack",
+      "status": "passed"
+    },
+    {
+      "name": "publish",
+      "status": "skipped"
+    },
+    {
+      "name": "confirm_live",
+      "status": "skipped"
+    },
+    {
+      "name": "read_status",
+      "status": "skipped"
+    },
+    {
+      "name": "delete",
+      "status": "skipped"
+    },
+    {
+      "name": "verify_gone",
+      "status": "skipped"
+    }
+  ],
+  "delete_supported": false,
+  "note": "Assisted connector has no delete operation."
+}

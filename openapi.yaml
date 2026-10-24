@@ -6,6 +6,43 @@ info:
 servers:
   - url: http://localhost:8000
 paths:
+  /:
+    get:
+      summary: Public service discovery
+      responses:
+        '200':
+          description: Service metadata and public links
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [name, version, mode, links]
+                properties:
+                  name:
+                    type: string
+                  version:
+                    type: string
+                  mode:
+                    type: string
+                    enum: [simulation, live]
+                  links:
+                    type: object
+                    required: [health, ready, openapi, reviewer_guide]
+                    properties:
+                      health: { type: string }
+                      ready: { type: string }
+                      openapi: { type: string }
+                      reviewer_guide: { type: string }
+  /openapi.yaml:
+    get:
+      summary: Download the OpenAPI document
+      responses:
+        '200':
+          description: OpenAPI 3.1 YAML document
+          content:
+            application/yaml:
+              schema:
+                type: string
   /health:
     get:
       summary: Health check
@@ -585,11 +622,52 @@ components:
       properties:
         type:
           type: string
+          enum: [certify, selftest, catalogue_import, batch_publish]
         input:
-          type: object
-          additionalProperties: true
+          oneOf:
+            - type: object
+              additionalProperties: true
+            - $ref: '#/components/schemas/BatchPublishInput'
         callback_url:
           type: string
+    BatchPublishInput:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            additionalProperties: false
+            required: [destination, rendition, idempotency_key, expected]
+            properties:
+              case:
+                type: string
+              destination:
+                type: string
+                description: Name or ID of a seeded simulation destination.
+              mock_scenario:
+                type: string
+              rendition:
+                type: object
+                additionalProperties: true
+              idempotency_key:
+                type: string
+              retry:
+                type: string
+                enum: [timeout]
+              expected:
+                type: object
+                additionalProperties: false
+                required: [outcome, code]
+                properties:
+                  outcome:
+                    type: string
+                    enum: [published, blocked, rescheduled, failed]
+                  code:
+                    type: string
     SelftestRequest:
       type: object
       additionalProperties: false

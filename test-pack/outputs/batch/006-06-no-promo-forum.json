@@ -1,22 +1,41 @@
 {
-  "job_id": "c23257fa-8951-4a31-9534-7d681a9fc470",
+  "job_id": "84b910eb-458b-44ff-97b1-cf259fbc4ee4",
   "type": "batch_publish",
-  "status": "failed",
-  "progress": 0,
-  "result": null,
-  "error": {
-    "code": "JOB_TYPE_NOT_READY",
-    "details": {},
-    "message": "Batch publish jobs are not ready yet",
-    "retryable": false
+  "status": "succeeded",
+  "progress": 100,
+  "result": {
+    "items": [
+      {
+        "code": "DEST_RULE_VIOLATION",
+        "item": {
+          "case": "no_promo_forum",
+          "destination": "sim-no-promo"
+        },
+        "passed": true,
+        "message": "Destination rules do not allow automated publishing",
+        "outcome": "blocked",
+        "expected": {
+          "code": "DEST_RULE_VIOLATION",
+          "outcome": "blocked"
+        }
+      }
+    ],
+    "total": 1,
+    "passed": 1,
+    "output_key": "jobs/84b910eb-458b-44ff-97b1-cf259fbc4ee4/output.json",
+    "report_key": "jobs/84b910eb-458b-44ff-97b1-cf259fbc4ee4/report.json",
+    "manifest_key": "jobs/84b910eb-458b-44ff-97b1-cf259fbc4ee4/manifest.json"
   },
+  "error": null,
   "links": {
-    "output": null,
-    "manifest": null,
+    "output": "/api/v1/jobs/84b910eb-458b-44ff-97b1-cf259fbc4ee4/download/output",
+    "manifest": "/api/v1/jobs/84b910eb-458b-44ff-97b1-cf259fbc4ee4/download/manifest",
     "errors": null,
-    "report": null
+    "report": "/api/v1/jobs/84b910eb-458b-44ff-97b1-cf259fbc4ee4/download/report"
   },
-  "created_at": "2026-10-24T14:49:27.638Z",
-  "started_at": "2026-10-24T14:49:28.543Z",
-  "finished_at": "2026-10-24T14:49:28.550Z"
+  "created_at": "2026-10-24T16:23:56.454Z",
+  "started_at": "2026-10-24T16:23:56.875Z",
+  "finished_at": "2026-10-24T16:23:56.905Z",
+  "manifest_path": "/out/006-06-no-promo-forum-manifest.json",
+  "report_path": "/out/006-06-no-promo-forum-report.json"
 }

@@ -1,8 +1,21 @@
 {
   "type": "batch_publish",
   "input": {
-    "case": "rate_limited",
-    "scenario": "rate_limit",
-    "idempotency_key": "sample-rate-limited"
+    "items": [
+      {
+        "case": "rate_limited",
+        "destination": "sim-429",
+        "mock_scenario": "rate_limit_long",
+        "rendition": {
+          "title": "Batch rate limit sample",
+          "body": "This simulation expects a long platform reset time."
+        },
+        "idempotency_key": "sample-rate-limited",
+        "expected": {
+          "outcome": "failed",
+          "code": "PLATFORM_RATE_LIMIT"
+        }
+      }
+    ]
   }
 }

@@ -1,14 +1,16 @@
 /**
  * Builds evidence-backed metrics from saved certification and catalogue records.
- * Runs two isolated mock publications to measure retry safety and cleanup.
+ * Runs disposable mock publications and forced timeout retries to measure safety and cleanup.
  */
 import fs from 'fs';
 import path from 'path';
 import rules = require('../src/modules/rules/engine');
+import { markerFor } from '../src/modules/connectors/commons/marker';
 
 const connectorKeys = [
   'discourse', 'lemmy', 'devto', 'ghost', 'webhook', 'assisted', 'mrss', 'slack', 'hashnode'
 ];
+const publishCore = ['discourse', 'lemmy', 'devto', 'ghost', 'webhook'];
 const ruleGroups: Record<string, string[]> = {
   frequency_cap: ['DEST_RULE_FREQUENCY_CAP'],
   no_promo: ['SELF_PROMOTION_NOT_ALLOWED'],
@@ -65,116 +67,189 @@ function calculateCertificationMetrics(records: any[]): any {
       time_per_run_ms: runs.map((record) => record.duration_ms)
     };
   }
-  return { source: 'preserved real certification run records', total_real_runs: records.length, per_connector: perConnector };
-}
-
-async function fetchJson(url: string, init?: any): Promise<any> {
-  const response = await fetch(url, init);
-  const text = await response.text();
-  let body: any;
-  try { body = JSON.parse(text); } catch { body = { raw: text }; }
-  return { status: response.status, headers: response.headers, body };
-}
-
-function connectorPayload(baseUrl: string, scenario: string, key: string, title: string): any {
   return {
-    idempotency_key: key,
-    destination_ref: `${baseUrl}/mock/discourse/${scenario}`,
-    connection: { api_key: 'measure-fake-key', api_username: 'measure-user' },
-    rendition: { title, body: 'Local measurement post; deleted immediately after verification.' }
+    source: 'preserved local-instance certification run records',
+    total_real_runs: records.length,
+    local_instance_reliability: {
+      n: records.length,
+      passed: records.filter((record) => record.status === 'passed').length,
+      pass_rate: records.length
+        ? records.filter((record) => record.status === 'passed').length / records.length
+        : 0
+    },
+    per_connector: perConnector
   };
 }
 
-async function deleteMeasuredPost(api: string, payload: any, postId: string): Promise<void> {
-  const response = await fetchJson(`${api}/connector/v1/discourse/delete`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      destination_ref: payload.destination_ref,
-      connection: payload.connection,
-      platform_post_id: postId
-    })
-  });
-  if (response.status !== 200 || response.body.deleted !== true) {
-    throw new Error('Could not delete the simulation measurement post');
+function apiHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  return {
+    'content-type': 'application/json',
+    ...(process.env.API_TOKEN ? { authorization: `Bearer ${process.env.API_TOKEN}` } : {}),
+    ...extra
+  };
+}
+
+const delay = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+async function fetchJson(url: string, init?: any): Promise<any> {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    let response: Response;
+    try {
+      response = await fetch(url, init);
+    } catch (error: any) {
+      throw new Error(`HTTP request to ${new URL(url).pathname} failed: ${error.message}`);
+    }
+    const text = await response.text();
+    let body: any;
+    try { body = JSON.parse(text); } catch { body = { raw: text }; }
+    if (response.status === 429 && body.error?.code === 'RATE_LIMITED') {
+      const seconds = Number(response.headers.get('retry-after') || 60);
+      await delay(Math.max(1, seconds) * 1000);
+      continue;
+    }
+    return { status: response.status, headers: response.headers, body };
   }
-  const status = await fetchJson(`${api}/connector/v1/discourse/get_status`, {
+  throw new Error('API request remained rate limited after waiting for reset');
+}
+
+function scenarioDestination(destination: any, scenario: string): any {
+  const copy = JSON.parse(JSON.stringify(destination));
+  const base = new URL(copy.config.base_url);
+  const segments = base.pathname.split('/');
+  segments[segments.length - 1] = scenario;
+  base.pathname = segments.join('/');
+  copy.config.base_url = base.toString().replace(/\/$/, '');
+  return copy;
+}
+
+async function connectorCall(api: string, key: string, method: string, payload: any, idempotencyKey?: string): Promise<any> {
+  return fetchJson(`${api}/connector/v1/${key}/${method}`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      destination_ref: payload.destination_ref,
-      connection: payload.connection,
-      platform_post_id: postId
-    })
+    headers: apiHeaders(idempotencyKey ? { 'idempotency-key': idempotencyKey } : {}),
+    body: JSON.stringify(payload)
   });
+}
+
+function stateItems(state: any): any[] {
+  return state.posts || state.articles || [];
+}
+
+function activeMarkerItems(connector: string, state: any, marker: string): any[] {
+  return stateItems(state).filter((item) => {
+    if (item.deleted || item.published === false) return false;
+    if (connector === 'ghost') return item.slug === `ix-${marker}`;
+    return JSON.stringify(item).includes(marker);
+  });
+}
+
+function platformId(post: any): string {
+  return String(post.topic_id || post.post_id || post.id);
+}
+
+async function stateFor(api: string, destination: any): Promise<any> {
+  const base = new URL(destination.config.base_url);
+  const route = `${base.pathname.replace(/\/$/, '')}/_state`;
+  return fetchJson(new URL(route, api).toString());
+}
+
+async function deleteMeasuredPost(api: string, connector: string, destination: any, postId: string): Promise<void> {
+  const payload = { destination, platform_post_id: postId };
+  const deleted = await connectorCall(api, connector, 'delete', payload);
+  if (deleted.status !== 200 || deleted.body.deleted !== true) {
+    throw new Error(`Could not delete a ${connector} simulation measurement post`);
+  }
+  const status = await connectorCall(api, connector, 'get_status', payload);
   if (status.status !== 200 || status.body.status !== 'deleted') {
-    throw new Error('Could not verify removal of the simulation measurement post');
+    throw new Error(`Could not verify removal of a ${connector} measurement post`);
   }
 }
 
-async function runMeasuredPublish(api: string, payload: any): Promise<any> {
-  const response = await fetchJson(`${api}/connector/v1/discourse/publish`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', 'idempotency-key': payload.idempotency_key },
-    body: JSON.stringify(payload)
-  });
-  return response;
+async function measureDisposablePublishes(api: string): Promise<any> {
+  const listing = await fetchJson(`${api}/api/v1/destinations?limit=200`, { headers: apiHeaders() });
+  if (listing.status !== 200) throw new Error('Could not list seeded simulation destinations');
+  const destinations = new Map<string, any>();
+  for (const connector of publishCore) {
+    const destination = listing.body.items.find((item: any) => item.name === `sim-healthy-${connector}`);
+    if (!destination) throw new Error(`Missing healthy simulation destination for ${connector}`);
+    destinations.set(connector, destination);
+  }
+  const perConnector: Record<string, any> = {};
+  let successes = 0;
+  let failures = 0;
+  for (const connector of publishCore) perConnector[connector] = { n: 0, successes: 0, failures: 0 };
+  for (let index = 0; index < 100; index += 1) {
+    const connector = publishCore[index % publishCore.length];
+    const destination = destinations.get(connector);
+    const key = `measure-100-${Date.now()}-${index}`;
+    const payload = {
+      destination,
+      rendition: {
+        title: `Disposable ${connector} measurement ${index}`,
+        body: 'Local simulation measurement; removed immediately after status verification.'
+      }
+    };
+    const response = await connectorCall(api, connector, 'publish', payload, key);
+    perConnector[connector].n += 1;
+    if (response.status === 200 && response.body.platform_post_id) {
+      successes += 1;
+      perConnector[connector].successes += 1;
+      await deleteMeasuredPost(api, connector, destination, String(response.body.platform_post_id));
+    } else {
+      failures += 1;
+      perConnector[connector].failures += 1;
+    }
+  }
+  return { n: 100, successes, failures, success_rate: successes / 100, per_connector: perConnector };
+}
+
+async function measureTimeoutRetries(api: string): Promise<any> {
+  const listing = await fetchJson(`${api}/api/v1/destinations?limit=200`, { headers: apiHeaders() });
+  const destinations = new Map<string, any>();
+  for (const connector of publishCore) {
+    const destination = listing.body.items.find((item: any) => item.name === `sim-healthy-${connector}`);
+    destinations.set(connector, destination);
+  }
+  let duplicates = 0;
+  let successes = 0;
+  for (let index = 0; index < 20; index += 1) {
+    const connector = publishCore[index % publishCore.length];
+    const key = `measure-timeout-${Date.now()}-${index}`;
+    const destination = scenarioDestination(destinations.get(connector), 'timeout_after_success');
+    const payload = {
+      destination,
+      rendition: {
+        title: `Timeout retry ${connector} ${index}`,
+        body: `Disposable retry measurement marker ${markerFor(key)}.`
+      }
+    };
+    const first = await connectorCall(api, connector, 'publish', payload, key);
+    const retry = first.status === 503 && first.body.error?.code === 'PLATFORM_UNAVAILABLE'
+      ? await connectorCall(api, connector, 'publish', payload, key)
+      : first;
+    if (retry.status === 200 && retry.body.platform_post_id) successes += 1;
+    const state = await stateFor(api, destination);
+    const posts = activeMarkerItems(connector, state.body, markerFor(key));
+    duplicates += Math.max(0, posts.length - 1);
+    for (const post of posts) {
+      await deleteMeasuredPost(api, connector, destination, platformId(post));
+    }
+    const after = await stateFor(api, destination);
+    if (activeMarkerItems(connector, after.body, markerFor(key)).length !== 0) {
+      throw new Error(`A ${connector} timeout measurement post remains after cleanup`);
+    }
+  }
+  return { n: 20, successes, failures: 20 - successes, duplicate_posts: duplicates };
 }
 
 async function measureSimulation(api: string): Promise<any> {
-  const runId = `measure-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  const outcomes = [];
-  let duplicatePosts = 0;
-  for (const scenario of [`${runId}-normal`, 'timeout_after_success']) {
-    const title = `Measurement ${runId} ${scenario}`;
-    const payload = connectorPayload(api, scenario, `${runId}-${scenario}`, title);
-    const first = await runMeasuredPublish(api, payload);
-    let published = first;
-    let requests = 1;
-    if (scenario === 'timeout_after_success') {
-      if (first.status !== 503 || first.body.error?.code !== 'PLATFORM_UNAVAILABLE') {
-        throw new Error('Timeout measurement did not produce the expected retryable failure');
-      }
-      published = await runMeasuredPublish(api, payload);
-      requests += 1;
-    }
-    if (published.status !== 200 || !published.body.platform_post_id) {
-      throw new Error('Simulation measurement publish did not succeed');
-    }
-    let matching: any[] = [];
-    try {
-      const state = await fetchJson(`${payload.destination_ref}/_state`);
-      matching = (state.body.posts || []).filter((post: any) => post.title === title);
-      duplicatePosts += Math.max(0, matching.length - 1);
-      if (matching.length !== 1) throw new Error('Retry measurement did not create exactly one post');
-    } finally {
-      const postIds = [...new Set([
-        ...matching.map((post: any) => String(post.topic_id)),
-        String(published.body.platform_post_id)
-      ])];
-      const cleanupErrors = [];
-      for (const postId of postIds) {
-        try {
-          await deleteMeasuredPost(api, payload, postId);
-        } catch (error: any) {
-          cleanupErrors.push(error.message);
-        }
-      }
-      if (cleanupErrors.length) {
-        throw new Error(`Measurement cleanup failed: ${cleanupErrors.join('; ')}`);
-      }
-      const afterDelete = await fetchJson(`${payload.destination_ref}/_state`);
-      const remaining = (afterDelete.body.posts || []).filter((post: any) => post.title === title);
-      if (remaining.length) throw new Error('A simulation measurement post remains after cleanup');
-    }
-    outcomes.push({ scenario, succeeded: true, publish_requests: requests, posts_after_retry: matching.length });
-  }
+  const disposable = await measureDisposablePublishes(api);
+  const retries = await measureTimeoutRetries(api);
   return {
-    logical_publications: outcomes.length,
-    successful_publications: outcomes.filter((item) => item.succeeded).length,
-    success_rate: outcomes.length ? outcomes.filter((item) => item.succeeded).length / outcomes.length : 0,
-    duplicate_posts_under_retry: duplicatePosts,
-    outcomes
+    ...disposable,
+    publish_capable_core_connectors: publishCore,
+    assisted_note: 'Assisted is a Core connector without automated publish or delete operations.',
+    forced_timeout_retries: retries,
+    duplicate_posts_under_retry: retries.duplicate_posts
   };
 }
 

@@ -1,8 +1,21 @@
 {
   "type": "batch_publish",
   "input": {
-    "case": "no_promo_forum",
-    "scenario": "no_promo",
-    "idempotency_key": "sample-no-promo-forum"
+    "items": [
+      {
+        "case": "no_promo_forum",
+        "destination": "sim-no-promo",
+        "rendition": {
+          "title": "Batch promotional sample",
+          "body": "Visit https://example.invalid for more information.",
+          "is_promotional": true
+        },
+        "idempotency_key": "sample-no-promo-forum",
+        "expected": {
+          "outcome": "blocked",
+          "code": "DEST_RULE_VIOLATION"
+        }
+      }
+    ]
   }
 }

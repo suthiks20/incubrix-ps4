@@ -1,22 +1,42 @@
 {
-  "job_id": "d0ca4444-7ad7-4a76-bb2a-8005bc17b7cd",
+  "job_id": "88002db0-5629-4083-b941-1ffbab97e89a",
   "type": "batch_publish",
-  "status": "failed",
-  "progress": 0,
-  "result": null,
-  "error": {
-    "code": "JOB_TYPE_NOT_READY",
-    "details": {},
-    "message": "Batch publish jobs are not ready yet",
-    "retryable": false
+  "status": "succeeded",
+  "progress": 100,
+  "result": {
+    "items": [
+      {
+        "code": "PLATFORM_UNAVAILABLE",
+        "item": {
+          "case": "timeout_then_retry",
+          "destination": "sim-timeout"
+        },
+        "passed": true,
+        "message": "Timeout was reconciled by retrying the same idempotency key.",
+        "outcome": "published",
+        "expected": {
+          "code": "PLATFORM_UNAVAILABLE",
+          "outcome": "published"
+        },
+        "live_url": "http://127.0.0.1:8000/mock/discourse/timeout_after_success/t/batch-timeout-retry-sample/1"
+      }
+    ],
+    "total": 1,
+    "passed": 1,
+    "output_key": "jobs/88002db0-5629-4083-b941-1ffbab97e89a/output.json",
+    "report_key": "jobs/88002db0-5629-4083-b941-1ffbab97e89a/report.json",
+    "manifest_key": "jobs/88002db0-5629-4083-b941-1ffbab97e89a/manifest.json"
   },
+  "error": null,
   "links": {
-    "output": null,
-    "manifest": null,
+    "output": "/api/v1/jobs/88002db0-5629-4083-b941-1ffbab97e89a/download/output",
+    "manifest": "/api/v1/jobs/88002db0-5629-4083-b941-1ffbab97e89a/download/manifest",
     "errors": null,
-    "report": null
+    "report": "/api/v1/jobs/88002db0-5629-4083-b941-1ffbab97e89a/download/report"
   },
-  "created_at": "2026-10-24T14:49:23.461Z",
-  "started_at": "2026-10-24T14:49:23.538Z",
-  "finished_at": "2026-10-24T14:49:23.543Z"
+  "created_at": "2026-10-24T16:23:51.649Z",
+  "started_at": "2026-10-24T16:23:51.874Z",
+  "finished_at": "2026-10-24T16:23:52.334Z",
+  "manifest_path": "/out/001-01-timeout-retry-manifest.json",
+  "report_path": "/out/001-01-timeout-retry-report.json"
 }

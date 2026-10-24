@@ -157,12 +157,20 @@ describe('phase 2 integration standard', () => {
     }));
   });
 
-  test('job type batch_publish returns JOB_TYPE_NOT_READY', async () => {
+  test('batch_publish rejects empty input with VALIDATION_ERROR', async () => {
     const response = await postJob(ctx, { type: 'batch_publish', input: {} }, 'job-batch-1');
     expect(response.statusCode).toBe(202);
     await require('../../src/modules/jobs/worker').runPending(workerDeps(ctx));
     const read = await ctx.app.inject(`/api/v1/jobs/${response.json().job_id}`);
-    expect(read.json().error.code).toBe('JOB_TYPE_NOT_READY');
+    expect(read.json()).toEqual(expect.objectContaining({
+      status: 'failed',
+      error: expect.objectContaining({
+        code: 'VALIDATION_ERROR',
+        message: expect.any(String),
+        retryable: false,
+        details: expect.any(Object)
+      })
+    }));
   });
 
   test('API_TOKEN still works with the rate limiter enabled', async () => {

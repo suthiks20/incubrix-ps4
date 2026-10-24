@@ -22,6 +22,7 @@ test('certification metrics count only supplied preserved real run records', () 
     { connector_key: 'lemmy', status: 'passed', duration_ms: 785 }
   ]);
   expect(metrics.total_real_runs).toBe(1);
+  expect(metrics.local_instance_reliability.n).toBe(1);
   expect(metrics.per_connector.lemmy).toEqual({ real_runs: 1, passed: 1, time_per_run_ms: [785] });
   expect(metrics.per_connector.ghost.real_runs).toBe(0);
 });

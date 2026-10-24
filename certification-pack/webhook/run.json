@@ -1,0 +1,35 @@
+{
+  "connector_key": "webhook",
+  "destination_name": "sim-healthy-webhook",
+  "instance_type": "MOCK instance, not a real platform",
+  "run_id": "37373bd8-f98b-43f5-8850-fbc96677e245",
+  "status": "passed",
+  "level": "L3",
+  "steps": [
+    {
+      "name": "validate",
+      "status": "passed"
+    },
+    {
+      "name": "publish",
+      "status": "passed"
+    },
+    {
+      "name": "confirm_live",
+      "status": "passed"
+    },
+    {
+      "name": "read_status",
+      "status": "passed"
+    },
+    {
+      "name": "delete",
+      "status": "passed"
+    },
+    {
+      "name": "verify_gone",
+      "status": "passed"
+    }
+  ],
+  "delete_supported": true
+}

@@ -97,6 +97,16 @@ describe('Phase 4 self-test and demo seed', () => {
     expect(secondRows).toEqual(firstRows);
   });
 
+  test('seed is skipped when simulation mode is disabled', async () => {
+    const count = await seedDemoDestinations(
+      ctx.knex,
+      { ...ctx.app.config, SIMULATION_MODE: false },
+      ctx.mockRoot
+    );
+    expect(count).toBe(0);
+    expect(await ctx.knex('destinations').count({ total: '*' }).first()).toEqual({ total: '0' });
+  });
+
   test('seeded destinations each trigger their intended rule or error code', async () => {
     const { job } = await runSelftest('phase4-intended-codes');
     const byCase = Object.fromEntries(job.json().result.cases.map((item) => [item.case, item]));

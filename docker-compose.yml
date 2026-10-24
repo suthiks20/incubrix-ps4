@@ -14,7 +14,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgres://ix:ix@postgres:5432/ix}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8000}
       SIMULATION_MODE: ${SIMULATION_MODE:-true}
-      SEED_DEMO: ${SEED_DEMO:-false}
+      SEED_DEMO: ${SEED_DEMO:-true}
       DB_AUTO_MIGRATE: ${DB_AUTO_MIGRATE:-true}
       API_TOKEN: ${API_TOKEN:-}
       TEST_DATABASE_URL: ${TEST_DATABASE_URL:-postgres://ix:ix@postgres:5432/ix_test}
@@ -49,6 +49,7 @@ services:
     volumes:
       - certdata:/app/data
       - ./evidence:/app/evidence
+      - ./certification-pack:/app/certification-pack
     depends_on:
       postgres:
         condition: service_healthy

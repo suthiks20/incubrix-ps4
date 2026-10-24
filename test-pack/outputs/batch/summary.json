@@ -1,80 +1,80 @@
 {
   "total": 8,
-  "passed": 0,
-  "failed": 8,
+  "passed": 8,
+  "failed": 0,
   "duration_ms": [
-    601,
-    1029,
-    521,
+    1084,
+    522,
     1023,
-    1029,
-    1022,
-    1022,
-    1022
+    1019,
+    1020,
+    514,
+    1017,
+    1019
   ],
   "results": [
     {
       "file": "01-timeout-retry.json",
-      "job_id": "d0ca4444-7ad7-4a76-bb2a-8005bc17b7cd",
-      "status": "failed",
-      "passed": false,
-      "duration_ms": 601,
+      "job_id": "88002db0-5629-4083-b941-1ffbab97e89a",
+      "status": "succeeded",
+      "passed": true,
+      "duration_ms": 1084,
       "output_path": "/out/001-01-timeout-retry.json"
     },
     {
       "file": "02-rate-limited.json",
-      "job_id": "d704e455-328d-4f93-a7b2-293f146b7a61",
-      "status": "failed",
-      "passed": false,
-      "duration_ms": 1029,
+      "job_id": "2e0b07ed-7a7f-49e3-b1f6-75eccdf92fde",
+      "status": "succeeded",
+      "passed": true,
+      "duration_ms": 522,
       "output_path": "/out/002-02-rate-limited.json"
     },
     {
       "file": "03-expired-token.json",
-      "job_id": "77ec18d1-c467-437b-92d4-149c3df4d866",
-      "status": "failed",
-      "passed": false,
-      "duration_ms": 521,
+      "job_id": "0d63194b-e29a-4b2b-82e1-280b912110fc",
+      "status": "succeeded",
+      "passed": true,
+      "duration_ms": 1023,
       "output_path": "/out/003-03-expired-token.json"
     },
     {
       "file": "04-spec-violation.json",
-      "job_id": "5ce58475-3420-45d3-82fc-187bed3da16b",
-      "status": "failed",
-      "passed": false,
-      "duration_ms": 1023,
+      "job_id": "706cd6be-c4c3-4f05-868b-a9d3aaf171b8",
+      "status": "succeeded",
+      "passed": true,
+      "duration_ms": 1019,
       "output_path": "/out/004-04-spec-violation.json"
     },
     {
       "file": "05-frequency-cap.json",
-      "job_id": "b8b5d5e1-4241-4053-8da1-0692a70225d3",
-      "status": "failed",
-      "passed": false,
-      "duration_ms": 1029,
+      "job_id": "1ee97d1f-c85b-45bd-bc09-66a85bd02e55",
+      "status": "succeeded",
+      "passed": true,
+      "duration_ms": 1020,
       "output_path": "/out/005-05-frequency-cap.json"
     },
     {
       "file": "06-no-promo-forum.json",
-      "job_id": "c23257fa-8951-4a31-9534-7d681a9fc470",
-      "status": "failed",
-      "passed": false,
-      "duration_ms": 1022,
+      "job_id": "84b910eb-458b-44ff-97b1-cf259fbc4ee4",
+      "status": "succeeded",
+      "passed": true,
+      "duration_ms": 514,
       "output_path": "/out/006-06-no-promo-forum.json"
     },
     {
       "file": "07-renamed-field.json",
-      "job_id": "f7c26fa3-caa6-40cf-aaaa-a559c2f486e2",
-      "status": "failed",
-      "passed": false,
-      "duration_ms": 1022,
+      "job_id": "0f64da43-fd3d-42f3-97fd-a816df9fba39",
+      "status": "succeeded",
+      "passed": true,
+      "duration_ms": 1017,
       "output_path": "/out/007-07-renamed-field.json"
     },
     {
       "file": "08-media-rejected.json",
-      "job_id": "a59b411d-a534-461a-98b0-a320d734f982",
-      "status": "failed",
-      "passed": false,
-      "duration_ms": 1022,
+      "job_id": "cbd8b4da-9767-4f80-b872-2e9f1a3b5c45",
+      "status": "succeeded",
+      "passed": true,
+      "duration_ms": 1019,
       "output_path": "/out/008-08-media-rejected.json"
     }
   ]

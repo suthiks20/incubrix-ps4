@@ -1,17 +1,17 @@
 # Progress
 
-## Phase status (24 Oct 2026)
+## Phase status (25 Oct 2026)
 
 | Phase | Status | Proof and remaining work |
 |---|---|---|
 | 1 — Core certification, mocks, media and metrics | DONE | Items 1.1-1.5 are verified below; real Lemmy and Ghost records are in `evidence/cert-lemmy-real.json` and `evidence/cert-ghost-real.json`. |
-| 2 — Integration Standard, first half | DONE | Integration points 1-9 are evidenced in `docs/INTEGRATION_PROOF.md`; see point 10 for the remaining batch limitation. |
-| 3 — Integration Standard, second half | PARTIAL | Items 3.0-3.5 are implemented, but `batch_publish` still returns `JOB_TYPE_NOT_READY`; point 10 and the associated live platform scenarios are not done. |
+| 2 — Integration Standard, first half | DONE | Integration Standard points 1-10 are evidenced in `docs/INTEGRATION_PROOF.md`. |
+| 3 — Integration Standard, second half | DONE | All eight seeded simulation inputs match their expected outcome; batch cleanup and report/manifest links pass in `tests/integration/phase3.second-half.test.js`. |
 | 4 — Hidden-test readiness | DONE | Seed and all 14 mock-only selftest cases are verified in `tests/integration/phase4.selftest.test.js`. |
 | 5 — Tailoring, relevance and rules capture | DONE | Items 5.1-5.3 and their required tests pass in `tests/integration/phase5.tailoring.test.js`. |
 | 6 — MRSS, Slack and Hashnode | DONE | All three Advanced connectors pass mock certification and contract coverage; see the Phase 6b gate below. |
 | 7 — Catalogue import | DONE | Import, row errors, mixed languages, real selftest importer scenario, and the protected 1,000-row record are proved by `tests/integration/catalogue/catalogue.import.test.js`, `tests/integration/phase4.selftest.test.js`, and `evidence/catalogue-1000-import.json` (2.626 seconds). |
-| 8 — Measurement and submission pack | PARTIAL | Metrics, documents, and clean-clone verification are recorded below. Hosted cold-start, screenshots/video, unknown form rows, and confirmation of earlier AI tools remain student-only. |
+| 8 — Measurement and submission pack | PARTIAL | Metrics, documents, and the clean-clone run are recorded below. Hosted cold-start, screenshots/video, unknown form rows, and confirmation of earlier AI tools remain student-only. |
 
 ## Brief-item reconciliation
 
@@ -23,9 +23,9 @@
 | 1.4 Mock parity and media validation | DONE | `tests/integration/phase1.remainder.test.js`; connector-specific mock tests |
 | 1.5 Normalized metrics | DONE | `tests/integration/phase1.remainder.test.js` fetch_metrics tests |
 | Integration points 1-9 | DONE | `docs/INTEGRATION_PROOF.md` rows 1-9 |
-| Integration point 10 batch runner | PARTIAL | `tests/integration/phase3.second-half.test.js`; batch scenarios still fail with `JOB_TYPE_NOT_READY` |
+| Integration point 10 batch runner | DONE | `batch_publish returns the expected outcome for each sample input`, `ix-batch eight sample inputs each match their expected outcome`, and `batch_publish leaves no test posts behind` in `tests/integration/phase3.second-half.test.js` |
 | 3.0 Assisted unsupported-method errors | DONE | `tests/integration/phase3.second-half.test.js` |
-| 3.1 Batch CLI results and samples | PARTIAL | CLI outputs each failure; `batch_publish` worker remains unimplemented |
+| 3.1 Batch CLI results and samples | DONE | Eight seeded simulation sample cases match expected outcomes; tests are in `tests/integration/phase3.second-half.test.js` |
 | 3.2 End-to-end path | DONE | `tests/integration/phase3.second-half.test.js` test `E2E full path with no API keys` |
 | 3.3 Config parity | DONE | `tests/integration/phase3.second-half.test.js` test `.env.example lists every config setting` |
 | 3.4 Job log identifiers | DONE | `tests/integration/phase3.second-half.test.js` test `job log lines carry job_id and correlation_id` |
@@ -47,7 +47,7 @@
 | 8.2 Report, sources, and AI-use disclosure | PARTIAL | `REPORT.md`; `SOURCES.md`; `AI_USE.md`; TODO(student) remains for confirmation of prior AI tools |
 | 8.3 Test, certification, and catalogue packs | PARTIAL | `test-pack/`, `certification-pack/`, and `catalogue/` contain run outputs; screenshot/video TODO remains |
 | 8.4 README completeness | DONE | `README.md`; live demo cold-start TODO is student-only |
-| 8.5 Clean-clone run | DONE | Separate clone had no `.env`; startup/readiness, 72-suite tests, lint/build, batch CLI, seeded 14-case selftest and report/manifest downloads are recorded in `test-pack/logs/` and `test-pack/outputs/`. Batch inputs still return `JOB_TYPE_NOT_READY` (Phase 3 PARTIAL). |
+| 8.5 Clean-clone run | DONE | The Phase 9 clean clone passed startup/readiness, 72 suites / 400 tests, lint, build, eight batch outcomes, and the 14-case selftest; see `test-pack/outputs/batch/summary.json` and the Phase 9 verification below. |
 | 8.6 Submission Form map | PARTIAL | `docs/FORM_MAP.md`; exact unavailable Outstanding rows and student-only items need confirmation |
 
 ## Latest repair and verification
@@ -141,11 +141,10 @@ posts, idempotent job submission, per-case expected/actual codes, and destinatio
 
 ### Phase 3 Integration Standard, second half (24 Oct 2026)
 
-Implemented shared error-envelope coverage for assisted unsupported methods; added optional bearer-token
-support to `ix-batch`, deterministic per-input result files (including submission failures), manifest
-downloads, and folder/single-file input coverage. Added eight named sample inputs for the requested
-hard-case labels. The sample job type `batch_publish` is still intentionally not ready, so the labels are
-fixtures rather than live platform scenario executions; Integration Standard point 10 remains PARTIAL.
+At this historical checkpoint, assisted error handling, optional bearer-token support to `ix-batch`,
+per-input result files, manifest downloads, and eight scenario-labelled inputs were verified. The
+initial `batch_publish` handler was still not ready; Phase 9 below records the completed implementation
+and supersedes that PARTIAL status.
 
 Completed the no-platform-key end-to-end flow through destination creation, mock publish/status/delete,
 certification job polling, and manifest download. The config parity test confirms all 41 typed settings
@@ -163,11 +162,9 @@ docker compose run --rm api npm run lint      PASS
 docker compose run --rm api npm run build     PASS
 ```
 
-`npm run ix-batch -- --input samples/batch --out /tmp/ix-batch-phase3 --api http://api:8000`
-ran inside the Docker image and discovered all eight samples. All eight jobs reached terminal failure
-with `JOB_TYPE_NOT_READY`, as expected from the current `batch_publish` handler. Focused verbose runs
-passed the required assisted, batch, end-to-end, config, job-log, and OpenAPI parity test names.
-Phase 3 remains PARTIAL until those sample cases execute real platform scenarios.
+At this checkpoint, the eight batch labels were fixtures and returned `JOB_TYPE_NOT_READY`. Phase 9
+implements the simulation-only batch path, validates all expected outcomes, and closes Integration
+Standard point 10; the older result is retained here as historical evidence.
 
 ### Phase 1 real local certification (24 Oct 2026)
 
@@ -277,9 +274,10 @@ docker compose run --rm api npm run build PASS
 ```
 
 Phase 8 remains PARTIAL: the live-demo cold-start, screenshots/video, unknown Submission Form
-Outstanding rows, and confirmation of earlier AI tools require student input. Phase 3 also
-remains PARTIAL because `batch_publish` has no implementation. Do not claim the assessment is
-complete while either gap remains.
+Outstanding rows, and confirmation of earlier AI tools require student input. At this Phase 8
+checkpoint, Phase 3 was also marked PARTIAL because `batch_publish` had not yet been implemented;
+Phase 9 below supersedes that status. Do not claim the assessment is complete while Phase 8
+remains PARTIAL.
 
 WP4 - DONE (23 Oct 2026). Completed the Lemmy and Ghost native connectors, production-shaped simulation
 mocks, registry/catalogue coverage, logger redaction, local verification alias, and Dev.to cleanup-failure
@@ -312,9 +310,46 @@ Discourse `delete_fails_once` / `delete_fails_twice` scenarios with `delete_atte
 
 T2 shared-layer conversion and T1 TypeScript tooling are done and Docker-verified.
 
+### Phase 9 finishing fixes (25 Oct 2026)
+
+Implemented simulation-only `batch_publish` using the shared rules and connector publish path.
+Each item records its expected and actual outcome, progress reaches 100, created posts are
+deleted, and the job links its report and manifest. The eight sample inputs now target seeded
+destinations and have explicit expected outcomes. The clean-clone `ix-batch` run wrote eight
+per-input results and a summary with `total: 8`, `passed: 8`, and `failed: 0`; the copied
+outputs are in `test-pack/outputs/batch/`.
+
+Added `pretest` so a fresh checkout builds before Jest, raised Jest's timeout to 30 seconds,
+enabled default demo seeding only in simulation mode, and added public `GET /` and
+`GET /openapi.yaml`. The mock-certification command saved outputs for Discourse, Dev.to,
+webhook, and assisted. The expanded measurement recorded 100/100 disposable simulated
+publishes, 20/20 forced timeout retries, zero duplicates, 13/13 expected rule violations
+caught with zero missed, and a $0 mock API cost estimate per 1,000 publishes. The protected
+real certification and 1,000-row catalogue evidence were not edited.
+
+Verification with the full Compose stack running:
+
+```text
+docker compose build api                      PASS before each test run
+docker compose run --rm api npm test          Test Suites: 72 passed, 72 total
+                                              Tests:       400 passed, 400 total
+docker compose run --rm api npm run lint      PASS
+docker compose run --rm api npm run build     PASS
+```
+
+The full Docker test gate passed twice consecutively at 72 suites / 400 tests. A separate
+clean clone with no `.env`, `bootstrap-output.json`, `dist/`, or `node_modules/` also started
+successfully, returned `/ready` with database and storage `ok`, and passed 72 suites / 400
+tests, lint, build, eight of eight batch outcomes, and all 14 selftest cases. The clean-clone
+batch summary and selftest report/manifest downloads are preserved under `test-pack/outputs/`.
+
+Phase 3 is DONE; Phase 8 remains PARTIAL only for student-supplied live-demo cold-start
+seconds, screenshots/video, exact unavailable Submission Form rows, and confirmation of any
+additional AI coding tools. Do not claim the overall assessment is complete until those
+student-only items are resolved.
+
 ## Next
 
-Complete the `batch_publish` implementation or clearly retain Phase 3 as PARTIAL. The student
-must also verify the live-demo cold start, provide screenshots and the required unedited video,
-confirm the full Submission Form Outstanding rows, and confirm prior AI-tool use. The assessment
-is not complete while Phase 3 or Phase 8 remains PARTIAL.
+The student must verify the live-demo cold start, provide screenshots and the required unedited
+video, confirm the full Submission Form Outstanding rows, and confirm prior AI-tool use. The
+assessment is not complete while Phase 8 remains PARTIAL.

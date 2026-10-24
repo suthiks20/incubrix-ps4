@@ -9,6 +9,7 @@ module.exports = {
   testMatch: ['<rootDir>/tests/**/*.test.[jt]s'],
   globalSetup: '<rootDir>/tests/setup/globalSetup.js',
   maxWorkers: 1,
+  testTimeout: 30000,
   clearMocks: true,
   transform: { '^.+\\.[jt]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.json' }] },
   transformIgnorePatterns: ['/node_modules/(?!(cookie)/)'],

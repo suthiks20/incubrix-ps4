@@ -1,8 +1,26 @@
 {
   "type": "batch_publish",
   "input": {
-    "case": "spec_violation",
-    "scenario": "content_rejected",
-    "idempotency_key": "sample-spec-violation"
+    "items": [
+      {
+        "case": "spec_violation",
+        "destination": "sim-timeout",
+        "rendition": {
+          "title": "Batch media specification sample",
+          "body": "This media type is outside the destination specification.",
+          "media": [
+            {
+              "url": "https://example.invalid/sample.pdf",
+              "type": "application/pdf"
+            }
+          ]
+        },
+        "idempotency_key": "sample-spec-violation",
+        "expected": {
+          "outcome": "failed",
+          "code": "DEST_SPEC_VIOLATION"
+        }
+      }
+    ]
   }
 }

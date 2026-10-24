@@ -37,12 +37,16 @@ docker compose run --rm api npm run build
 
 The API source is copied into the image, not bind-mounted, so rebuild with
 `docker compose build api` before running changed Jest tests.
+The `pretest` hook rebuilds TypeScript output before Jest, so a clean checkout with no `dist/`
+directory can run `npm test` directly.
 The default stack starts the API, PostgreSQL, SeaweedFS storage, local Lemmy and Ghost instances,
 and a one-shot bootstrap service. Allow about 6 GB of Docker memory for all services.
 The API starts independently of Lemmy and Ghost; the bootstrap waits for both platforms to be healthy
 and writes their credentials to `/app/data/connections.json` in the shared `certdata` volume.
 The optional `CONNECTIONS_FILE` setting defaults to that path. Per-connection environment values
 override matching fields from the file.
+In simulation mode, `SEED_DEMO` defaults to `true`; set it to `false` to disable demo rows.
+The seed operation is always skipped when `SIMULATION_MODE=false`.
 
 For simulation-only development without the local platforms, start just:
 
@@ -61,6 +65,10 @@ The command prints only status, level, and step outcomes. The integration eviden
 until both `evidence/cert-lemmy-real.json` and `evidence/cert-ghost-real.json` exist.
 
 ## Destinations API
+
+`GET /` is a public service-discovery response with the service version, mode, and links to
+health, readiness, OpenAPI, and the reviewer guide. `GET /openapi.yaml` serves the OpenAPI
+document and is public even when `API_TOKEN` is enabled.
 
 All destination endpoints are under `/api/v1/destinations`. When `API_TOKEN` is set, requests require `Authorization: Bearer <token>`; `/health` and the versioned health routes remain public.
 
@@ -108,8 +116,8 @@ settings are needed for catalogue import.
 
 `npm run seed` applies migrations and idempotently creates mock-only demo destinations. It creates rows
 only when `SIMULATION_MODE=true`; API startup performs the same seed automatically when
-`SEED_DEMO=true`. The seeded destinations use local mock routes and fake simulation credentials,
-never real platform credentials.
+`SEED_DEMO=true`, which is the Compose default. The seeded destinations use local mock routes and
+fake simulation credentials, never real platform credentials.
 
 Queue all hidden-case checks with:
 
@@ -152,9 +160,13 @@ Every `POST` whose path starts with `/api/v1` requires an `Idempotency-Key` head
 ## Batch job runner
 
 The batch runner accepts one JSON file or a directory. It submits each input with an
-idempotency key, polls jobs, and writes one result per input plus `summary.json`.
-Current sample inputs use `batch_publish`, which returns `JOB_TYPE_NOT_READY`; the CLI handles
-and records those failures, but does not claim to publish a batch.
+idempotency key, polls jobs, and writes one result per input plus `summary.json`. Each
+`batch_publish` input must include an `items` array. Items identify a seeded simulation
+destination, rendition, idempotency key, and expected outcome. The worker uses the shared rules
+and connector path, retries the timeout sample with the same key, deletes any created mock post,
+and links both a report and output manifest. The eight checked-in samples cover timeout
+reconciliation, rate limiting, expired credentials, specification errors, frequency caps,
+no-promotion rules, schema drift, and rejected media.
 
 ```powershell
 New-Item -ItemType Directory -Force test-pack\outputs\batch
@@ -166,11 +178,13 @@ Add `--token "$API_TOKEN"` when authentication is enabled.
 
 ## Measurement
 
-After the default API is running, `npm run measure` evaluates the checked-in rule cases,
-reads the preserved real certification records and catalogue import record, and runs two
-isolated local mock publications. One mock request deliberately times out after creating a
-post; the same-key retry is checked for exactly one item, and both measured posts are deleted.
-The command writes `evidence/metrics.json`. From Docker:
+After the default API is running and its simulation destinations have been seeded,
+`npm run measure` evaluates the checked-in rule cases, reads the preserved real certification
+records and catalogue import record, runs 100 disposable publications across the five
+publish-capable Core connectors, and runs 20 forced timeout/same-key retry checks. Every
+measured post is deleted and status-checked. Assisted is excluded from publishing counts because
+it has no automated publish or delete operation. The command writes `evidence/metrics.json`
+and waits for the configured API rate-limit reset rather than bypassing the limiter. From Docker:
 
 ```powershell
 New-Item -ItemType Directory -Force certification-pack
@@ -179,7 +193,14 @@ docker compose run --rm -v "${PWD}\certification-pack:/app/certification-pack" a
 ```
 
 The command also writes sanitized copies and deletion confirmations under `certification-pack/`.
-It does not rewrite any original certification or catalogue evidence.
+It does not rewrite any original certification or catalogue evidence. `npm run certify:mock`
+certifies the seeded healthy Discourse, Dev.to, webhook, and assisted destinations and writes
+secret-free run records labelled as mock instances, not real platforms. Assisted certification
+records that the connector has no delete operation.
+
+```powershell
+docker compose run --rm api npm run certify:mock -- --api http://api:8000
+```
 
 ## Connector contract
 
@@ -260,7 +281,7 @@ curl.exe -X POST http://localhost:8000/connector/v1/discourse/publish -H "Conten
 | DATABASE_URL | required | PostgreSQL connection string |
 | PUBLIC_BASE_URL | http://localhost:8000 | Public service URL |
 | SIMULATION_MODE | true | Mount local mock platform endpoints |
-| SEED_DEMO | false | Seed local demo destinations during API startup in simulation mode |
+| SEED_DEMO | true | Seed local demo destinations during API startup when simulation mode is enabled |
 | DB_AUTO_MIGRATE | true | Apply pending migrations before listening |
 | API_TOKEN | empty | Optional bearer token; empty disables authentication |
 | TEST_DATABASE_URL | optional | Isolated database used by Jest integration tests |
@@ -321,7 +342,7 @@ Every error response uses `{ "error": { "code", "message", "retryable", "details
 
 - Phase 1 — DONE: Core connectors, real Lemmy/Ghost certification, mock parity, media validation, and metrics.
 - Phase 2 — DONE: Output manifests, jobs, API rate limiting, and OpenAPI route parity.
-- Phase 3 — PARTIAL: Integration proof and batch CLI are in place; `batch_publish` scenarios remain unavailable.
+- Phase 3 — DONE: `batch_publish` executes the eight simulation cases with outcomes, cleanup, report, and manifest.
 - Phase 4 — DONE: Idempotent simulation seeding and all 14 hidden-case selftests pass.
 - Phase 5 — DONE: Tailoring, relevance scoring, and rules capture.
 - Phase 6 — DONE: MRSS, Slack, and Hashnode connectors pass mock certification and contract tests.

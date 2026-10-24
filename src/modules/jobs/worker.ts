@@ -10,7 +10,12 @@ import { buildOutputManifest } from '../manifest/build';
 
 function errorBody(error: any): any {
   if (error instanceof AppError) return { code: error.code, message: error.message, retryable: error.retryable, details: error.details };
-  return { code: 'INTERNAL_ERROR', message: 'Job execution failed', retryable: false, details: {} };
+  return {
+    code: 'INTERNAL_ERROR',
+    message: 'Job execution failed',
+    retryable: false,
+    details: { error_name: error instanceof Error ? error.name : typeof error }
+  };
 }
 
 async function callback(deps: any, job: any, status: string, result: any, error: any): Promise<void> {

@@ -109,10 +109,19 @@ async function runBatch(options: any = {}): Promise<any> {
       const manifestPath = path.join(out, `${String(index + 1).padStart(3, '0')}-${path.basename(filePath, path.extname(filePath))}-manifest.json`);
       await download(api, reading.links.manifest, manifestPath, token);
       reading.manifest_path = manifestPath;
+    }
+    if (reading.links && reading.links.report) {
+      const reportPath = path.join(out, `${String(index + 1).padStart(3, '0')}-${path.basename(filePath, path.extname(filePath))}-report.json`);
+      await download(api, reading.links.report, reportPath, token);
+      reading.report_path = reportPath;
+    }
+    if (reading.manifest_path || reading.report_path) {
       await fs.writeFile(resultFile, JSON.stringify(reading, null, 2));
     }
 
-    const passed = reading.status === 'succeeded';
+    const batchItems = reading.type === 'batch_publish' ? reading.result?.items : null;
+    const passed = reading.status === 'succeeded' &&
+      (!batchItems || batchItems.length > 0 && batchItems.every((item: any) => item.passed));
     summary.results.push({
       file: path.basename(filePath),
       job_id: job.job_id,

@@ -1,22 +1,41 @@
 {
-  "job_id": "b8b5d5e1-4241-4053-8da1-0692a70225d3",
+  "job_id": "1ee97d1f-c85b-45bd-bc09-66a85bd02e55",
   "type": "batch_publish",
-  "status": "failed",
-  "progress": 0,
-  "result": null,
-  "error": {
-    "code": "JOB_TYPE_NOT_READY",
-    "details": {},
-    "message": "Batch publish jobs are not ready yet",
-    "retryable": false
+  "status": "succeeded",
+  "progress": 100,
+  "result": {
+    "items": [
+      {
+        "code": "DEST_RULE_FREQUENCY_CAP",
+        "item": {
+          "case": "frequency_cap",
+          "destination": "sim-weekly-cap"
+        },
+        "passed": true,
+        "message": "Destination frequency cap requires rescheduling",
+        "outcome": "rescheduled",
+        "expected": {
+          "code": "DEST_RULE_FREQUENCY_CAP",
+          "outcome": "rescheduled"
+        }
+      }
+    ],
+    "total": 1,
+    "passed": 1,
+    "output_key": "jobs/1ee97d1f-c85b-45bd-bc09-66a85bd02e55/output.json",
+    "report_key": "jobs/1ee97d1f-c85b-45bd-bc09-66a85bd02e55/report.json",
+    "manifest_key": "jobs/1ee97d1f-c85b-45bd-bc09-66a85bd02e55/manifest.json"
   },
+  "error": null,
   "links": {
-    "output": null,
-    "manifest": null,
+    "output": "/api/v1/jobs/1ee97d1f-c85b-45bd-bc09-66a85bd02e55/download/output",
+    "manifest": "/api/v1/jobs/1ee97d1f-c85b-45bd-bc09-66a85bd02e55/download/manifest",
     "errors": null,
-    "report": null
+    "report": "/api/v1/jobs/1ee97d1f-c85b-45bd-bc09-66a85bd02e55/download/report"
   },
-  "created_at": "2026-10-24T14:49:26.602Z",
-  "started_at": "2026-10-24T14:49:27.542Z",
-  "finished_at": "2026-10-24T14:49:27.552Z"
+  "created_at": "2026-10-24T16:23:55.402Z",
+  "started_at": "2026-10-24T16:23:55.874Z",
+  "finished_at": "2026-10-24T16:23:55.920Z",
+  "manifest_path": "/out/005-05-frequency-cap-manifest.json",
+  "report_path": "/out/005-05-frequency-cap-report.json"
 }

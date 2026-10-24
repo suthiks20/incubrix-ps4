@@ -1,0 +1,35 @@
+{
+  "connector_key": "devto",
+  "destination_name": "sim-healthy-devto",
+  "instance_type": "MOCK instance, not a real platform",
+  "run_id": "a14c4ad3-cbcf-43ea-9fc6-35ef5c64ae5b",
+  "status": "passed",
+  "level": "L3",
+  "steps": [
+    {
+      "name": "validate",
+      "status": "passed"
+    },
+    {
+      "name": "publish",
+      "status": "passed"
+    },
+    {
+      "name": "confirm_live",
+      "status": "passed"
+    },
+    {
+      "name": "read_status",
+      "status": "passed"
+    },
+    {
+      "name": "delete",
+      "status": "passed"
+    },
+    {
+      "name": "verify_gone",
+      "status": "passed"
+    }
+  ],
+  "delete_supported": true
+}

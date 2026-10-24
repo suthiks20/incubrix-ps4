@@ -1,8 +1,20 @@
 {
   "type": "batch_publish",
   "input": {
-    "case": "renamed_field",
-    "scenario": "renamed_field",
-    "idempotency_key": "sample-renamed-field"
+    "items": [
+      {
+        "case": "renamed_field",
+        "destination": "sim-renamed-field",
+        "rendition": {
+          "title": "Batch renamed field sample",
+          "body": "This simulation returns a changed platform response field."
+        },
+        "idempotency_key": "sample-renamed-field",
+        "expected": {
+          "outcome": "failed",
+          "code": "SCHEMA_DRIFT"
+        }
+      }
+    ]
   }
 }

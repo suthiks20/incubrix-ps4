@@ -1,8 +1,20 @@
 {
   "type": "batch_publish",
   "input": {
-    "case": "expired_token",
-    "scenario": "expired_token",
-    "idempotency_key": "sample-expired-token"
+    "items": [
+      {
+        "case": "expired_token",
+        "destination": "sim-expired-token",
+        "rendition": {
+          "title": "Batch expired token sample",
+          "body": "This simulation expects an expired credential."
+        },
+        "idempotency_key": "sample-expired-token",
+        "expected": {
+          "outcome": "failed",
+          "code": "CONNECTION_AUTH_EXPIRED"
+        }
+      }
+    ]
   }
 }
