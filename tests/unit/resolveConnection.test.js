@@ -83,6 +83,21 @@ test('resolveConnection uses simulation credentials when no environment value ex
   expect(connection).toEqual({ api_key: 'sim-key', api_username: 'sim-user' });
 });
 
+test('seeded simulation destinations ignore stored platform credentials', () => {
+  connectionsDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'ix-connections-'));
+  const connectionsFile = path.join(connectionsDirectory, 'connections.json');
+  fs.writeFileSync(connectionsFile, JSON.stringify({
+    lemmy: { username: 'fake-real-user', password: 'fake-real-password' }
+  }));
+  process.env.CONNECTIONS_FILE = connectionsFile;
+  const connection = resolveConnection({
+    connector_key: 'lemmy',
+    connection_ref: 'local-lemmy',
+    config: { simulation: true }
+  }, { SIMULATION_MODE: true, CONNECTIONS_FILE: connectionsFile });
+  expect(connection).toEqual({ username: 'sim-user', password: 'lemmy-password' });
+});
+
 test('resolveConnection fails safely without an environment value outside simulation', () => {
   delete process.env[environmentName];
   expect(() => resolveConnection({ connection_ref: 'mixed.ref-2' }, { SIMULATION_MODE: false }))

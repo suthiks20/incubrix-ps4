@@ -95,6 +95,47 @@ test imports it with mocked reachability, records the actual elapsed time and co
 `evidence/catalogue-1000-import.json`, and verifies the under-five-minute target. No new environment
 settings are needed for catalogue import.
 
+## Simulation demo seed and self-test
+
+`npm run seed` applies migrations and idempotently creates mock-only demo destinations. It creates rows
+only when `SIMULATION_MODE=true`; API startup performs the same seed automatically when
+`SEED_DEMO=true`. The seeded destinations use local mock routes and fake simulation credentials,
+never real platform credentials.
+
+Queue all hidden-case checks with:
+
+```powershell
+curl.exe -X POST http://localhost:8000/api/v1/selftest -H "Idempotency-Key: reviewer-selftest" -H "Content-Type: application/json"
+```
+
+The job result includes a `links.report` URL and a `links.manifest` URL. Poll
+`GET /api/v1/jobs/{job_id}` until the status is terminal, then fetch each link. Requests can include a
+single `case` to review that one scenario; omitting it runs the full set. When `API_TOKEN` is enabled,
+add `-H "Authorization: Bearer $env:API_TOKEN"` to the command.
+
+### Reviewer guide
+
+Run these commands only against the local simulation stack. Each queues one case; expected code and
+system behavior are shown alongside it. Poll the returned `job_id` and download `links.report` to see
+the case result. Add the bearer header if API authentication is enabled.
+
+| Hard case | Copy-paste curl | Expected result |
+| --- | --- | --- |
+| Timeout and same-key retry | `curl.exe -X POST http://localhost:8000/api/v1/selftest -H "Idempotency-Key: review-timeout" -H "Content-Type: application/json" --data-raw '{"case":"timeout_then_retry"}'` | `PLATFORM_UNAVAILABLE`; retry replays the marker-matched post, exactly one post exists, then it is deleted. |
+| 429 reset honored | `curl.exe -X POST http://localhost:8000/api/v1/selftest -H "Idempotency-Key: review-rate-limit" -H "Content-Type: application/json" --data-raw '{"case":"rate_limit_reset_honored"}'` | `PLATFORM_RATE_LIMIT`; waits for the mock reset and retries successfully. |
+| Expired token | `curl.exe -X POST http://localhost:8000/api/v1/selftest -H "Idempotency-Key: review-expired" -H "Content-Type: application/json" --data-raw '{"case":"expired_token"}'` | `CONNECTION_AUTH_EXPIRED`; no post is created. |
+| Content rejected | `curl.exe -X POST http://localhost:8000/api/v1/selftest -H "Idempotency-Key: review-rejected" -H "Content-Type: application/json" --data-raw '{"case":"content_rejected"}'` | `PLATFORM_CONTENT_REJECTED`; no post is created. |
+| Title too long | `curl.exe -X POST http://localhost:8000/api/v1/selftest -H "Idempotency-Key: review-title" -H "Content-Type: application/json" --data-raw '{"case":"title_too_long"}'` | `DEST_SPEC_VIOLATION`; the title is rejected before publish. |
+| Body too long | `curl.exe -X POST http://localhost:8000/api/v1/selftest -H "Idempotency-Key: review-body" -H "Content-Type: application/json" --data-raw '{"case":"body_too_long"}'` | `DEST_SPEC_VIOLATION`; the body is rejected before publish. |
+| Unsupported media | `curl.exe -X POST http://localhost:8000/api/v1/selftest -H "Idempotency-Key: review-media" -H "Content-Type: application/json" --data-raw '{"case":"media_not_accepted"}'` | `DEST_SPEC_VIOLATION`; report names `media[0].type` and its allowed types. |
+| Weekly frequency cap | `curl.exe -X POST http://localhost:8000/api/v1/selftest -H "Idempotency-Key: review-cap" -H "Content-Type: application/json" --data-raw '{"case":"second_post_inside_frequency_cap"}'` | `DEST_RULE_FREQUENCY_CAP`; the second post is rescheduled and the first is deleted. |
+| Promotion on no-promo destination | `curl.exe -X POST http://localhost:8000/api/v1/selftest -H "Idempotency-Key: review-promotion" -H "Content-Type: application/json" --data-raw '{"case":"promotion_to_no_promo_destination"}'` | `DEST_RULE_VIOLATION`; the promotional post is blocked. |
+| Renamed response field | `curl.exe -X POST http://localhost:8000/api/v1/selftest -H "Idempotency-Key: review-schema" -H "Content-Type: application/json" --data-raw '{"case":"renamed_field_demotes_destination"}'` | `SCHEMA_DRIFT`; certification detects drift, cleans up, and restores the destination's prior demotion state. |
+| Partner permission revoked | `curl.exe -X POST http://localhost:8000/api/v1/selftest -H "Idempotency-Key: review-revoked" -H "Content-Type: application/json" --data-raw '{"case":"partner_revokes_permission"}'` | `CONNECTION_AUTH_EXPIRED`; publishing stops. |
+| Non-English mismatch | `curl.exe -X POST http://localhost:8000/api/v1/selftest -H "Idempotency-Key: review-language" -H "Content-Type: application/json" --data-raw '{"case":"non_english_community_mismatch"}'` | `DEST_RULE_VIOLATION`; the community-language mismatch is blocked. |
+| AI disclosure | `curl.exe -X POST http://localhost:8000/api/v1/selftest -H "Idempotency-Key: review-disclosure" -H "Content-Type: application/json" --data-raw '{"case":"ai_disclosure_auto_appended"}'` | `AI_DISCLOSURE_APPENDED`; disclosure is added and the mock post is deleted. |
+| Catalogue CSV | `curl.exe -X POST http://localhost:8000/api/v1/selftest -H "Idempotency-Key: review-catalogue" -H "Content-Type: application/json" --data-raw '{"case":"csv_duplicates_bad_urls_mixed_languages"}'` | `CATALOGUE_IMPORT_COMPLETED`; real importer reports the duplicate, bad URL, and English/Spanish languages. |
+
 ## Idempotency
 
 Every `POST` whose path starts with `/api/v1` requires an `Idempotency-Key` header containing 1–255 printable ASCII characters. A repeat with the same key, method, path, and request content replays the stored status and body and adds `Idempotent-Replay: true`. Reusing the same key for different request content returns `409 IDEMPOTENCY_KEY_CONFLICT`. If the original request is still running, the duplicate waits up to `IDEMPOTENCY_WAIT_MS`, then returns retryable `409 IDEMPOTENCY_REQUEST_IN_PROGRESS` if it has not finished. Completed keys are retained for `IDEMPOTENCY_TTL_HOURS`; abandoned in-progress claims can be reclaimed after `IDEMPOTENCY_LOCK_TTL_SECONDS`. Connector publish accepts the standard `Idempotency-Key` header; a matching `idempotency_key` body value is also supported. Health routes and non-POST methods are excluded.
@@ -169,7 +210,8 @@ curl.exe -X POST http://localhost:8000/connector/v1/discourse/publish -H "Conten
 | LOG_LEVEL | info | Pino severity threshold |
 | DATABASE_URL | required | PostgreSQL connection string |
 | PUBLIC_BASE_URL | http://localhost:8000 | Public service URL |
-| SIMULATION_MODE | true | Future simulation switch |
+| SIMULATION_MODE | true | Mount local mock platform endpoints |
+| SEED_DEMO | false | Seed local demo destinations during API startup in simulation mode |
 | DB_AUTO_MIGRATE | true | Apply pending migrations before listening |
 | API_TOKEN | empty | Optional bearer token; empty disables authentication |
 | TEST_DATABASE_URL | optional | Isolated database used by Jest integration tests |
@@ -199,10 +241,10 @@ curl.exe -X POST http://localhost:8000/connector/v1/discourse/publish -H "Conten
 
 ## Phases
 
-
-- Phase 1 — done: project skeleton, health/readiness, configuration, errors, logging, tests, and Docker.
-- Phase 2 — done: migrations, optional bearer authentication, and destinations API.
-- Phase 3 - done: idempotency claims, response replay, and concurrent duplicate protection.
-- Phase 3.5 cleanup - done: client error envelopes, server-managed destination fields, and config cleanup.
-- Phase 4 - done: connector framework, Discourse, simulator, and publish ledger.
-- Phase 5 - done: rules engine, webhook, assisted connector, race protections, and simulation coverage.
+- Phase 1 — DONE: Core connectors, real Lemmy/Ghost certification, mock parity, media validation, and metrics.
+- Phase 2 — DONE: Output manifests, jobs, API rate limiting, and OpenAPI route parity.
+- Phase 3 — PARTIAL: Integration proof and batch CLI are in place; `batch_publish` scenarios remain unavailable.
+- Phase 4 — DONE: Idempotent simulation seeding and all 14 hidden-case selftests pass.
+- Phase 5 — DONE: Tailoring, relevance scoring, and rules capture.
+- Phase 6 — NOT DONE: MRSS, Slack, and Hashnode connectors remain to be implemented.
+- Phase 7 — PARTIAL: Catalogue import and 1,000-row evidence are present; full assessment closure still awaits Phase 6 and Phase 3 batch scenarios.

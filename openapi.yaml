@@ -290,6 +290,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/JobAccepted'
+  /api/v1/selftest:
+    post:
+      summary: Queue the simulation hard-case self-test
+      description: Runs the seeded local mock scenarios and stores a downloadable report.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SelftestRequest'
+      responses:
+        '202':
+          description: Self-test job accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobAccepted'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '501':
+          description: Self-test is unavailable outside simulation mode
   /api/v1/jobs/{id}:
     get:
       summary: Fetch job by id
@@ -308,10 +332,10 @@ paths:
           required: true
           schema:
             type: string
-            enum: [output, manifest, errors]
+            enum: [output, manifest, errors, report]
       responses:
         '200':
-          description: Downloaded job output, manifest, or catalogue error CSV
+          description: Downloaded job output, report, manifest, or catalogue error CSV
   /api/v1/catalogue/import:
     post:
       summary: Import destinations from a CSV upload or URL
@@ -543,6 +567,27 @@ components:
           additionalProperties: true
         callback_url:
           type: string
+    SelftestRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        case:
+          type: string
+          enum:
+            - timeout_then_retry
+            - rate_limit_reset_honored
+            - expired_token
+            - content_rejected
+            - title_too_long
+            - body_too_long
+            - media_not_accepted
+            - second_post_inside_frequency_cap
+            - promotion_to_no_promo_destination
+            - renamed_field_demotes_destination
+            - partner_revokes_permission
+            - non_english_community_mismatch
+            - ai_disclosure_auto_appended
+            - csv_duplicates_bad_urls_mixed_languages
     CatalogueImportRequest:
       type: object
       additionalProperties: false

@@ -7,6 +7,7 @@ import * as schemas from './schemas';
 
 async function routes(app: any): Promise<void> {
   app.post('/api/v1/jobs', { schema: schemas.create }, handlers.create);
+  app.post('/api/v1/selftest', handlers.selftest);
   app.get('/api/v1/jobs/:id', { schema: schemas.get }, handlers.get);
   app.get('/api/v1/jobs/:id/download/:kind', { schema: schemas.download }, handlers.download);
   app.get('/api/v1/jobs', { schema: schemas.list }, handlers.list);

@@ -27,7 +27,8 @@ function workerDeps(ctx) {
     storage: ctx.app.storage,
     now: () => new Date(),
     connectorFactory: ctx.app.connectorFactory,
-    catalogueOptions: ctx.app.catalogueOptions
+    catalogueOptions: ctx.app.catalogueOptions,
+    app: ctx.app
   };
 }
 

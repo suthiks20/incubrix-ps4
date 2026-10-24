@@ -10,6 +10,7 @@ interface AppConfig {
   DATABASE_URL: string;
   PUBLIC_BASE_URL: string;
   SIMULATION_MODE: boolean;
+  SEED_DEMO: boolean;
   DB_AUTO_MIGRATE: boolean;
   API_TOKEN: string;
   TEST_DATABASE_URL: string;
@@ -97,6 +98,7 @@ function loadConfig(env: Environment = process.env): Readonly<AppConfig> {
     DATABASE_URL: requireValue(env, 'DATABASE_URL'),
     PUBLIC_BASE_URL: validateUrl('PUBLIC_BASE_URL', env.PUBLIC_BASE_URL || 'http://localhost:8000'),
     SIMULATION_MODE: parseBoolean('SIMULATION_MODE', env.SIMULATION_MODE, true),
+    SEED_DEMO: parseBoolean('SEED_DEMO', env.SEED_DEMO, false),
     DB_AUTO_MIGRATE: parseBoolean('DB_AUTO_MIGRATE', env.DB_AUTO_MIGRATE, true),
     API_TOKEN: env.API_TOKEN || '',
     TEST_DATABASE_URL: env.TEST_DATABASE_URL || '',

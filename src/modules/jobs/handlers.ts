@@ -11,6 +11,16 @@ async function create(request: any, reply: any): Promise<any> {
   return { job_id: job.id, status: 'queued', progress: 0 };
 }
 
+async function selftest(request: any, reply: any): Promise<any> {
+  const job = await service.create(
+    request.server,
+    { type: 'selftest', input: request.body || {} },
+    request.id
+  );
+  reply.code(202);
+  return { job_id: job.id, status: 'queued', progress: 0 };
+}
+
 async function get(request: any): Promise<any> {
   return service.get(request.server.knex, request.params.id);
 }
@@ -26,4 +36,4 @@ async function download(request: any, reply: any): Promise<any> {
   return reply.send(value);
 }
 
-export { create, get, list, download };
+export { create, selftest, get, list, download };

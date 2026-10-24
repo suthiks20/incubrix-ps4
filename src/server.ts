@@ -8,6 +8,7 @@ import { runMigrations } from './db/migrate';
 import { purgeExpired } from './shared/idempotency/repository';
 import { runCleanup } from './modules/certification/services/cleanup';
 import { runPending } from './modules/jobs/worker';
+import { seedDemoDestinations } from './modules/seed/demo';
 const app = buildApp();
 let cleanupTimer: ReturnType<typeof setInterval> | undefined;
 let jobsTimer: ReturnType<typeof setInterval> | undefined;
@@ -19,7 +20,8 @@ function cleanupDeps(): any {
     logger: app.log,
     storage: app.storage,
     now: () => new Date(),
-    connectorFactory: app.connectorFactory
+    connectorFactory: app.connectorFactory,
+    app
   };
 }
 
@@ -54,6 +56,11 @@ process.on('SIGTERM', () => closeServer('SIGTERM'));
 process.on('SIGINT', () => closeServer('SIGINT'));
 async function startServer(): Promise<void> {
   if (config.DB_AUTO_MIGRATE) await runMigrations(app.knex, app.log);
+  if (config.SEED_DEMO && config.SIMULATION_MODE) {
+    const mockRoot = `http://127.0.0.1:${config.PORT}/mock`;
+    const count = await seedDemoDestinations(app.knex, config, mockRoot);
+    app.log.info({ demo_destinations: count }, 'Simulation destinations seeded');
+  }
   const purgedCount = await purgeExpired(app.knex);
   app.log.info({ purged_count: purgedCount }, 'Expired idempotency keys purged');
   await runJanitor();

@@ -7,14 +7,45 @@
 | 1 — Core certification, mocks, media and metrics | DONE | Lemmy and Ghost passed real API certification at L3; secret-free evidence is in `evidence/cert-lemmy-real.json` and `evidence/cert-ghost-real.json`, including direct deletion checks. All mock fault scenarios are available, all connector manifests define media MIME types, media violations identify the field/reason/allowed types, and Discourse, Dev.to, and Ghost return normalized metrics. |
 | 2 — Integration Standard, first half | DONE | The six named manifest, rate-limit, OpenAPI and job-type tests pass in `tests/integration/phase2.integration.test.js`. |
 | 3 — Integration Standard, second half | PARTIAL | Assisted error envelopes, batch CLI output/auth, end-to-end flow, config parity, structured job logs, and ten proof rows are verified. The eight batch sample scenarios are labeled, but `batch_publish` remains `JOB_TYPE_NOT_READY`; see `docs/INTEGRATION_PROOF.md`. Docker gate: 70 suites / 357 tests; lint and build clean. |
-| 4 — Hidden-test readiness | NOT DONE | `src/modules/jobs/types/index.ts` still returns `JOB_TYPE_NOT_READY` for selftest; demo seeding and the selftest hard-case runner remain unimplemented. |
+| 4 — Hidden-test readiness | DONE | `SEED_DEMO` startup and `npm run seed` create 17 idempotent mock-only destinations. `/api/v1/selftest` runs all 14 scenarios (or one reviewer-selected case), stores the report and links the report and manifest. All cases pass, test posts are cleaned, and certification demotion is restored. Verified in `tests/integration/phase4.selftest.test.js`. |
 | 5 — Tailoring, relevance and rules capture | DONE | All eight required test names, plus supporting regression tests, pass in `tests/integration/phase5.tailoring.test.js`. |
 | 6 — MRSS, Slack and Hashnode | NOT DONE | No connector implementations/manifests exist under `src/modules/connectors/` for these three platforms. |
-| 7 — Catalogue import | PARTIAL | Import route/job, CSV parser, deduplication, validation, row-level error report and fixture are covered in `tests/integration/catalogue/catalogue.import.test.js`. Latest Docker API import evidence: 1,000 rows, 880 imported, 100 duplicates, 120 errors, 2.517 seconds; see `evidence/catalogue-1000-import.json`. The complete Phase 7 gate remains blocked by unfinished Phase 4 and Phase 6 work. |
+| 7 — Catalogue import | PARTIAL | Import route/job, CSV parser, deduplication, validation, row-level error report and fixture are covered in `tests/integration/catalogue/catalogue.import.test.js`. Latest Docker API import evidence: 1,000 rows, 880 imported, 100 duplicates, 120 errors, 2.517 seconds; see `evidence/catalogue-1000-import.json`. Overall advanced-item closure remains blocked by unfinished Phase 6. |
 
 ## Latest repair and verification
 
-### Phase 3 Integration Standard, second half (25 Oct 2026)
+### Phase 4 hidden-test readiness (24 Oct 2026)
+
+Added the idempotent `npm run seed` command and `SEED_DEMO` startup seeding. The seed inserts 17
+mock-only destination rows, including every required fault scenario and a healthy destination for
+each of the six core connectors. JSONB fields are serialized before writes; the seed leaves
+certification-owned destination fields to the certification module. Seeded simulation destinations
+resolve only fake simulation credentials, even if a platform connection file exists.
+
+Replaced the selftest not-ready handler with a queued job and `POST /api/v1/selftest`. The complete
+run checks timeout reconciliation, reset-aware 429 retry, expired credentials, rejected content,
+title/body/media limits, frequency caps, promotion rules, certification schema drift and cleanup,
+revoked partner permission, language policy, AI disclosure, and real catalogue import behavior.
+The job stores a JSON report and output manifest and exposes both download links. Posts created by
+the mock checks are deleted; the certification case restores its previous destination certification
+state. The README reviewer guide provides a one-command-per-case workflow.
+
+Docker verification:
+
+```text
+docker compose up --build -d                  PASS
+docker compose run --rm api npm test          Test Suites: 71 passed, 71 total
+                                              Tests:       367 passed, 367 total
+docker compose run --rm api npm run lint      PASS
+docker compose run --rm api npm run build     PASS
+```
+
+All five required Phase 4 tests and `openapi.yaml matches the registered routes exactly` passed
+in verbose output. Startup seeding with `SEED_DEMO=true` was verified to produce 17 destination
+rows. `npm run seed` completed successfully. The seed and selftest tests also confirm no stale
+posts, idempotent job submission, per-case expected/actual codes, and destination-state restoration.
+
+### Phase 3 Integration Standard, second half (24 Oct 2026)
 
 Implemented shared error-envelope coverage for assisted unsupported methods; added optional bearer-token
 support to `ix-batch`, deterministic per-input result files (including submission failures), manifest

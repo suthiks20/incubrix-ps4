@@ -80,9 +80,10 @@ function links(job: any): any {
   const output = job.result?.output_key ? `/api/v1/jobs/${job.id}/download/output` : null;
   const manifest = job.result?.manifest_key ? `/api/v1/jobs/${job.id}/download/manifest` : null;
   const errors = job.result?.errors_key ? `/api/v1/jobs/${job.id}/download/errors` : null;
-  if (!job.result || !job.result.run_id) return { output, manifest, errors };
+  const report = job.result?.report_key ? `/api/v1/jobs/${job.id}/download/report` : null;
+  if (!job.result || !job.result.run_id) return { output, manifest, errors, report };
   const run = `/api/v1/certification/runs/${job.result.run_id}`;
-  return { run, evidence: `${run}/evidence`, output, manifest, errors };
+  return { run, evidence: `${run}/evidence`, output, manifest, errors, report };
 }
 
 async function get(knex: any, id: string): Promise<any> {
@@ -98,7 +99,8 @@ async function download(deps: any, id: string, kind: string): Promise<Buffer> {
   const keys: Record<string, string | undefined> = {
     manifest: job.result?.manifest_key,
     output: job.result?.output_key,
-    errors: job.result?.errors_key
+    errors: job.result?.errors_key,
+    report: job.result?.report_key
   };
   const key = keys[kind];
   if (!key) throw new AppError('NOT_FOUND', 'Job output not found', { statusCode: 404 });

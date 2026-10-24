@@ -69,4 +69,12 @@ async function recordFailed(deps, result, error) {
   return row;
 }
 
-module.exports = { recordPassed, recordFailed, failedRunValues };
+async function restoreDestinationState(knex, destinationId, state) {
+  return destinations.updateCertification(knex, destinationId, {
+    level: state.level,
+    last_certified_at: state.last_certified_at,
+    demoted: state.demoted
+  });
+}
+
+module.exports = { recordPassed, recordFailed, failedRunValues, restoreDestinationState };

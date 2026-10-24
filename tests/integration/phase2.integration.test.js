@@ -130,10 +130,13 @@ describe('phase 2 integration standard', () => {
     expect(response.json().error.code).toBe('JOB_TYPE_UNKNOWN');
   });
 
-  test('job type selftest returns JOB_TYPE_NOT_READY', async () => {
+  test('selftest job reports unavailable when simulation mode is disabled', async () => {
     const response = await postJob(ctx, { type: 'selftest', input: {} }, 'job-selftest-1');
     expect(response.statusCode).toBe(202);
-    await require('../../src/modules/jobs/worker').runPending(workerDeps(ctx));
+    await require('../../src/modules/jobs/worker').runPending({
+      ...workerDeps(ctx),
+      config: { ...ctx.app.config, SIMULATION_MODE: false }
+    });
     const read = await ctx.app.inject(`/api/v1/jobs/${response.json().job_id}`);
     expect(read.json().error.code).toBe('JOB_TYPE_NOT_READY');
   });

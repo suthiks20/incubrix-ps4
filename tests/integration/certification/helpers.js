@@ -33,7 +33,12 @@ const MOCK_SCENARIOS = {
 async function createContext(options = {}) {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'ix-cert-'));
   const knex = createTestDatabase();
-  const config = { ...baseConfig, CERT_ALLOWED_HOSTS: ['127.0.0.1'], STORAGE_DIR: directory };
+  const config = {
+    ...baseConfig,
+    ...options.config,
+    CERT_ALLOWED_HOSTS: ['127.0.0.1'],
+    STORAGE_DIR: directory
+  };
   const app = buildApp({
     knex,
     apiToken: options.apiToken || '',
