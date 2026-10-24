@@ -8,7 +8,10 @@ const codes = require('../../src/shared/errors/codes');
 const registry = require('../../src/modules/connectors/registry');
 const { createTestDatabase } = require('./testDatabase');
 
-const connectorKeys = ['discourse', 'devto', 'lemmy', 'ghost', 'webhook', 'mrss'];
+const connectorKeys = [
+  'discourse', 'devto', 'lemmy', 'ghost', 'webhook', 'assisted',
+  'mrss', 'slack', 'hashnode'
+];
 let app;
 let knex;
 

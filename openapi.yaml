@@ -394,6 +394,7 @@ paths:
           required: true
           schema:
             type: string
+            enum: [discourse, lemmy, devto, ghost, webhook, assisted, mrss, slack, hashnode]
         - in: path
           name: method
           required: true

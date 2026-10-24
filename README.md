@@ -175,6 +175,17 @@ are escaped by the feed renderer. Item guids are stable idempotency markers, so 
 an ambiguous publish does not add a duplicate item. The connector supports publish,
 status, and delete at level L2.
 
+Slack destinations use `config.base_url` for the workspace API and `config.channel_id`
+for the target channel. Configure `connection.bot_token`; publishing calls `chat.postMessage`,
+status reads channel history, and delete calls `chat.delete`. The marker is stored in Slack
+message metadata.
+
+Hashnode destinations use `config.base_url` for the GraphQL endpoint and
+`config.publication_id` for the publication. Configure `connection.api_key`; the connector
+uses `publishPost`, `post`, `postBySlug` marker lookup, and `removePost`. Both connectors
+support the shared publish, status, and delete contract and video/image MIME types declared
+in their manifests. Their scenarios run only against the local simulation mocks.
+
 | Simulation scenario | Result |
 | --- | --- |
 | normal | Creates and reads posts normally |

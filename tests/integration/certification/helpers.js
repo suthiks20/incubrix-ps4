@@ -38,6 +38,16 @@ const MOCK_SCENARIOS = {
     'delete_fails_once',
     'delete_fails_twice'
   ],
+  slack: [
+    'normal', 'timeout_after_success', 'renamed_field', 'rate_limit_long',
+    'expired_token', 'content_rejected', 'unavailable', 'delete_fails_once',
+    'delete_fails_twice'
+  ],
+  hashnode: [
+    'normal', 'timeout_after_success', 'renamed_field', 'rate_limit_long',
+    'expired_token', 'content_rejected', 'unavailable', 'delete_fails_once',
+    'delete_fails_twice'
+  ],
   webhook: ['normal', 'renamed_field']
 };
 
@@ -89,7 +99,11 @@ function createDestination(ctx, connector, scenario, overrides = {}) {
     url_normalized: baseUrl,
     platform_key: connector,
     connector_key: connector,
-    config: JSON.stringify({ base_url: baseUrl }),
+    config: JSON.stringify({
+      base_url: baseUrl,
+      ...(connector === 'slack' ? { channel_id: 'C_TEST' } : {}),
+      ...(connector === 'hashnode' ? { publication_id: 'publication-test-id' } : {})
+    }),
     language: 'en',
     ...overrides
   };

@@ -1,0 +1,23 @@
+# Describes the Slack bot connector contract and content limits.
+# The workspace URL is configured per destination.
+key: slack
+version: 1.0.0
+tier: native
+auth: bot_token
+surfaces:
+  - key: message
+    content_types: [text, image, video]
+    spec:
+      title_max_chars: 150
+      body_max_chars: 40000
+      links_allowed: true
+      media_types: [video/mp4, video/webm, image/jpeg, image/png]
+rate_limits:
+  per_connection:
+    requests: 50
+    per_seconds: 60
+capabilities: [publish, status, delete]
+error_map:
+  '401': CONNECTION_AUTH_EXPIRED
+  '429': PLATFORM_RATE_LIMIT
+instance_param: base_url

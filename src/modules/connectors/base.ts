@@ -116,7 +116,16 @@ function createBase(manifest: Manifest, options: any = {}): any {
       clearTimeout(timer);
       if (response.ok) { circuits.set(key, { failures: 0, openedAt: null }); return response; }
       let message = '';
-      try { const parsed = await response.clone().json(); message = parsed.errors && parsed.errors.join('; ') || parsed.error || ''; } catch { message = ''; }
+      try {
+        const parsed = await response.clone().json();
+        message = Array.isArray(parsed.errors)
+          ? parsed.errors.map((entry) => typeof entry === 'string' ? entry : entry && entry.message).filter(Boolean).join('; ')
+          : typeof parsed.error === 'string'
+            ? parsed.error
+            : typeof parsed.message === 'string'
+              ? parsed.message
+              : '';
+      } catch { message = ''; }
       for (const field of options.secretFields || ['api_key', 'api_username']) {
         const secret = connection[field];
         if (typeof secret === 'string' && secret) message = message.split(secret).join('[REDACTED]');

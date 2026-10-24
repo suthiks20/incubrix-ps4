@@ -1,0 +1,23 @@
+# Describes the Hashnode GraphQL connector contract and content limits.
+# The publication host is configured per destination.
+key: hashnode
+version: 1.0.0
+tier: native
+auth: api_key
+surfaces:
+  - key: post
+    content_types: [text, image, video]
+    spec:
+      title_max_chars: 200
+      body_max_chars: 50000
+      links_allowed: true
+      media_types: [video/mp4, video/webm, image/jpeg, image/png]
+rate_limits:
+  per_connection:
+    requests: 30
+    per_seconds: 60
+capabilities: [publish, status, delete]
+error_map:
+  '401': CONNECTION_AUTH_EXPIRED
+  '429': PLATFORM_RATE_LIMIT
+instance_param: base_url

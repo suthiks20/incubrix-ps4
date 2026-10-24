@@ -83,6 +83,30 @@ test('mrss passes certification against its mock', async () => {
   expect((await mockState(ctx, 'mrss', 'normal')).posts).toHaveLength(0);
 });
 
+test('slack passes certification against its mock', async () => {
+  const destination = await createDestination(ctx, 'slack', 'normal');
+  const response = await certify(ctx, destination.id, 'cert-slack-1');
+  expect(response.statusCode).toBe(200);
+  const run = response.json();
+  expect(run.status).toBe('passed');
+  expect(run.level_awarded).toBe('L3');
+  expect(run.steps.map((step) => step.name)).toEqual(SIX_STEPS);
+  expect(run.steps.every((step) => step.status === 'passed')).toBe(true);
+  expect((await mockState(ctx, 'slack', 'normal')).messages).toHaveLength(0);
+});
+
+test('hashnode passes certification against its mock', async () => {
+  const destination = await createDestination(ctx, 'hashnode', 'normal');
+  const response = await certify(ctx, destination.id, 'cert-hashnode-1');
+  expect(response.statusCode).toBe(200);
+  const run = response.json();
+  expect(run.status).toBe('passed');
+  expect(run.level_awarded).toBe('L3');
+  expect(run.steps.map((step) => step.name)).toEqual(SIX_STEPS);
+  expect(run.steps.every((step) => step.status === 'passed')).toBe(true);
+  expect((await mockState(ctx, 'hashnode', 'normal')).posts).toHaveLength(0);
+});
+
 test('certifies an assisted destination as L1 with no network calls', async () => {
   const destination = await ctx.knex('destinations').insert({
     name: 'Assisted forum',

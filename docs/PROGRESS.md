@@ -1,6 +1,6 @@
 # Progress
 
-## Phase status (24 Oct 2026)
+## Phase status (25 Oct 2026)
 
 | Phase | Status | Proof and remaining work |
 |---|---|---|
@@ -9,8 +9,8 @@
 | 3 — Integration Standard, second half | PARTIAL | Assisted error envelopes, batch CLI output/auth, end-to-end flow, config parity, structured job logs, and ten proof rows are verified. The eight batch sample scenarios are labeled, but `batch_publish` remains `JOB_TYPE_NOT_READY`; see `docs/INTEGRATION_PROOF.md`. Docker gate: 70 suites / 357 tests; lint and build clean. |
 | 4 — Hidden-test readiness | DONE | `SEED_DEMO` startup and `npm run seed` create 17 idempotent mock-only destinations. `/api/v1/selftest` runs all 14 scenarios (or one reviewer-selected case), stores the report and links the report and manifest. All cases pass, test posts are cleaned, and certification demotion is restored. Verified in `tests/integration/phase4.selftest.test.js`. |
 | 5 — Tailoring, relevance and rules capture | DONE | All eight required test names, plus supporting regression tests, pass in `tests/integration/phase5.tailoring.test.js`. |
-| 6 — MRSS, Slack and Hashnode | PARTIAL | Phase 6a MRSS is implemented and passes timeout reconciliation, schema drift, XML escaping, secrets, and six-step L2 certification tests. Slack and Hashnode remain unimplemented. |
-| 7 — Catalogue import | PARTIAL | Import route/job, CSV parser, deduplication, validation, row-level error report and fixture are covered in `tests/integration/catalogue/catalogue.import.test.js`. Latest Docker API import evidence: 1,000 rows, 880 imported, 100 duplicates, 120 errors, 2.517 seconds; see `evidence/catalogue-1000-import.json`. Phase 6b still remains before overall closure. |
+| 6 — MRSS, Slack and Hashnode | DONE | MRSS, Slack and Hashnode pass timeout reconciliation, schema-drift, secret-redaction, and mock certification tests. All nine connectors are included in contract compliance. The Phase 6b gate passed: 71 suites / 392 tests, lint and build clean. |
+| 7 — Catalogue import | PARTIAL | Import route/job, CSV parser, deduplication, validation, row-level error report and fixture are covered in `tests/integration/catalogue/catalogue.import.test.js`. Latest Docker API import evidence: 1,000 rows, 880 imported, 100 duplicates, 120 errors, 2.517 seconds; see `evidence/catalogue-1000-import.json`. Phase 3 batch publishing remains unavailable; the assessment is not complete. |
 
 ## Latest repair and verification
 
@@ -22,7 +22,7 @@ normal, timeout-after-success, renamed-field, long-rate-limit, expired-token, re
 unavailable, and both delete-failure scenarios. `GET /feeds/{destination_id}.xml` builds RSS 2.0
 and Media RSS by hand; text and attribute values escape all five XML-sensitive characters.
 The connector is discoverable in the catalogue and contract test, and the feed route is in
-`openapi.yaml`. Slack and Hashnode remain for Phase 6b.
+`openapi.yaml`. Slack and Hashnode were completed in Phase 6b.
 
 Docker verification:
 
@@ -38,6 +38,37 @@ The required verbose tests all passed: `HARD CASE mrss timeout retry creates exa
 `HARD CASE mrss renamed field returns SCHEMA_DRIFT`, `mrss passes certification against its mock`,
 `mrss secrets never appear in logs`, and `mrss feed escapes xml and lists published items`.
 `openapi.yaml matches the registered routes exactly` and MRSS contract/catalogue assertions pass.
+
+### Phase 6b Slack and Hashnode connectors (25 Oct 2026)
+
+Added native Slack and Hashnode connectors with strict response checks, marker-based timeout
+reconciliation, scenario mocks, secret-redaction checks, and six-step certification. Slack handles
+Web API `ok:false` errors, bot-token auth, message history, and deletion; Hashnode handles GraphQL
+publish, marker lookup, and removal. Both appear in the registry, catalogue, nine-connector contract
+test, OpenAPI connector enum, and README.
+
+Docker verification:
+
+```text
+docker compose up --build -d                  PASS
+docker compose build api                      PASS
+docker compose run --rm api npm test          Test Suites: 71 passed, 71 total
+                                              Tests:       392 passed, 392 total
+docker compose run --rm api npm run lint      PASS
+docker compose run --rm api npm run build     PASS
+```
+
+Verbose required tests passed:
+`HARD CASE slack timeout retry creates exactly one post`,
+`HARD CASE slack renamed field returns SCHEMA_DRIFT`,
+`slack passes certification against its mock`,
+`slack secrets never appear in logs`,
+`HARD CASE hashnode timeout retry creates exactly one post`,
+`HARD CASE hashnode renamed field returns SCHEMA_DRIFT`,
+`hashnode passes certification against its mock`, and
+`hashnode secrets never appear in logs`.
+The run also caught and fixed a shared response parser regression for string-valued Discourse
+errors; the existing platform-message regression test passes.
 
 ### Phase 4 hidden-test readiness (24 Oct 2026)
 
