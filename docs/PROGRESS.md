@@ -1,28 +1,42 @@
 # Progress
 
-## Current step
+## Phase status (24 Oct 2026)
 
-Phase 7 / catalogue import — PARTIAL (24 Oct 2026). Added the catalogue-import job and API route,
-CSV parsing/validation, normalized platform+URL deduplication, bounded reachability checks, mock
-member-count enrichment, language detection, Phase 5 relevance scoring, and stored row-error CSV
-downloads. Added the 1,000-row fixture generator and 11 integration tests with the six required names.
-The fixture was generated and the pure CSV/language check reported 1,000 rows, 100 duplicate rows,
-20 invalid URLs, and Spanish detection. Local `npm run build` and `npm run lint` pass, and
-`docker compose config --quiet` passes.
+| Phase | Status | Proof and remaining work |
+|---|---|---|
+| 1 — Core certification, mocks, media and metrics | PARTIAL | Core connector integration tests pass. `evidence/cert-ghost-real.json` exists, but `evidence/cert-lemmy-real.json` is missing; connector metrics implementations are not present. |
+| 2 — Integration Standard, first half | DONE | The six named manifest, rate-limit, OpenAPI and job-type tests pass in `tests/integration/phase2.integration.test.js`. |
+| 3 — Integration Standard, second half | PARTIAL | `scripts/ix-batch.ts` and URL-input storage tests exist. The required end-to-end proof and named batch/log/config tests are not present. |
+| 4 — Hidden-test readiness | NOT DONE | `src/modules/jobs/types/index.ts` still returns `JOB_TYPE_NOT_READY` for selftest; demo seeding and the selftest hard-case runner remain unimplemented. |
+| 5 — Tailoring, relevance and rules capture | DONE | All eight required test names, plus supporting regression tests, pass in `tests/integration/phase5.tailoring.test.js`. |
+| 6 — MRSS, Slack and Hashnode | NOT DONE | No connector implementations/manifests exist under `src/modules/connectors/` for these three platforms. |
+| 7 — Catalogue import | PARTIAL | Import route/job, CSV parser, deduplication, validation, row-level error report and fixture are covered in `tests/integration/catalogue/catalogue.import.test.js`. Real Docker API import: 1,000 rows, 880 imported, 100 duplicates, 120 errors, 3.15 seconds; see `evidence/catalogue-1000-import.json`. The complete Phase 7 gate remains blocked by unfinished Phase 4 and Phase 6 work. |
 
-The database-backed tests and measured-import evidence are NOT verified. `docker compose up --build -d`
-failed while recreating `minio-init` because Docker Desktop reported a read-only containerd
-`metadata.db`; `docker compose run --rm api npm test ...` then remained stalled. A host Jest attempt
-could not load configuration without `DATABASE_URL`; with local test URLs it failed with
-`ECONNREFUSED 127.0.0.1:5432`. Therefore there are no suite/test totals and
-`evidence/catalogue-1000-import.json` has not been produced. The required selftest CSV behavior is
-exercised directly through the importer test, but the full selftest endpoint/job is still not wired.
-The other advanced connector prerequisite (MRSS, Slack, Hashnode) is also not verified, so the
-“all five Advanced items” gate remains PARTIAL.
+## Latest repair and verification
 
-Next required action: restore Docker/Postgres availability, run the full four-command Docker gate,
-fix any red tests, and retain the measured evidence from the real Postgres import. Do not mark Phase 7
-DONE until that output is captured.
+Repaired the mock-route rate-limit exemption and test override, catalogue source schema,
+JSONB insert serialization and safe error-code logging, Phase 5 POST idempotency headers,
+private-URL rejection before job fetch, and the four remaining Phase 5 test failures. Catalogue
+reachability uses a deterministic success check in simulation mode; it makes no external
+reachability requests during mock imports.
+
+Docker verification completed against the current API image:
+
+```text
+docker compose build api                  PASS
+docker compose run --rm api npm test      Test Suites: 67 passed, 67 total
+                                           Tests:       337 passed, 337 total
+docker compose run --rm api npm run lint  PASS
+docker compose run --rm api npm run build PASS
+```
+
+The required Phase 2 and Phase 5 test names were also run verbosely after rebuilding:
+`docker compose run --rm api npm test -- --verbose tests/integration/phase2.integration.test.js tests/integration/phase5.tailoring.test.js`
+reported 2 suites and 27 tests passed.
+
+The stack was started successfully with `docker compose up --build -d`. The 1,000-row import
+evidence is from the real running API, worker, Postgres and configured storage path; its
+reachability component remained simulated as intended.
 
 Infrastructure stability fix (23 Oct 2026). Fixed the SeaweedFS S3 bucket init race by retrying the bucket creation on transient connection errors and switching the MinIO healthcheck to the S3 port used by the app. This keeps `docker compose up --build -d` from failing during the `minio-init` bootstrap step when the S3 listener is still coming online. Next: validate the stack and continue the project gate.
 
@@ -59,4 +73,5 @@ T2 shared-layer conversion and T1 TypeScript tooling are done and Docker-verifie
 
 ## Next
 
-WP2b: Storage and output manifests.
+Complete Phase 4 selftest and Phase 6 connectors before claiming Advanced completion; then
+close the remaining Phase 1, Phase 3 and Phase 7 gaps. The assessment is not complete.

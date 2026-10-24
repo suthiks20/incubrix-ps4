@@ -68,10 +68,11 @@ describe('phase 2 integration standard', () => {
     const app = buildApp({
       knex,
       apiToken: '',
-      config: { ...baseConfig, RATE_LIMIT_PER_MINUTE: 2 }
+      config: { ...baseConfig, RATE_LIMIT_PER_MINUTE: 3 }
     });
     await app.ready();
     try {
+      expect((await app.inject('/api/v1/destinations')).statusCode).toBe(200);
       expect((await app.inject('/api/v1/destinations')).statusCode).toBe(200);
       expect((await app.inject('/api/v1/destinations')).statusCode).toBe(200);
       const response = await app.inject('/api/v1/destinations');
@@ -137,12 +138,20 @@ describe('phase 2 integration standard', () => {
     expect(read.json().error.code).toBe('JOB_TYPE_NOT_READY');
   });
 
-  test('job type catalogue_import returns JOB_TYPE_NOT_READY', async () => {
+  test('catalogue_import with empty input fails the job with a VALIDATION_ERROR envelope', async () => {
     const response = await postJob(ctx, { type: 'catalogue_import', input: {} }, 'job-import-1');
     expect(response.statusCode).toBe(202);
     await require('../../src/modules/jobs/worker').runPending(workerDeps(ctx));
     const read = await ctx.app.inject(`/api/v1/jobs/${response.json().job_id}`);
-    expect(read.json().error.code).toBe('JOB_TYPE_NOT_READY');
+    expect(read.json()).toEqual(expect.objectContaining({
+      status: 'failed',
+      error: expect.objectContaining({
+        code: 'VALIDATION_ERROR',
+        message: expect.any(String),
+        retryable: expect.any(Boolean),
+        details: expect.any(Object)
+      })
+    }));
   });
 
   test('job type batch_publish returns JOB_TYPE_NOT_READY', async () => {

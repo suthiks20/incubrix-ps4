@@ -5,21 +5,23 @@
 const source = {
   type: 'object',
   additionalProperties: false,
+  properties: {
+    upload: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['name', 'content_base64'],
+      properties: { name: { type: 'string' }, content_base64: { type: 'string' } }
+    },
+    url: { type: 'string', format: 'uri' }
+  },
   oneOf: [
     {
       required: ['upload'],
-      properties: {
-        upload: {
-          type: 'object',
-          additionalProperties: false,
-          required: ['name', 'content_base64'],
-          properties: { name: { type: 'string' }, content_base64: { type: 'string' } }
-        }
-      }
+      not: { required: ['url'] }
     },
     {
       required: ['url'],
-      properties: { url: { type: 'string', format: 'uri' } }
+      not: { required: ['upload'] }
     }
   ]
 };

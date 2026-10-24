@@ -32,10 +32,43 @@ describe('job storage and manifests', () => {
     await expect(ctx.app.storage.get(job.input.source.upload.storage_key)).resolves.toEqual(Buffer.from('{"demo":true}'));
   });
 
-  test('a URL source is accepted and retained without fetching an untrusted URL', async () => {
+  test('job source url to a private address is rejected', async () => {
     const destination = await createDestination(ctx, 'discourse', 'normal');
-    const created = await postJob(ctx, { type: 'certify', input: { destination_id: destination.id, source: { url: 'https://example.test/input.json' } } }, 'storage-url-1');
-    const job = await ctx.knex('jobs').where({ id: created.json().job_id }).first();
-    expect(job.input.source).toEqual({ url: 'https://example.test/input.json' });
+    const response = await postJob(ctx, {
+      type: 'certify',
+      input: { destination_id: destination.id, source: { url: 'http://127.0.0.1/private' } }
+    }, 'storage-private-url-1');
+    expect(response.statusCode).toBe(400);
+    expect(response.json().error).toEqual(expect.objectContaining({
+      code: 'VALIDATION_ERROR',
+      message: expect.any(String),
+      retryable: expect.any(Boolean),
+      details: expect.any(Object)
+    }));
+  });
+
+  test('job source url is fetched and stored', async () => {
+    const destination = await createDestination(ctx, 'discourse', 'normal');
+    const csv = Buffer.from('{"source":"mocked"}');
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue(new Response(csv));
+    try {
+      const created = await postJob(ctx, {
+        type: 'certify',
+        input: {
+          destination_id: destination.id,
+          source: { url: 'https://example.com/input.json' }
+        }
+      }, 'storage-url-fetch-1');
+      expect(created.statusCode).toBe(202);
+      const job = await ctx.knex('jobs').where({ id: created.json().job_id }).first();
+      expect(job.input.source).toEqual({
+        url: 'https://example.com/input.json',
+        storage_key: expect.stringMatching(/jobs\/.+\/input\/input\.json/)
+      });
+      await expect(ctx.app.storage.get(job.input.source.storage_key)).resolves.toEqual(csv);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      fetchMock.mockRestore();
+    }
   });
 });

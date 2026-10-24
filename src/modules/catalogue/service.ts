@@ -230,7 +230,8 @@ async function checkReachability(
   const reachable: Candidate[] = [];
   await mapConcurrent(candidates, 50, async (candidate) => {
     try {
-      const check = options.reachability || defaultReachability;
+      const check = options.reachability ||
+        (options.simulationMode ? async () => true : defaultReachability);
       if (!await check(candidate.destination.url)) {
         errors.push(errorRow(
           candidate.rowNumber,
@@ -265,7 +266,12 @@ async function checkReachability(
   return reachable;
 }
 
-async function saveCandidates(knex: any, candidates: Candidate[], errors: any[]): Promise<number> {
+async function saveCandidates(
+  knex: any,
+  candidates: Candidate[],
+  errors: any[],
+  logger: any
+): Promise<number> {
   let imported = 0;
   for (const candidate of candidates) {
     try {
@@ -273,6 +279,10 @@ async function saveCandidates(knex: any, candidates: Candidate[], errors: any[])
       imported += 1;
     } catch (error: any) {
       const duplicate = error.code === '23505';
+      logger.error(
+        { code: error.code || 'UNKNOWN' },
+        'Catalogue destination insert failed'
+      );
       errors.push(errorRow(candidate.rowNumber, candidate.source,
         duplicate ? 'DUPLICATE_DESTINATION' : 'INTERNAL_ERROR',
         duplicate ? 'Destination already exists' : 'Destination could not be saved'));
@@ -298,9 +308,13 @@ async function importCatalogue(
   const candidates = buildCandidates(rows, errors);
   const ready = await removeExisting(deps.knex, candidates, errors);
   await progress(25);
-  const reachable = await checkReachability(ready, deps.catalogueOptions || {}, errors);
+  const reachabilityOptions = {
+    ...deps.catalogueOptions,
+    simulationMode: deps.config?.SIMULATION_MODE === true
+  };
+  const reachable = await checkReachability(ready, reachabilityOptions, errors);
   await progress(70);
-  const imported = await saveCandidates(deps.knex, reachable, errors);
+  const imported = await saveCandidates(deps.knex, reachable, errors, deps.logger);
   errors.sort((left, right) => left.row - right.row);
   const errorKey = `jobs/${deps.job_id}/catalogue-errors.csv`;
   await deps.storage.put(errorKey, formatErrorCsv(errors));

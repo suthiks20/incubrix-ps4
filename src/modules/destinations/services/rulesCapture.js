@@ -21,6 +21,7 @@ async function captureRules(knex, destinationId, payload, server) {
     status: 'PENDING',
     rules: proposal.rules,
     provider: proposal.provider || provider,
+    source: payload.url || null,
     created_at: proposal.created_at
   };
 }

@@ -5,6 +5,7 @@
 import AppError = require('../../shared/errors/AppError');
 import * as repository from './repository';
 import types = require('./types');
+import { publicHttpUrl } from '../catalogue/service';
 
 function validCallback(url: any): boolean {
   return !url || (typeof url === 'string' && /^https?:\/\//.test(url));
@@ -12,7 +13,14 @@ function validCallback(url: any): boolean {
 
 function validSource(source: any): boolean {
   if (!source) return true;
-  if (typeof source.url === 'string') return /^https?:\/\//.test(source.url);
+  if (typeof source.url === 'string') {
+    try {
+      publicHttpUrl(source.url);
+      return true;
+    } catch {
+      return false;
+    }
+  }
   return Boolean(source.upload && typeof source.upload.name === 'string' && typeof source.upload.content_base64 === 'string');
 }
 
@@ -21,11 +29,19 @@ async function persistInput(storage: any, knex: any, job: any): Promise<any> {
   if (!source) return job;
 
   if (source.url) {
+    try {
+      publicHttpUrl(source.url);
+    } catch {
+      throw new AppError('VALIDATION_ERROR', 'Job source URL is not allowed', {
+        statusCode: 400,
+        details: { action: 'rejected_private_or_invalid_url' }
+      });
+    }
     const response = await fetch(source.url, { signal: AbortSignal.timeout(5000) });
     if (!response.ok) {
       throw new AppError('VALIDATION_ERROR', 'Job input source URL could not be fetched', {
         statusCode: 400,
-        details: { url: source.url, status: response.status }
+        details: { status: response.status }
       });
     }
     const url = new URL(source.url);

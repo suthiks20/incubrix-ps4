@@ -16,10 +16,11 @@ Candidate submission for IncuBrix Assessment 4 ("Distribution: Long-Tail Destina
 - Mocks (Discourse, webhook) mount only when SIMULATION_MODE is true and have fault scenarios. The webhook test secret is "test-signing-secret".
 - Tests: npm test runs Jest --runInBand against a real Postgres test database. Test cleanup must TRUNCATE ... CASCADE because destinations is referenced by foreign keys.
 ## Roadmap (update as you go)
-The work-package order and source of truth are in docs/MASTER_PLAN.md. Phase 7 catalogue import is
-PARTIAL: import route/job, CSV handling, destination writes, stored error reports, fixture generation,
-and named tests are present. Build and lint pass locally, but the Docker/Postgres test gate and measured
-evidence are blocked by the Docker Desktop read-only metadata database failure. The full selftest and
-MRSS/Slack/Hashnode connector prerequisites remain unverified. Update docs/PROGRESS.md only with
-measured results; do not mark the phase done until the Docker gate and evidence are complete.
+The work-package order and source of truth are in docs/MASTER_PLAN.md. Phase verification on
+24 Oct 2026: Phase 2 and Phase 5 are DONE; Phases 1, 3 and 7 are PARTIAL; Phases 4 and 6
+are NOT DONE. Docker verified 67 suites / 337 tests, lint clean and build clean. Phase 7's
+real 1,000-row Docker API import completed in 3.15 seconds; evidence is in
+`evidence/catalogue-1000-import.json`. Next work is to complete the missing Phase 4 selftest
+and Phase 6 connectors, then close the remaining partial phases. Do not claim the overall
+assessment is complete while any phase remains partial or not done.
 ---

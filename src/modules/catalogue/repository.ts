@@ -9,7 +9,13 @@ async function findExistingPairs(knex: any, pairs: Array<[string, string]>): Pro
 }
 
 async function insert(knex: any, row: any): Promise<any> {
-  return (await knex('destinations').insert(row).returning('*'))[0];
+  const values = { ...row };
+  for (const column of ['audience_tags', 'config', 'frequency_cap']) {
+    if (values[column] !== undefined && values[column] !== null) {
+      values[column] = JSON.stringify(values[column]);
+    }
+  }
+  return (await knex('destinations').insert(values).returning('*'))[0];
 }
 
 export { findExistingPairs, insert };

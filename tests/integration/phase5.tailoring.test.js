@@ -7,9 +7,22 @@ const { describe } = require('@jest/globals');
 
 describe('phase 5 advanced items', () => {
   let ctx;
+  let postSequence = 0;
 
   beforeAll(async () => {
     ctx = await createContext();
+    const inject = ctx.app.inject.bind(ctx.app);
+    ctx.app.inject = (options) => {
+      if (!options || typeof options === 'string' || options.method !== 'POST') {
+        return inject(options);
+      }
+      postSequence += 1;
+      const headers = options.headers || {};
+      return inject({
+        ...options,
+        headers: { ...headers, 'idempotency-key': `phase5-${postSequence}` }
+      });
+    };
   });
 
   beforeEach(async () => {
@@ -140,7 +153,10 @@ describe('phase 5 advanced items', () => {
       method: 'POST',
       url: '/api/v1/rules/evaluate',
       payload: {
-        destination: { ...JSON.parse(destination.config), self_promo_allowed: true },
+        destination: {
+          ...(typeof destination.config === 'string' ? JSON.parse(destination.config) : destination.config),
+          self_promo_allowed: true
+        },
         rendition: { title: 'Buy now', body: 'Limited offer today', is_promotional: true },
         proposed_rules: { status: 'CONFIRMED', rules: { self_promo_allowed: false } }
       }

@@ -13,6 +13,15 @@ async function routes(app) {
         properties: {
           rendition: { type: 'object', additionalProperties: true },
           destination: { type: 'object', additionalProperties: true },
+          proposed_rules: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['status', 'rules'],
+            properties: {
+              status: { enum: ['PENDING', 'CONFIRMED'] },
+              rules: { type: 'object', additionalProperties: true }
+            }
+          },
           history: {
             type: 'object',
             additionalProperties: false,

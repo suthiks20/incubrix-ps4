@@ -50,22 +50,26 @@ function applyArticleCanonicalUrl(body: string, canonicalUrl: string): string {
   return `${trimmedBody}\n\nRead more: ${trimmedUrl}`;
 }
 
-function addPlatformTags(platform: string, body: string): { body: string; tags: string[] } {
-  const lowerBody = body.toLowerCase();
+function addPlatformTags(
+  platform: string,
+  body: string,
+  context: string = body
+): { body: string; tags: string[] } {
+  const lowerContext = context.toLowerCase();
   const tags: string[] = [];
   if (platform === 'devto') {
-    if (lowerBody.includes('ai')) tags.push('#ai');
-    if (lowerBody.includes('saas')) tags.push('#saas');
-    if (lowerBody.includes('marketing')) tags.push('#marketing');
+    if (lowerContext.includes('ai')) tags.push('#ai');
+    if (lowerContext.includes('saas')) tags.push('#saas');
+    if (lowerContext.includes('marketing')) tags.push('#marketing');
     if (tags.length === 0) tags.push('#build');
     return { body: `${body}${tags.length ? ` ${tags.join(' ')}` : ''}`.trim(), tags };
   }
   return { body, tags: [] };
 }
 
-function normaliseTags(destination: any, body: string): { body: string; tags: string[] } {
+function normaliseTags(destination: any, body: string, context: string): { body: string; tags: string[] } {
   const platform = inferPlatform(destination);
-  return addPlatformTags(platform, body);
+  return addPlatformTags(platform, body, context);
 }
 
 function scoreRelevance(input: any): { relevance_score: number; relevance_reason: string } {
@@ -110,7 +114,7 @@ function tailorRendition(destination: any, rendition: any): { tailored_rendition
 
   if (platform === 'devto') {
     const before = body;
-    const withTags = normaliseTags(destination, body);
+    const withTags = normaliseTags(destination, body, `${title} ${body}`);
     body = withTags.body;
     if (before !== body) {
       changes.push({ field: 'body', before, after: body, why: 'Dev.to posts use platform tags to improve discoverability.' });
