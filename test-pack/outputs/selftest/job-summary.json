@@ -1,0 +1,94 @@
+{
+  "job_id": "d04d7291-0ae5-4cff-98bb-ab07f409b812",
+  "job_status": "succeeded",
+  "passed": 14,
+  "failed": 0,
+  "report_download_http": 200,
+  "manifest_download_http": 200,
+  "codes": [
+    {
+      "case": "timeout_then_retry",
+      "expected_code": "PLATFORM_UNAVAILABLE",
+      "actual_code": "PLATFORM_UNAVAILABLE",
+      "passed": true
+    },
+    {
+      "case": "rate_limit_reset_honored",
+      "expected_code": "PLATFORM_RATE_LIMIT",
+      "actual_code": "PLATFORM_RATE_LIMIT",
+      "passed": true
+    },
+    {
+      "case": "expired_token",
+      "expected_code": "CONNECTION_AUTH_EXPIRED",
+      "actual_code": "CONNECTION_AUTH_EXPIRED",
+      "passed": true
+    },
+    {
+      "case": "content_rejected",
+      "expected_code": "PLATFORM_CONTENT_REJECTED",
+      "actual_code": "PLATFORM_CONTENT_REJECTED",
+      "passed": true
+    },
+    {
+      "case": "title_too_long",
+      "expected_code": "DEST_SPEC_VIOLATION",
+      "actual_code": "DEST_SPEC_VIOLATION",
+      "passed": true
+    },
+    {
+      "case": "body_too_long",
+      "expected_code": "DEST_SPEC_VIOLATION",
+      "actual_code": "DEST_SPEC_VIOLATION",
+      "passed": true
+    },
+    {
+      "case": "media_not_accepted",
+      "expected_code": "DEST_SPEC_VIOLATION",
+      "actual_code": "DEST_SPEC_VIOLATION",
+      "passed": true
+    },
+    {
+      "case": "second_post_inside_frequency_cap",
+      "expected_code": "DEST_RULE_FREQUENCY_CAP",
+      "actual_code": "DEST_RULE_FREQUENCY_CAP",
+      "passed": true
+    },
+    {
+      "case": "promotion_to_no_promo_destination",
+      "expected_code": "DEST_RULE_VIOLATION",
+      "actual_code": "DEST_RULE_VIOLATION",
+      "passed": true
+    },
+    {
+      "case": "renamed_field_demotes_destination",
+      "expected_code": "SCHEMA_DRIFT",
+      "actual_code": "SCHEMA_DRIFT",
+      "passed": true
+    },
+    {
+      "case": "partner_revokes_permission",
+      "expected_code": "CONNECTION_AUTH_EXPIRED",
+      "actual_code": "CONNECTION_AUTH_EXPIRED",
+      "passed": true
+    },
+    {
+      "case": "non_english_community_mismatch",
+      "expected_code": "DEST_RULE_VIOLATION",
+      "actual_code": "DEST_RULE_VIOLATION",
+      "passed": true
+    },
+    {
+      "case": "ai_disclosure_auto_appended",
+      "expected_code": "AI_DISCLOSURE_APPENDED",
+      "actual_code": "AI_DISCLOSURE_APPENDED",
+      "passed": true
+    },
+    {
+      "case": "csv_duplicates_bad_urls_mixed_languages",
+      "expected_code": "CATALOGUE_IMPORT_COMPLETED",
+      "actual_code": "CATALOGUE_IMPORT_COMPLETED",
+      "passed": true
+    }
+  ]
+}

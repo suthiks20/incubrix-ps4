@@ -1,0 +1,22 @@
+{
+  "job_id": "5ce58475-3420-45d3-82fc-187bed3da16b",
+  "type": "batch_publish",
+  "status": "failed",
+  "progress": 0,
+  "result": null,
+  "error": {
+    "code": "JOB_TYPE_NOT_READY",
+    "details": {},
+    "message": "Batch publish jobs are not ready yet",
+    "retryable": false
+  },
+  "links": {
+    "output": null,
+    "manifest": null,
+    "errors": null,
+    "report": null
+  },
+  "created_at": "2026-10-24T14:49:25.568Z",
+  "started_at": "2026-10-24T14:49:26.541Z",
+  "finished_at": "2026-10-24T14:49:26.551Z"
+}

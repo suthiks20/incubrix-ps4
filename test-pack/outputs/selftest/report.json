@@ -1,0 +1,100 @@
+[
+  {
+    "case": "timeout_then_retry",
+    "expected_code": "PLATFORM_UNAVAILABLE",
+    "actual_code": "PLATFORM_UNAVAILABLE",
+    "passed": true,
+    "what_the_system_did": "Recovered the timed-out publish with one post; cleanup=true."
+  },
+  {
+    "case": "rate_limit_reset_honored",
+    "expected_code": "PLATFORM_RATE_LIMIT",
+    "actual_code": "PLATFORM_RATE_LIMIT",
+    "passed": true,
+    "what_the_system_did": "Retried after 1019ms and cleanup=true."
+  },
+  {
+    "case": "expired_token",
+    "expected_code": "CONNECTION_AUTH_EXPIRED",
+    "actual_code": "CONNECTION_AUTH_EXPIRED",
+    "passed": true,
+    "what_the_system_did": "Returned CONNECTION_AUTH_EXPIRED without creating a post."
+  },
+  {
+    "case": "content_rejected",
+    "expected_code": "PLATFORM_CONTENT_REJECTED",
+    "actual_code": "PLATFORM_CONTENT_REJECTED",
+    "passed": true,
+    "what_the_system_did": "Returned PLATFORM_CONTENT_REJECTED without creating a post."
+  },
+  {
+    "case": "title_too_long",
+    "expected_code": "DEST_SPEC_VIOLATION",
+    "actual_code": "DEST_SPEC_VIOLATION",
+    "passed": true,
+    "what_the_system_did": "Rejected the overlong title before publishing."
+  },
+  {
+    "case": "body_too_long",
+    "expected_code": "DEST_SPEC_VIOLATION",
+    "actual_code": "DEST_SPEC_VIOLATION",
+    "passed": true,
+    "what_the_system_did": "Rejected the overlong body before publishing."
+  },
+  {
+    "case": "media_not_accepted",
+    "expected_code": "DEST_SPEC_VIOLATION",
+    "actual_code": "DEST_SPEC_VIOLATION",
+    "passed": true,
+    "what_the_system_did": "Media type image/png is not accepted"
+  },
+  {
+    "case": "second_post_inside_frequency_cap",
+    "expected_code": "DEST_RULE_FREQUENCY_CAP",
+    "actual_code": "DEST_RULE_FREQUENCY_CAP",
+    "passed": true,
+    "what_the_system_did": "Rescheduled the second post and cleanup=true."
+  },
+  {
+    "case": "promotion_to_no_promo_destination",
+    "expected_code": "DEST_RULE_VIOLATION",
+    "actual_code": "DEST_RULE_VIOLATION",
+    "passed": true,
+    "what_the_system_did": "Blocked promotional content on a no-promotion destination."
+  },
+  {
+    "case": "renamed_field_demotes_destination",
+    "expected_code": "SCHEMA_DRIFT",
+    "actual_code": "SCHEMA_DRIFT",
+    "passed": true,
+    "what_the_system_did": "Certification detected schema drift, cleaned its post, and restored the prior demotion state."
+  },
+  {
+    "case": "partner_revokes_permission",
+    "expected_code": "CONNECTION_AUTH_EXPIRED",
+    "actual_code": "CONNECTION_AUTH_EXPIRED",
+    "passed": true,
+    "what_the_system_did": "Stopped publishing after the partner revoked permission."
+  },
+  {
+    "case": "non_english_community_mismatch",
+    "expected_code": "DEST_RULE_VIOLATION",
+    "actual_code": "DEST_RULE_VIOLATION",
+    "passed": true,
+    "what_the_system_did": "Blocked content whose language does not match the community."
+  },
+  {
+    "case": "ai_disclosure_auto_appended",
+    "expected_code": "AI_DISCLOSURE_APPENDED",
+    "actual_code": "AI_DISCLOSURE_APPENDED",
+    "passed": true,
+    "what_the_system_did": "Appended the required disclosure and cleanup=true."
+  },
+  {
+    "case": "csv_duplicates_bad_urls_mixed_languages",
+    "expected_code": "CATALOGUE_IMPORT_COMPLETED",
+    "actual_code": "CATALOGUE_IMPORT_COMPLETED",
+    "passed": true,
+    "what_the_system_did": "Imported 1; duplicates=1; errors=2."
+  }
+]

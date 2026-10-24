@@ -1,0 +1,81 @@
+{
+  "total": 8,
+  "passed": 0,
+  "failed": 8,
+  "duration_ms": [
+    601,
+    1029,
+    521,
+    1023,
+    1029,
+    1022,
+    1022,
+    1022
+  ],
+  "results": [
+    {
+      "file": "01-timeout-retry.json",
+      "job_id": "d0ca4444-7ad7-4a76-bb2a-8005bc17b7cd",
+      "status": "failed",
+      "passed": false,
+      "duration_ms": 601,
+      "output_path": "/out/001-01-timeout-retry.json"
+    },
+    {
+      "file": "02-rate-limited.json",
+      "job_id": "d704e455-328d-4f93-a7b2-293f146b7a61",
+      "status": "failed",
+      "passed": false,
+      "duration_ms": 1029,
+      "output_path": "/out/002-02-rate-limited.json"
+    },
+    {
+      "file": "03-expired-token.json",
+      "job_id": "77ec18d1-c467-437b-92d4-149c3df4d866",
+      "status": "failed",
+      "passed": false,
+      "duration_ms": 521,
+      "output_path": "/out/003-03-expired-token.json"
+    },
+    {
+      "file": "04-spec-violation.json",
+      "job_id": "5ce58475-3420-45d3-82fc-187bed3da16b",
+      "status": "failed",
+      "passed": false,
+      "duration_ms": 1023,
+      "output_path": "/out/004-04-spec-violation.json"
+    },
+    {
+      "file": "05-frequency-cap.json",
+      "job_id": "b8b5d5e1-4241-4053-8da1-0692a70225d3",
+      "status": "failed",
+      "passed": false,
+      "duration_ms": 1029,
+      "output_path": "/out/005-05-frequency-cap.json"
+    },
+    {
+      "file": "06-no-promo-forum.json",
+      "job_id": "c23257fa-8951-4a31-9534-7d681a9fc470",
+      "status": "failed",
+      "passed": false,
+      "duration_ms": 1022,
+      "output_path": "/out/006-06-no-promo-forum.json"
+    },
+    {
+      "file": "07-renamed-field.json",
+      "job_id": "f7c26fa3-caa6-40cf-aaaa-a559c2f486e2",
+      "status": "failed",
+      "passed": false,
+      "duration_ms": 1022,
+      "output_path": "/out/007-07-renamed-field.json"
+    },
+    {
+      "file": "08-media-rejected.json",
+      "job_id": "a59b411d-a534-461a-98b0-a320d734f982",
+      "status": "failed",
+      "passed": false,
+      "duration_ms": 1022,
+      "output_path": "/out/008-08-media-rejected.json"
+    }
+  ]
+}

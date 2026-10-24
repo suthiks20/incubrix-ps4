@@ -144,17 +144,6 @@ describe('catalogue imports', () => {
     expect(job.status).toBe('succeeded');
     expect(job.result.rows).toBe(1000);
     expect(seconds).toBeLessThan(300);
-    await fs.mkdir(path.resolve(process.cwd(), 'evidence'), { recursive: true });
-    await fs.writeFile(
-      path.resolve(process.cwd(), 'evidence/catalogue-1000-import.json'),
-      `${JSON.stringify({
-        rows: job.result.rows,
-        imported: job.result.imported,
-        duplicates: job.result.duplicates,
-        errors: job.result.errors,
-        seconds
-      }, null, 2)}\n`
-    );
   });
 
   test('selftest csv case now runs for real', async () => {

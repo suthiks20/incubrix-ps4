@@ -1,33 +1,42 @@
 # IncuBrix Long-Tail Destination Network
 
-The IncuBrix Long-Tail Destination Network is a Node.js/Fastify service for publishing content to community destinations. Phase 4 adds a manifest-driven connector framework, the Discourse connector, a simulation platform, and a durable publish ledger.
+The IncuBrix Long-Tail Destination Network is a Node.js/Fastify service for safely publishing
+content to configured community destinations. It uses connector manifests, policy checks,
+idempotent publishing, a durable ledger, queued jobs, and S3-compatible artifact storage.
 
-## Module layering
+## Architecture
 
-Every module follows: route -> handler -> service -> repository. Routes declare HTTP, handlers read requests and send replies, services contain business logic and throw `AppError`, and repositories contain only Knex queries.
+Every module follows route -> handler -> service -> repository. Connectors call destination
+platform APIs only after policy and validation checks.
 
 ```text
-src/modules/<module>/
-├── commons/constants.js
-├── routes/index.js
-├── handlers/
-├── services/
-├── repository/<module>.js
-└── schemas/
+Reviewer / CLI
+      |
+      v
+Fastify API -> routes -> handlers -> services -> repositories -> PostgreSQL
+      |                 |                 |
+      |                 |                 +-> publish ledger / job worker
+      |                 +-> connector registry -> platform connectors -> destinations
+      +-> S3 storage adapter -> SeaweedFS (local Docker)
+                                  |
+                                  +-> job outputs, manifests, certification evidence
 ```
 
 ## Setup and verification
 
-Copying `.env.example` to `.env` is optional and only needed to override the Compose defaults. Start and verify with:
+Node 22 and Docker Compose are required. `.env` is optional; the default Compose settings
+are intended to work without it. From a clean clone, start and verify with these commands:
 
 ```bash
 docker compose up --build -d
+docker compose build api
 docker compose run --rm api npm test
 docker compose run --rm api npm run lint
 docker compose run --rm api npm run build
 ```
 
-The single command that runs all tests is `docker compose run --rm api npm test`.
+The API source is copied into the image, not bind-mounted, so rebuild with
+`docker compose build api` before running changed Jest tests.
 The default stack starts the API, PostgreSQL, SeaweedFS storage, local Lemmy and Ghost instances,
 and a one-shot bootstrap service. Allow about 6 GB of Docker memory for all services.
 The API starts independently of Lemmy and Ghost; the bootstrap waits for both platforms to be healthy
@@ -105,7 +114,7 @@ never real platform credentials.
 Queue all hidden-case checks with:
 
 ```powershell
-curl.exe -X POST http://localhost:8000/api/v1/selftest -H "Idempotency-Key: reviewer-selftest" -H "Content-Type: application/json"
+curl.exe -X POST http://localhost:8000/api/v1/selftest -H "Idempotency-Key: reviewer-selftest" -H "Content-Type: application/json" --data-raw "{}"
 ```
 
 The job result includes a `links.report` URL and a `links.manifest` URL. Poll
@@ -142,13 +151,35 @@ Every `POST` whose path starts with `/api/v1` requires an `Idempotency-Key` head
 
 ## Batch job runner
 
-`npm run ix-batch -- --input samples/batch --out batch-out --api http://localhost:8000`
-submits each JSON job input with a unique idempotency key, polls until it finishes, and writes
-one result per input, any available manifest downloads, and `summary.json`. Add
-`--token "$API_TOKEN"` when the API requires bearer authentication. Inputs can be a JSON file
-or a folder of JSON files. The sample folder labels representative connector failure scenarios;
-the `batch_publish` worker itself remains `JOB_TYPE_NOT_READY` until the later batch publishing
-phase is implemented.
+The batch runner accepts one JSON file or a directory. It submits each input with an
+idempotency key, polls jobs, and writes one result per input plus `summary.json`.
+Current sample inputs use `batch_publish`, which returns `JOB_TYPE_NOT_READY`; the CLI handles
+and records those failures, but does not claim to publish a batch.
+
+```powershell
+New-Item -ItemType Directory -Force test-pack\outputs\batch
+docker compose run --rm -v "${PWD}\test-pack\outputs\batch:/out" api npm run ix-batch -- `
+  --input samples/batch --out /out --api http://api:8000
+```
+
+Add `--token "$API_TOKEN"` when authentication is enabled.
+
+## Measurement
+
+After the default API is running, `npm run measure` evaluates the checked-in rule cases,
+reads the preserved real certification records and catalogue import record, and runs two
+isolated local mock publications. One mock request deliberately times out after creating a
+post; the same-key retry is checked for exactly one item, and both measured posts are deleted.
+The command writes `evidence/metrics.json`. From Docker:
+
+```powershell
+New-Item -ItemType Directory -Force certification-pack
+docker compose run --rm -v "${PWD}\certification-pack:/app/certification-pack" api `
+  npm run measure -- --api http://api:8000
+```
+
+The command also writes sanitized copies and deletion confirmations under `certification-pack/`.
+It does not rewrite any original certification or catalogue evidence.
 
 ## Connector contract
 
@@ -240,22 +271,51 @@ curl.exe -X POST http://localhost:8000/connector/v1/discourse/publish -H "Conten
 | CONNECTOR_MAX_BACKOFF_MS | 5000 | Maximum automatic wait for one rate-limit retry |
 | CIRCUIT_FAILURE_THRESHOLD | 5 | Consecutive unavailable responses before opening a connector circuit |
 | CIRCUIT_COOLDOWN_SECONDS | 60 | Seconds before an open circuit can retry |
-| STORAGE_DRIVER | local | Certification evidence storage driver |
-| STORAGE_DIR | ./data/storage | Directory for local certification evidence |
+| STORAGE_DRIVER | s3 | Storage backend: local, mock, or s3 |
+| STORAGE_DIR | ./data/storage | Directory used by local storage |
+| S3_ENDPOINT | empty outside Compose | S3-compatible endpoint |
+| S3_REGION | us-east-1 | S3 region |
+| S3_BUCKET | incubrix | S3 bucket name |
+| S3_ACCESS_KEY | empty outside Compose | S3 access key; local Compose default is for development only |
+| S3_SECRET_KEY | empty outside Compose | S3 secret key; local Compose default is for development only |
 | CERT_TEST_POST_TTL_MINUTES | 10 | Maximum lifetime of a certification test post |
-| CERT_JANITOR_INTERVAL_SECONDS | 60 | Future certification cleanup interval in seconds |
-| CERT_ALLOWED_HOSTS | localhost,127.0.0.1 | Hosts allowed to receive certification posts |
+| CERT_JANITOR_INTERVAL_SECONDS | 60 | Interval between certification cleanup sweeps |
+| CERT_ALLOWED_HOSTS | localhost,127.0.0.1 | Comma-separated hosts allowed for certification posts |
 | CONNECTORS_DISABLED | empty | Comma-separated connector keys disabled by configuration |
+| JOBS_POLL_INTERVAL_MS | 1000 | In-process job worker polling interval |
+| JOBS_MAX_ATTEMPTS | 3 | Maximum job attempts before terminal failure |
+| JOBS_STALE_SECONDS | 300 | Age at which a running job is treated as stale |
+| JOBS_CALLBACK_SECRET | development default | HMAC secret for outbound job callbacks |
+| JOBS_CALLBACK_TIMEOUT_MS | 5000 | Outbound callback timeout |
+| RATE_LIMIT_PER_MINUTE | 60 | Shared API rate limit per minute; mock routes are exempt |
+| CONNECTIONS_FILE | /app/data/connections.json | Optional local connections JSON merged below environment overrides |
+| CONNECTION_LEMMY_LOCAL | empty | Optional local Lemmy connection override |
+| CONNECTION_GHOST_LOCAL | empty | Optional local Ghost connection override |
+| LLM_PROVIDER | mock | Rules-capture adapter: mock, gemini, groq, or ollama |
+| GEMINI_API_KEY | empty | Optional key when using Gemini rules capture |
+| GROQ_API_KEY | empty | Optional key when using Groq rules capture |
+| OLLAMA_BASE_URL | http://localhost:11434 | Ollama endpoint when selected |
 
 ## Error codes
 
 | Group | Codes |
 | --- | --- |
-| Connector | DEST_SPEC_VIOLATION, DEST_RULE_FREQUENCY_CAP, CONNECTION_AUTH_EXPIRED, PLATFORM_RATE_LIMIT, PLATFORM_QUOTA_EXHAUSTED, PLATFORM_CONTENT_REJECTED, PLATFORM_UNAVAILABLE, CONNECTOR_DISABLED |
-| Connector framework extensions | SCHEMA_DRIFT, DEST_RULE_VIOLATION, DESTINATION_DEMOTED |
-| Certification extensions | CERT_HOST_NOT_ALLOWED, CERT_CONFIG_INVALID |
-| Platform | VALIDATION_ERROR, UNSUPPORTED_MEDIA_TYPE, PAYLOAD_TOO_LARGE, NOT_FOUND, UNAUTHORIZED, IDEMPOTENCY_KEY_REQUIRED, IDEMPOTENCY_KEY_CONFLICT, IDEMPOTENCY_REQUEST_IN_PROGRESS, RATE_LIMITED, NOT_READY, INTERNAL_ERROR, CONNECTOR_NOT_IMPLEMENTED, DESTINATION_DISABLED |
-| Destinations | DUPLICATE_DESTINATION |
+| Connector contract | DEST_SPEC_VIOLATION, DEST_RULE_FREQUENCY_CAP, CONNECTION_AUTH_EXPIRED, PLATFORM_RATE_LIMIT, PLATFORM_QUOTA_EXHAUSTED, PLATFORM_CONTENT_REJECTED, PLATFORM_UNAVAILABLE, CONNECTOR_DISABLED |
+| Connector framework and rules | SCHEMA_DRIFT, DEST_RULE_VIOLATION, DESTINATION_DEMOTED, DESTINATION_DISABLED, CONNECTOR_NOT_IMPLEMENTED |
+| Certification | CERT_HOST_NOT_ALLOWED, CERT_CONFIG_INVALID |
+| Validation and HTTP | VALIDATION_ERROR, UNSUPPORTED_MEDIA_TYPE, PAYLOAD_TOO_LARGE, NOT_FOUND, UNAUTHORIZED, RATE_LIMITED, NOT_READY, INTERNAL_ERROR |
+| Idempotency | IDEMPOTENCY_KEY_REQUIRED, IDEMPOTENCY_KEY_CONFLICT, IDEMPOTENCY_REQUEST_IN_PROGRESS |
+| Jobs and catalogue | JOB_TYPE_UNKNOWN, JOB_TYPE_NOT_READY, DUPLICATE_DESTINATION |
+| Rules proposals | RULES_PROPOSAL_NOT_FOUND, RULES_PROPOSAL_REJECTED |
+
+Every error response uses `{ "error": { "code", "message", "retryable", "details" } }`.
+
+## Live demo
+
+- URL: https://incubrix-ps4-2ms6.onrender.com
+- token: provided in the Submission Form
+- Rate limit: 120/min
+- Cold start: TODO(student): cold-start seconds; record the observed value before submission.
 
 ## Phases
 
@@ -264,5 +324,6 @@ curl.exe -X POST http://localhost:8000/connector/v1/discourse/publish -H "Conten
 - Phase 3 — PARTIAL: Integration proof and batch CLI are in place; `batch_publish` scenarios remain unavailable.
 - Phase 4 — DONE: Idempotent simulation seeding and all 14 hidden-case selftests pass.
 - Phase 5 — DONE: Tailoring, relevance scoring, and rules capture.
-- Phase 6 — PARTIAL: MRSS feed connector (Phase 6a) is done; Slack and Hashnode remain.
-- Phase 7 — PARTIAL: Catalogue import and 1,000-row evidence are present; full assessment closure still awaits Phase 6 and Phase 3 batch scenarios.
+- Phase 6 — DONE: MRSS, Slack, and Hashnode connectors pass mock certification and contract tests.
+- Phase 7 — DONE: Catalogue CSV import, error reports, mixed-language detection, and 1,000-row timing are verified.
+- Phase 8 — PARTIAL: Metrics and documentation are recorded; student-only demo, screenshot, and form tasks remain.

@@ -1,0 +1,66 @@
+{
+  "id": "73e816f4-5191-4f1e-ba90-7c8f3e91efae",
+  "destination_id": "b5583e0e-c9c9-4d83-9230-536c39d00b49",
+  "connector_key": "ghost",
+  "status": "passed",
+  "level_awarded": "L3",
+  "failure_code": null,
+  "failure_step": null,
+  "platform_post_id": "6adc468b8f39d300018530ac",
+  "live_url": "http://ghost:2368/p/ix-3a369a29f14fcbd6/",
+  "test_post_deleted": true,
+  "evidence_key": "certification/b5583e0e-c9c9-4d83-9230-536c39d00b49/73e816f4-5191-4f1e-ba90-7c8f3e91efae.json",
+  "evidence_link": "/api/v1/certification/runs/73e816f4-5191-4f1e-ba90-7c8f3e91efae/evidence",
+  "started_at": "2026-10-24T05:47:55.031Z",
+  "finished_at": "2026-10-24T05:47:56.232Z",
+  "duration_ms": 1201,
+  "steps": [
+    {
+      "name": "validate",
+      "status": "passed",
+      "summary": "test rendition passes the destination format limits",
+      "started_at": "2026-10-24T05:47:55.032Z",
+      "duration_ms": 0
+    },
+    {
+      "name": "publish",
+      "status": "passed",
+      "summary": "created post 6adc468b8f39d300018530ac at http://ghost:2368/p/ix-3a369a29f14fcbd6/",
+      "started_at": "2026-10-24T05:47:55.032Z",
+      "duration_ms": 815
+    },
+    {
+      "name": "confirm_live",
+      "status": "passed",
+      "summary": "post is live at http://ghost:2368/p/ix-3a369a29f14fcbd6/",
+      "started_at": "2026-10-24T05:47:55.847Z",
+      "duration_ms": 86
+    },
+    {
+      "name": "read_status",
+      "status": "passed",
+      "summary": "status read again and the live URL matches the publish result",
+      "started_at": "2026-10-24T05:47:55.933Z",
+      "duration_ms": 74
+    },
+    {
+      "name": "delete",
+      "status": "passed",
+      "summary": "deleted post 6adc468b8f39d300018530ac",
+      "started_at": "2026-10-24T05:47:56.007Z",
+      "duration_ms": 142
+    },
+    {
+      "name": "verify_gone",
+      "status": "passed",
+      "summary": "platform reports the test post as deleted",
+      "started_at": "2026-10-24T05:47:56.149Z",
+      "duration_ms": 83
+    }
+  ],
+  "deletion_confirmation": {
+    "method": "GET",
+    "status_code": 404,
+    "removed": true
+  }
+}

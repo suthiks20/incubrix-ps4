@@ -23,7 +23,8 @@
     "certify:real": "node dist/scripts/certify-real.js",
     "seed": "npm run build && node dist/scripts/seed.js",
     "ix-batch": "node dist/scripts/ix-batch.js",
-    "gen-catalogue": "node dist/scripts/gen-catalogue.js"
+    "gen-catalogue": "node dist/scripts/gen-catalogue.js",
+    "measure": "node dist/scripts/measure.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1156.0",

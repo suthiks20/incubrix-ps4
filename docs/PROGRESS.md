@@ -1,16 +1,54 @@
 # Progress
 
-## Phase status (25 Oct 2026)
+## Phase status (24 Oct 2026)
 
 | Phase | Status | Proof and remaining work |
 |---|---|---|
-| 1 — Core certification, mocks, media and metrics | DONE | Lemmy and Ghost passed real API certification at L3; secret-free evidence is in `evidence/cert-lemmy-real.json` and `evidence/cert-ghost-real.json`, including direct deletion checks. All mock fault scenarios are available, all connector manifests define media MIME types, media violations identify the field/reason/allowed types, and Discourse, Dev.to, and Ghost return normalized metrics. |
-| 2 — Integration Standard, first half | DONE | The six named manifest, rate-limit, OpenAPI and job-type tests pass in `tests/integration/phase2.integration.test.js`. |
-| 3 — Integration Standard, second half | PARTIAL | Assisted error envelopes, batch CLI output/auth, end-to-end flow, config parity, structured job logs, and ten proof rows are verified. The eight batch sample scenarios are labeled, but `batch_publish` remains `JOB_TYPE_NOT_READY`; see `docs/INTEGRATION_PROOF.md`. Docker gate: 70 suites / 357 tests; lint and build clean. |
-| 4 — Hidden-test readiness | DONE | `SEED_DEMO` startup and `npm run seed` create 17 idempotent mock-only destinations. `/api/v1/selftest` runs all 14 scenarios (or one reviewer-selected case), stores the report and links the report and manifest. All cases pass, test posts are cleaned, and certification demotion is restored. Verified in `tests/integration/phase4.selftest.test.js`. |
-| 5 — Tailoring, relevance and rules capture | DONE | All eight required test names, plus supporting regression tests, pass in `tests/integration/phase5.tailoring.test.js`. |
-| 6 — MRSS, Slack and Hashnode | DONE | MRSS, Slack and Hashnode pass timeout reconciliation, schema-drift, secret-redaction, and mock certification tests. All nine connectors are included in contract compliance. The Phase 6b gate passed: 71 suites / 392 tests, lint and build clean. |
-| 7 — Catalogue import | PARTIAL | Import route/job, CSV parser, deduplication, validation, row-level error report and fixture are covered in `tests/integration/catalogue/catalogue.import.test.js`. Latest Docker API import evidence: 1,000 rows, 880 imported, 100 duplicates, 120 errors, 2.517 seconds; see `evidence/catalogue-1000-import.json`. Phase 3 batch publishing remains unavailable; the assessment is not complete. |
+| 1 — Core certification, mocks, media and metrics | DONE | Items 1.1-1.5 are verified below; real Lemmy and Ghost records are in `evidence/cert-lemmy-real.json` and `evidence/cert-ghost-real.json`. |
+| 2 — Integration Standard, first half | DONE | Integration points 1-9 are evidenced in `docs/INTEGRATION_PROOF.md`; see point 10 for the remaining batch limitation. |
+| 3 — Integration Standard, second half | PARTIAL | Items 3.0-3.5 are implemented, but `batch_publish` still returns `JOB_TYPE_NOT_READY`; point 10 and the associated live platform scenarios are not done. |
+| 4 — Hidden-test readiness | DONE | Seed and all 14 mock-only selftest cases are verified in `tests/integration/phase4.selftest.test.js`. |
+| 5 — Tailoring, relevance and rules capture | DONE | Items 5.1-5.3 and their required tests pass in `tests/integration/phase5.tailoring.test.js`. |
+| 6 — MRSS, Slack and Hashnode | DONE | All three Advanced connectors pass mock certification and contract coverage; see the Phase 6b gate below. |
+| 7 — Catalogue import | DONE | Import, row errors, mixed languages, real selftest importer scenario, and the protected 1,000-row record are proved by `tests/integration/catalogue/catalogue.import.test.js`, `tests/integration/phase4.selftest.test.js`, and `evidence/catalogue-1000-import.json` (2.626 seconds). |
+| 8 — Measurement and submission pack | PARTIAL | Metrics, documents, and clean-clone verification are recorded below. Hosted cold-start, screenshots/video, unknown form rows, and confirmation of earlier AI tools remain student-only. |
+
+## Brief-item reconciliation
+
+| Item | Status | Proof |
+|---|---|---|
+| 1.1 Connection delivery from file and environment | DONE | `tests/unit/resolveConnection.test.js`; `.env.example` |
+| 1.2 Default Docker stack and bootstrap | DONE | `docker-compose.yml`; no-`.env` startup, `/ready`, and bootstrap output in `test-pack/logs/clean-clone-up.txt` |
+| 1.3 Real Lemmy/Ghost certification | DONE | `evidence/cert-lemmy-real.json`; `evidence/cert-ghost-real.json` |
+| 1.4 Mock parity and media validation | DONE | `tests/integration/phase1.remainder.test.js`; connector-specific mock tests |
+| 1.5 Normalized metrics | DONE | `tests/integration/phase1.remainder.test.js` fetch_metrics tests |
+| Integration points 1-9 | DONE | `docs/INTEGRATION_PROOF.md` rows 1-9 |
+| Integration point 10 batch runner | PARTIAL | `tests/integration/phase3.second-half.test.js`; batch scenarios still fail with `JOB_TYPE_NOT_READY` |
+| 3.0 Assisted unsupported-method errors | DONE | `tests/integration/phase3.second-half.test.js` |
+| 3.1 Batch CLI results and samples | PARTIAL | CLI outputs each failure; `batch_publish` worker remains unimplemented |
+| 3.2 End-to-end path | DONE | `tests/integration/phase3.second-half.test.js` test `E2E full path with no API keys` |
+| 3.3 Config parity | DONE | `tests/integration/phase3.second-half.test.js` test `.env.example lists every config setting` |
+| 3.4 Job log identifiers | DONE | `tests/integration/phase3.second-half.test.js` test `job log lines carry job_id and correlation_id` |
+| 3.5 Integration proof document | DONE | `docs/INTEGRATION_PROOF.md` |
+| 4.1 Idempotent mock seed | DONE | `tests/integration/phase4.selftest.test.js` test `seed is idempotent` |
+| 4.2 Full selftest job | DONE | `tests/integration/phase4.selftest.test.js`; selftest report/manifest links |
+| 4.3 Reviewer hard-case guide | DONE | README `Reviewer guide` section |
+| 5.1 Tailoring | DONE | `tests/integration/phase5.tailoring.test.js` |
+| 5.2 Relevance scoring | DONE | `tests/integration/phase5.tailoring.test.js` |
+| 5.3 Rules capture and confirmation | DONE | `tests/integration/phase5.tailoring.test.js` |
+| 6a MRSS | DONE | `tests/integration/phase1.remainder.test.js`; MRSS certification test |
+| 6b Slack | DONE | `tests/integration/phase1.remainder.test.js`; Slack certification test |
+| 6b Hashnode | DONE | `tests/integration/phase1.remainder.test.js`; Hashnode certification test |
+| 7.1 Catalogue importer | DONE | `tests/integration/catalogue/catalogue.import.test.js` |
+| 7.2 Generated 1,000-row time | DONE | `evidence/catalogue-1000-import.json` |
+| 7.3 Real catalogue selftest scenario | DONE | `tests/integration/phase4.selftest.test.js` |
+| 8.0 Phase and item reconciliation | DONE | This table and `docs/FORM_MAP.md` |
+| 8.1 Metrics generation | DONE | `scripts/measure.ts`; `evidence/metrics.json`; `tests/unit/measure.test.js` |
+| 8.2 Report, sources, and AI-use disclosure | PARTIAL | `REPORT.md`; `SOURCES.md`; `AI_USE.md`; TODO(student) remains for confirmation of prior AI tools |
+| 8.3 Test, certification, and catalogue packs | PARTIAL | `test-pack/`, `certification-pack/`, and `catalogue/` contain run outputs; screenshot/video TODO remains |
+| 8.4 README completeness | DONE | `README.md`; live demo cold-start TODO is student-only |
+| 8.5 Clean-clone run | DONE | Separate clone had no `.env`; startup/readiness, 72-suite tests, lint/build, batch CLI, seeded 14-case selftest and report/manifest downloads are recorded in `test-pack/logs/` and `test-pack/outputs/`. Batch inputs still return `JOB_TYPE_NOT_READY` (Phase 3 PARTIAL). |
+| 8.6 Submission Form map | PARTIAL | `docs/FORM_MAP.md`; exact unavailable Outstanding rows and student-only items need confirmation |
 
 ## Latest repair and verification
 
@@ -180,8 +218,8 @@ docker compose run --rm api npm run build PASS
 ```
 
 The exact Phase 1 test names and `openapi.yaml matches the registered routes exactly` passed
-in verbose runs. Phase 1 items 1.1–1.5 are verified. The other project phases remain in their
-existing PARTIAL/NOT DONE states.
+in verbose runs. Phase 1 items 1.1–1.5 are verified. Current phase statuses are summarized
+in the table at the top of this document.
 
 Repaired the mock-route rate-limit exemption and test override, catalogue source schema,
 JSONB insert serialization and safe error-code logging, Phase 5 POST idempotency headers,
@@ -208,6 +246,40 @@ import evidence is from the full integration import test and is recorded in
 `evidence/catalogue-1000-import.json`; its reachability component remained simulated as intended.
 
 Infrastructure stability fix (23 Oct 2026). Fixed the SeaweedFS S3 bucket init race by retrying the bucket creation on transient connection errors and switching the MinIO healthcheck to the S3 port used by the app. This keeps `docker compose up --build -d` from failing during the `minio-init` bootstrap step when the S3 listener is still coming online. Next: validate the stack and continue the project gate.
+
+### Phase 8 measurement and clean-clone verification (24 Oct 2026)
+
+The refreshed metrics were generated by `npm run measure -- --api http://127.0.0.1:8000`
+against the local Docker simulation. The script verified and removed both measurement posts.
+The preserved records show two real L3 runs (Lemmy 785 ms; Ghost 1,201 ms); two successful
+logical mock publications; zero duplicate posts; 13/13 expected rule violations caught across
+24 fixture cases; and the protected 1,000-row catalogue record (880 imported, 100 duplicates,
+120 errors, 2.626 seconds). Mock API cost is $0 per 1,000 publications; infrastructure is excluded.
+
+A separate clone at `LongTail-clean-clone-phase8` had no `.env` or bootstrap credential file.
+`docker compose up --build -d` started the default stack and `/ready` returned database and
+storage checks `ok`. The clean-clone Docker gate reported 72 suites / 394 tests passed, with
+lint and build clean. `npm run seed` created 17 mock-only destinations. The documented batch
+CLI wrote `summary.json` and eight per-input results; each job correctly reports
+`JOB_TYPE_NOT_READY` because batch publishing remains unimplemented. After seeding, the real
+selftest job passed all 14 cases, and both report and manifest downloads returned HTTP 200.
+The first unseeded selftest attempt is retained separately to show why the documented seed
+step is required. See `test-pack/index.md` for file-by-file evidence.
+
+Docker verification on the source worktree after the measurement lint fix:
+
+```text
+docker compose build api                  PASS
+docker compose run --rm api npm test      Test Suites: 72 passed, 72 total
+                                           Tests:       394 passed, 394 total
+docker compose run --rm api npm run lint  PASS
+docker compose run --rm api npm run build PASS
+```
+
+Phase 8 remains PARTIAL: the live-demo cold-start, screenshots/video, unknown Submission Form
+Outstanding rows, and confirmation of earlier AI tools require student input. Phase 3 also
+remains PARTIAL because `batch_publish` has no implementation. Do not claim the assessment is
+complete while either gap remains.
 
 WP4 - DONE (23 Oct 2026). Completed the Lemmy and Ghost native connectors, production-shaped simulation
 mocks, registry/catalogue coverage, logger redaction, local verification alias, and Dev.to cleanup-failure
@@ -242,5 +314,7 @@ T2 shared-layer conversion and T1 TypeScript tooling are done and Docker-verifie
 
 ## Next
 
-Complete Phase 4 selftest and Phase 6 connectors before claiming Advanced completion; then
-close the remaining Phase 1, Phase 3 and Phase 7 gaps. The assessment is not complete.
+Complete the `batch_publish` implementation or clearly retain Phase 3 as PARTIAL. The student
+must also verify the live-demo cold start, provide screenshots and the required unedited video,
+confirm the full Submission Form Outstanding rows, and confirm prior AI-tool use. The assessment
+is not complete while Phase 3 or Phase 8 remains PARTIAL.

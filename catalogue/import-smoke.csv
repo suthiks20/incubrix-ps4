@@ -1,0 +1,5 @@
+name,url,platform_key,connector_key,category,description,audience_tags
+Phase 8 English,https://example.com/phase8-unique-10424,forum,discourse,creators,"The community shares ideas and resources for creators",creators
+Phase 8 duplicate,https://example.com/phase8-unique-10424/,forum,discourse,creators,"The community shares ideas and resources for creators",creators
+Grupo de prueba,https://example.com/phase8-spanish-10424,forum,discourse,creadores,"La comunidad comparte ideas para creadores",creadores
+Invalid scheme,ftp://invalid.example/phase8,forum,discourse,creators,"The community shares ideas",creators

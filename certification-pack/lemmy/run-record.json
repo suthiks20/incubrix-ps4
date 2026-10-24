@@ -1,0 +1,66 @@
+{
+  "id": "514806ff-8c57-4b9f-8ac4-34b6d1558b55",
+  "destination_id": "98823ee3-a423-41f7-a19e-c7c6c5f38632",
+  "connector_key": "lemmy",
+  "status": "passed",
+  "level_awarded": "L3",
+  "failure_code": null,
+  "failure_step": null,
+  "platform_post_id": "1",
+  "live_url": "http://lemmy:8536/post/1",
+  "test_post_deleted": true,
+  "evidence_key": "certification/98823ee3-a423-41f7-a19e-c7c6c5f38632/514806ff-8c57-4b9f-8ac4-34b6d1558b55.json",
+  "evidence_link": "/api/v1/certification/runs/514806ff-8c57-4b9f-8ac4-34b6d1558b55/evidence",
+  "started_at": "2026-10-24T05:47:53.957Z",
+  "finished_at": "2026-10-24T05:47:54.742Z",
+  "duration_ms": 785,
+  "steps": [
+    {
+      "name": "validate",
+      "status": "passed",
+      "summary": "test rendition passes the destination format limits",
+      "started_at": "2026-10-24T05:47:53.958Z",
+      "duration_ms": 0
+    },
+    {
+      "name": "publish",
+      "status": "passed",
+      "summary": "created post 1 at http://lemmy:8536/post/1",
+      "started_at": "2026-10-24T05:47:53.959Z",
+      "duration_ms": 592
+    },
+    {
+      "name": "confirm_live",
+      "status": "passed",
+      "summary": "post is live at http://lemmy:8536/post/1",
+      "started_at": "2026-10-24T05:47:54.551Z",
+      "duration_ms": 71
+    },
+    {
+      "name": "read_status",
+      "status": "passed",
+      "summary": "status read again and the live URL matches the publish result",
+      "started_at": "2026-10-24T05:47:54.622Z",
+      "duration_ms": 64
+    },
+    {
+      "name": "delete",
+      "status": "passed",
+      "summary": "deleted post 1",
+      "started_at": "2026-10-24T05:47:54.687Z",
+      "duration_ms": 30
+    },
+    {
+      "name": "verify_gone",
+      "status": "passed",
+      "summary": "platform reports the test post as deleted",
+      "started_at": "2026-10-24T05:47:54.717Z",
+      "duration_ms": 25
+    }
+  ],
+  "deletion_confirmation": {
+    "method": "GET",
+    "status_code": 200,
+    "removed": true
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "measured_at": "2026-10-24T14:45:28.166Z",
+  "certifications": {
+    "source": "preserved real certification run records",
+    "total_real_runs": 2,
+    "per_connector": {
+      "discourse": {
+        "real_runs": 0,
+        "passed": 0,
+        "time_per_run_ms": []
+      },
+      "lemmy": {
+        "real_runs": 1,
+        "passed": 1,
+        "time_per_run_ms": [
+          785
+        ]
+      },
+      "devto": {
+        "real_runs": 0,
+        "passed": 0,
+        "time_per_run_ms": []
+      },
+      "ghost": {
+        "real_runs": 1,
+        "passed": 1,
+        "time_per_run_ms": [
+          1201
+        ]
+      },
+      "webhook": {
+        "real_runs": 0,
+        "passed": 0,
+        "time_per_run_ms": []
+      },
+      "assisted": {
+        "real_runs": 0,
+        "passed": 0,
+        "time_per_run_ms": []
+      },
+      "mrss": {
+        "real_runs": 0,
+        "passed": 0,
+        "time_per_run_ms": []
+      },
+      "slack": {
+        "real_runs": 0,
+        "passed": 0,
+        "time_per_run_ms": []
+      },
+      "hashnode": {
+        "real_runs": 0,
+        "passed": 0,
+        "time_per_run_ms": []
+      }
+    }
+  },
+  "simulation_publish": {
+    "logical_publications": 2,
+    "successful_publications": 2,
+    "success_rate": 1,
+    "duplicate_posts_under_retry": 0,
+    "outcomes": [
+      {
+        "scenario": "measure-1792853127873-11c3b2c54a9b68-normal",
+        "succeeded": true,
+        "publish_requests": 1,
+        "posts_after_retry": 1
+      },
+      {
+        "scenario": "timeout_after_success",
+        "succeeded": true,
+        "publish_requests": 2,
+        "posts_after_retry": 1
+      }
+    ]
+  },
+  "rule_violations": {
+    "fixture": "tests/fixtures/rule-cases.json",
+    "cases": 24,
+    "violations_expected": 13,
+    "violations_caught": 13,
+    "violations_missed": 0,
+    "by_rule": {
+      "frequency_cap": {
+        "expected": 4,
+        "caught": 4,
+        "missed": 0
+      },
+      "no_promo": {
+        "expected": 3,
+        "caught": 3,
+        "missed": 0
+      },
+      "link_policy": {
+        "expected": 3,
+        "caught": 3,
+        "missed": 0
+      },
+      "ai_disclosure": {
+        "expected": 3,
+        "caught": 3,
+        "missed": 0
+      }
+    }
+  },
+  "catalogue_import": {
+    "rows": 1000,
+    "imported": 880,
+    "duplicates": 100,
+    "errors": 120,
+    "seconds": 2.626
+  },
+  "cost_per_1000_publications_usd": 0,
+  "cost_basis": "Mock platform APIs; excludes hosting and storage infrastructure."
+}

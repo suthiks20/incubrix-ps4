@@ -1,0 +1,3 @@
+row,name,url,platform_key,code,message
+3,Phase 8 duplicate,https://example.com/phase8-unique-10424/,forum,DUPLICATE_DESTINATION,Duplicate in CSV
+5,Invalid scheme,ftp://invalid.example/phase8,forum,VALIDATION_ERROR,URL must be a public HTTP or HTTPS address

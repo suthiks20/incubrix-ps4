@@ -1,0 +1,47 @@
+{
+  "providers": [
+    {
+      "kind": "connector",
+      "key": "job",
+      "version": "1.0.0"
+    },
+    {
+      "kind": "storage",
+      "key": "s3",
+      "version": "native"
+    },
+    {
+      "kind": "llm",
+      "key": "mock",
+      "version": "mock"
+    }
+  ],
+  "settings": {
+    "storage_driver": "s3",
+    "simulation_mode": true,
+    "api_token_set": false,
+    "rate_limit_per_minute": 60,
+    "connector_http_timeout_ms": 10000
+  },
+  "seed": "deterministic",
+  "started_at": "2026-10-24T13:58:26.132Z",
+  "finished_at": "2026-10-24T13:58:26.617Z",
+  "timings": {
+    "started_at": "2026-10-24T13:58:26.132Z",
+    "finished_at": "2026-10-24T13:58:26.617Z",
+    "duration_ms": 485
+  },
+  "cost_estimate": {
+    "currency": "USD",
+    "amount": 0
+  },
+  "warnings": [],
+  "licence_rights": {
+    "input": "caller supplied or public URL",
+    "output": "assessment-only generated metadata",
+    "ai_generated": false,
+    "licence": "assessment-only",
+    "usage": "internal evaluation and certification only"
+  },
+  "ai_generated": false
+}

@@ -1,0 +1,38 @@
+{
+  "job_id": "a4a27b48-f6df-4b39-9f8a-1369c8541dbc",
+  "status": "succeeded",
+  "progress": 100,
+  "result": {
+    "rows": 4,
+    "errors": 2,
+    "imported": 2,
+    "languages": [
+      "en",
+      "es"
+    ],
+    "duplicates": 1,
+    "error_rows": [
+      {
+        "row": 3,
+        "url": "https://example.com/phase8-unique-10424/",
+        "code": "DUPLICATE_DESTINATION",
+        "name": "Phase 8 duplicate",
+        "message": "Duplicate in CSV",
+        "platform_key": "forum"
+      },
+      {
+        "row": 5,
+        "url": "ftp://invalid.example/phase8",
+        "code": "VALIDATION_ERROR",
+        "name": "Invalid scheme",
+        "message": "URL must be a public HTTP or HTTPS address",
+        "platform_key": "forum"
+      }
+    ],
+    "errors_key": "jobs/a4a27b48-f6df-4b39-9f8a-1369c8541dbc/catalogue-errors.csv",
+    "output_key": "jobs/a4a27b48-f6df-4b39-9f8a-1369c8541dbc/output.json",
+    "error_count": 2,
+    "manifest_key": "jobs/a4a27b48-f6df-4b39-9f8a-1369c8541dbc/manifest.json",
+    "error_csv_link": "/api/v1/jobs/a4a27b48-f6df-4b39-9f8a-1369c8541dbc/download/errors"
+  }
+}

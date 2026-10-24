@@ -1,0 +1,100 @@
+[
+  {
+    "case": "timeout_then_retry",
+    "expected_code": "CASE_COMPLETED",
+    "actual_code": "NOT_FOUND",
+    "passed": false,
+    "what_the_system_did": "The scenario could not complete."
+  },
+  {
+    "case": "rate_limit_reset_honored",
+    "expected_code": "CASE_COMPLETED",
+    "actual_code": "NOT_FOUND",
+    "passed": false,
+    "what_the_system_did": "The scenario could not complete."
+  },
+  {
+    "case": "expired_token",
+    "expected_code": "CASE_COMPLETED",
+    "actual_code": "NOT_FOUND",
+    "passed": false,
+    "what_the_system_did": "The scenario could not complete."
+  },
+  {
+    "case": "content_rejected",
+    "expected_code": "CASE_COMPLETED",
+    "actual_code": "NOT_FOUND",
+    "passed": false,
+    "what_the_system_did": "The scenario could not complete."
+  },
+  {
+    "case": "title_too_long",
+    "expected_code": "CASE_COMPLETED",
+    "actual_code": "NOT_FOUND",
+    "passed": false,
+    "what_the_system_did": "The scenario could not complete."
+  },
+  {
+    "case": "body_too_long",
+    "expected_code": "CASE_COMPLETED",
+    "actual_code": "NOT_FOUND",
+    "passed": false,
+    "what_the_system_did": "The scenario could not complete."
+  },
+  {
+    "case": "media_not_accepted",
+    "expected_code": "CASE_COMPLETED",
+    "actual_code": "NOT_FOUND",
+    "passed": false,
+    "what_the_system_did": "The scenario could not complete."
+  },
+  {
+    "case": "second_post_inside_frequency_cap",
+    "expected_code": "CASE_COMPLETED",
+    "actual_code": "NOT_FOUND",
+    "passed": false,
+    "what_the_system_did": "The scenario could not complete."
+  },
+  {
+    "case": "promotion_to_no_promo_destination",
+    "expected_code": "CASE_COMPLETED",
+    "actual_code": "NOT_FOUND",
+    "passed": false,
+    "what_the_system_did": "The scenario could not complete."
+  },
+  {
+    "case": "renamed_field_demotes_destination",
+    "expected_code": "CASE_COMPLETED",
+    "actual_code": "NOT_FOUND",
+    "passed": false,
+    "what_the_system_did": "The scenario could not complete."
+  },
+  {
+    "case": "partner_revokes_permission",
+    "expected_code": "CASE_COMPLETED",
+    "actual_code": "NOT_FOUND",
+    "passed": false,
+    "what_the_system_did": "The scenario could not complete."
+  },
+  {
+    "case": "non_english_community_mismatch",
+    "expected_code": "CASE_COMPLETED",
+    "actual_code": "NOT_FOUND",
+    "passed": false,
+    "what_the_system_did": "The scenario could not complete."
+  },
+  {
+    "case": "ai_disclosure_auto_appended",
+    "expected_code": "CASE_COMPLETED",
+    "actual_code": "NOT_FOUND",
+    "passed": false,
+    "what_the_system_did": "The scenario could not complete."
+  },
+  {
+    "case": "csv_duplicates_bad_urls_mixed_languages",
+    "expected_code": "CATALOGUE_IMPORT_COMPLETED",
+    "actual_code": "CATALOGUE_IMPORT_COMPLETED",
+    "passed": true,
+    "what_the_system_did": "Imported 1; duplicates=1; errors=2."
+  }
+]

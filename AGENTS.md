@@ -17,17 +17,18 @@ Candidate submission for IncuBrix Assessment 4 ("Distribution: Long-Tail Destina
 - Tests: npm test runs Jest --runInBand against a real Postgres test database. Test cleanup must TRUNCATE ... CASCADE because destinations is referenced by foreign keys.
 ## Roadmap (update as you go)
 The work-package order and source of truth are in docs/MASTER_PLAN.md. Phase verification on
-25 Oct 2026: Phases 1, 2, 4, 5 and 6 are DONE; Phases 3 and 7 are PARTIAL. MRSS, Slack and
-Hashnode pass their mock certifications and contract tests. Lemmy and Ghost passed real API certification at L3; secret-free results and
-deletion confirmations are in `evidence/cert-lemmy-real.json` and `evidence/cert-ghost-real.json`.
-The clean default Docker stack and latest verification gate passed: 71 suites / 392 tests, lint
-clean, build clean. Phase 3 has assisted error-envelope, batch CLI, end-to-end, configuration,
-job-log, and proof-document coverage; batch publishing remains unavailable, so its scenario
-fixtures are not live platform tests. Phase 4 has idempotent mock-only seeding and a passing
-14-case selftest with report and manifest downloads. Phase 1 includes verified mock parity,
-media validation, and normalized Discourse, Dev.to and Ghost metrics. Phase 7's
-real 1,000-row Docker API import completed in 2.517 seconds; evidence is in
-`evidence/catalogue-1000-import.json`. Next work is to complete Phase 3 batch-publish scenarios
-and close the remaining partial phases. Do not claim the overall
-assessment is complete while any phase remains partial or not done.
+24 Oct 2026: Phases 1, 2, 4, 5, 6 and 7 are DONE; Phases 3 and 8 are PARTIAL. MRSS, Slack
+and Hashnode pass their mock certifications and contract tests. Lemmy and Ghost passed real API
+certification at L3; secret-free results and deletion confirmations are in
+`evidence/cert-lemmy-real.json` and `evidence/cert-ghost-real.json`.
+The clean default Docker stack and latest verification gate passed: 72 suites / 394 tests,
+lint clean, build clean. A separate clone without `.env` also passed the gate and the seeded
+14-case selftest with report and manifest downloads. Phase 3 has assisted error-envelope,
+batch CLI, end-to-end, configuration, job-log, and proof-document coverage; batch publishing
+remains unavailable, and all eight clean-clone batch inputs report `JOB_TYPE_NOT_READY`.
+Phase 1 includes verified mock parity, media validation, and normalized Discourse, Dev.to and
+Ghost metrics. Phase 7's protected 1,000-row record reports 880 imported, 100 duplicates,
+120 errors, and 2.626 seconds in `evidence/catalogue-1000-import.json`. Phase 8 still has
+student-only cold-start, screenshot/video, unknown form rows, and prior AI-tool confirmations.
+Do not claim the overall assessment is complete while any phase remains partial or not done.
 ---
