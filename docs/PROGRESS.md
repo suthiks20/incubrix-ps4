@@ -4,15 +4,49 @@
 
 | Phase | Status | Proof and remaining work |
 |---|---|---|
-| 1 — Core certification, mocks, media and metrics | PARTIAL | Core connector integration tests pass. `evidence/cert-ghost-real.json` exists, but `evidence/cert-lemmy-real.json` is missing; connector metrics implementations are not present. |
+| 1 — Core certification, mocks, media and metrics | PARTIAL | Lemmy and Ghost both passed real API certification at L3; secret-free evidence is in `evidence/cert-lemmy-real.json` and `evidence/cert-ghost-real.json`, including direct deletion checks. Phase 1 remains partial because connector `fetch_metrics` implementations are not present. |
 | 2 — Integration Standard, first half | DONE | The six named manifest, rate-limit, OpenAPI and job-type tests pass in `tests/integration/phase2.integration.test.js`. |
 | 3 — Integration Standard, second half | PARTIAL | `scripts/ix-batch.ts` and URL-input storage tests exist. The required end-to-end proof and named batch/log/config tests are not present. |
 | 4 — Hidden-test readiness | NOT DONE | `src/modules/jobs/types/index.ts` still returns `JOB_TYPE_NOT_READY` for selftest; demo seeding and the selftest hard-case runner remain unimplemented. |
 | 5 — Tailoring, relevance and rules capture | DONE | All eight required test names, plus supporting regression tests, pass in `tests/integration/phase5.tailoring.test.js`. |
 | 6 — MRSS, Slack and Hashnode | NOT DONE | No connector implementations/manifests exist under `src/modules/connectors/` for these three platforms. |
-| 7 — Catalogue import | PARTIAL | Import route/job, CSV parser, deduplication, validation, row-level error report and fixture are covered in `tests/integration/catalogue/catalogue.import.test.js`. Real Docker API import: 1,000 rows, 880 imported, 100 duplicates, 120 errors, 3.15 seconds; see `evidence/catalogue-1000-import.json`. The complete Phase 7 gate remains blocked by unfinished Phase 4 and Phase 6 work. |
+| 7 — Catalogue import | PARTIAL | Import route/job, CSV parser, deduplication, validation, row-level error report and fixture are covered in `tests/integration/catalogue/catalogue.import.test.js`. Latest Docker API import evidence: 1,000 rows, 880 imported, 100 duplicates, 120 errors, 2.325 seconds; see `evidence/catalogue-1000-import.json`. The complete Phase 7 gate remains blocked by unfinished Phase 4 and Phase 6 work. |
 
 ## Latest repair and verification
+
+### Phase 1 real local certification (24 Oct 2026)
+
+The default stack starts Lemmy, Ghost and their dependencies with no local-instances profile.
+The one-shot bootstrap completed on a clean volume, created the local accounts, and stored
+connection data in the private shared volume. The API readiness endpoint returned `ready`
+with both database and storage checks `ok`. The API reads the optional `CONNECTIONS_FILE`
+below per-connection environment overrides.
+
+`docker compose run --rm api npm run certify:real` certified both local destinations through
+the API. Both runs passed at L3 with `validate`, `publish`, `confirm_live`, `read_status`,
+`delete` and `verify_gone` passed. Direct GET checks confirmed Lemmy returned a removed post
+and Ghost returned 404. The evidence files contain no connection values. The exact evidence
+test, `real certification evidence files show passed at L3`, passed in the full suite.
+
+The first certification attempt failed at Lemmy `publish` with `CONNECTION_AUTH_EXPIRED`:
+the existing local per-connection environment override took precedence over the newly
+bootstrapped file. The API and certification runner were rerun with empty per-connection
+overrides, allowing the shared file to supply the fresh credentials; both certifications
+then passed. The ignored `.env` was not read or changed.
+
+Docker verification after the clean start:
+
+```text
+docker compose up --build -d            PASS; API, Postgres, storage, Lemmy, Ghost and bootstrap started
+docker compose run --rm api npm test    Test Suites: 68 passed, 68 total
+                                         Tests:       340 passed, 340 total
+docker compose run --rm api npm run lint PASS
+docker compose run --rm api npm run build PASS
+```
+
+The resolver unit test uses an isolated temporary connection file so a real certification
+volume cannot affect test expectations. The broader Phase 1 remains PARTIAL because metrics
+implementations are still missing.
 
 Repaired the mock-route rate-limit exemption and test override, catalogue source schema,
 JSONB insert serialization and safe error-code logging, Phase 5 POST idempotency headers,
@@ -20,7 +54,7 @@ private-URL rejection before job fetch, and the four remaining Phase 5 test fail
 reachability uses a deterministic success check in simulation mode; it makes no external
 reachability requests during mock imports.
 
-Docker verification completed against the current API image:
+Earlier Docker verification completed against the API image at that point:
 
 ```text
 docker compose build api                  PASS
@@ -34,9 +68,9 @@ The required Phase 2 and Phase 5 test names were also run verbosely after rebuil
 `docker compose run --rm api npm test -- --verbose tests/integration/phase2.integration.test.js tests/integration/phase5.tailoring.test.js`
 reported 2 suites and 27 tests passed.
 
-The stack was started successfully with `docker compose up --build -d`. The 1,000-row import
-evidence is from the real running API, worker, Postgres and configured storage path; its
-reachability component remained simulated as intended.
+The stack was started successfully with `docker compose up --build -d`. The latest 1,000-row
+import evidence is from the full integration import test and is recorded in
+`evidence/catalogue-1000-import.json`; its reachability component remained simulated as intended.
 
 Infrastructure stability fix (23 Oct 2026). Fixed the SeaweedFS S3 bucket init race by retrying the bucket creation on transient connection errors and switching the MinIO healthcheck to the S3 port used by the app. This keeps `docker compose up --build -d` from failing during the `minio-init` bootstrap step when the S3 listener is still coming online. Next: validate the stack and continue the project gate.
 

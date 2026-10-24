@@ -18,8 +18,11 @@ Candidate submission for IncuBrix Assessment 4 ("Distribution: Long-Tail Destina
 ## Roadmap (update as you go)
 The work-package order and source of truth are in docs/MASTER_PLAN.md. Phase verification on
 24 Oct 2026: Phase 2 and Phase 5 are DONE; Phases 1, 3 and 7 are PARTIAL; Phases 4 and 6
-are NOT DONE. Docker verified 67 suites / 337 tests, lint clean and build clean. Phase 7's
-real 1,000-row Docker API import completed in 3.15 seconds; evidence is in
+are NOT DONE. Lemmy and Ghost passed real API certification at L3; secret-free results and
+deletion confirmations are in `evidence/cert-lemmy-real.json` and `evidence/cert-ghost-real.json`.
+The clean default Docker stack and verification gate passed: 68 suites / 340 tests, lint clean,
+build clean. Phase 1 remains PARTIAL because connector metrics are not implemented. Phase 7's
+real 1,000-row Docker API import completed in 2.325 seconds; evidence is in
 `evidence/catalogue-1000-import.json`. Next work is to complete the missing Phase 4 selftest
 and Phase 6 connectors, then close the remaining partial phases. Do not claim the overall
 assessment is complete while any phase remains partial or not done.

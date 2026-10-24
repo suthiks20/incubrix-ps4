@@ -4,7 +4,6 @@
  */
 import AppError = require('../errors/AppError');
 const fs = require('fs');
-const path = require('path');
 
 function normaliseGhostConnection(connection: Record<string, any>): Record<string, any> {
   if (!connection || typeof connection !== 'object') return {};
@@ -17,43 +16,51 @@ function normaliseGhostConnection(connection: Record<string, any>): Record<strin
   return connection;
 }
 
-function readBootstrapFile(): Record<string, any> {
-  const candidates = [
-    process.env.BOOTSTRAP_OUTPUT_PATH,
-    path.resolve(process.cwd(), 'bootstrap-output.json'),
-    path.resolve(__dirname, '../../../bootstrap-output.json'),
-    path.resolve(__dirname, '../../bootstrap-output.json')
-  ].filter(Boolean);
-  for (const candidate of candidates) {
-    try {
-      if (!fs.existsSync(candidate)) continue;
-      const parsed = JSON.parse(fs.readFileSync(candidate, 'utf8'));
-      if (parsed && typeof parsed === 'object') return parsed;
-    } catch {
-      // Ignore bootstrap file read errors; env and simulation mode remain authoritative.
+function readConnectionsFile(config: any): Record<string, any> {
+  const filePath = config.CONNECTIONS_FILE || '/app/data/connections.json';
+  try {
+    const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error('invalid connection file shape');
     }
+    return parsed;
+  } catch (error: any) {
+    if (error.code === 'ENOENT') return {};
+    throw new AppError('CONNECTION_AUTH_EXPIRED', 'Connection file could not be read', {
+      statusCode: 401
+    });
   }
-  return {};
 }
 
-function bootstrapConnection(connectionRef: string, connectorKey: string): Record<string, any> | undefined {
-  const file = readBootstrapFile();
-  const bare = String(connectionRef || '').toLowerCase().replace(/_local$/, '').replace(/[^a-z0-9]/g, '');
-  const key = bare || connectorKey;
-  const direct = file[key] || file[`${key}_local`] || file[`${connectorKey}`];
-  if (!direct || typeof direct !== 'object') return undefined;
-  if (connectorKey === 'ghost') return normaliseGhostConnection(direct);
-  return direct;
+function fileConnection(
+  connectionRef: string,
+  connectorKey: string,
+  config: any
+): Record<string, any> {
+  const file = readConnectionsFile(config);
+  const normalized = String(connectionRef || '').toLowerCase().replace(/[^a-z0-9]/g, '_');
+  const bare = normalized.replace(/_local$/, '');
+  const names = [normalized, bare, connectorKey, `${connectorKey}_local`];
+  for (const name of names) {
+    const value = file[name];
+    if (value && typeof value === 'object' && !Array.isArray(value)) return value;
+  }
+  return {};
 }
 
 function resolveConnection(destination: any, config: any): Record<string, any> {
   const name = String(destination.connection_ref || '').toUpperCase().replace(/[^A-Z0-9]/g, '_');
   const envName = `CONNECTION_${name}`;
+  const stored = fileConnection(destination.connection_ref || '', destination.connector_key, config);
   if (name && process.env[envName]) {
     try {
       const connection = JSON.parse(process.env[envName] as string);
-      if (destination.connector_key === 'ghost') return normaliseGhostConnection(connection);
-      return connection;
+      if (!connection || typeof connection !== 'object' || Array.isArray(connection)) {
+        throw new Error('invalid connection value');
+      }
+      const merged = { ...stored, ...connection };
+      if (destination.connector_key === 'ghost') return normaliseGhostConnection(merged);
+      return merged;
     } catch {
       throw new AppError('CONNECTION_AUTH_EXPIRED', 'Connection setting is not valid JSON', {
         statusCode: 401,
@@ -62,9 +69,8 @@ function resolveConnection(destination: any, config: any): Record<string, any> {
     }
   }
 
-  const bootstrap = bootstrapConnection(destination.connection_ref || '', destination.connector_key);
-  if (bootstrap) {
-    return destination.connector_key === 'ghost' ? normaliseGhostConnection(bootstrap) : bootstrap;
+  if (Object.keys(stored).length > 0) {
+    return destination.connector_key === 'ghost' ? normaliseGhostConnection({ ...stored }) : stored;
   }
   if (config.SIMULATION_MODE) {
     if (destination.connector_key === 'discourse') return { api_key: 'sim-key', api_username: 'sim-user' };

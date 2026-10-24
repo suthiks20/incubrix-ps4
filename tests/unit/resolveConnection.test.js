@@ -4,13 +4,22 @@
  */
 const AppError = require('../../src/shared/errors/AppError');
 const { resolveConnection } = require('../../src/shared/connections/resolve');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 
 const environmentName = 'CONNECTION_MIXED_REF_2';
 const originalValue = process.env[environmentName];
+const originalConnectionsFile = process.env.CONNECTIONS_FILE;
+let connectionsDirectory;
 
 afterEach(() => {
   if (originalValue === undefined) delete process.env[environmentName];
   else process.env[environmentName] = originalValue;
+  if (originalConnectionsFile === undefined) delete process.env.CONNECTIONS_FILE;
+  else process.env.CONNECTIONS_FILE = originalConnectionsFile;
+  if (connectionsDirectory) fs.rmSync(connectionsDirectory, { recursive: true, force: true });
+  connectionsDirectory = undefined;
 });
 
 test('resolveConnection parses JSON from its named environment value', () => {
@@ -19,9 +28,34 @@ test('resolveConnection parses JSON from its named environment value', () => {
   expect(connection).toEqual({ api_key: 'fake-key', api_username: 'fake-user' });
 });
 
+test('resolveConnection merges file connections under environment overrides', () => {
+  connectionsDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'ix-connections-'));
+  const connectionsFile = path.join(connectionsDirectory, 'connections.json');
+  fs.writeFileSync(connectionsFile, JSON.stringify({
+    mixed_ref_2: { username: 'stored-user', password: 'stored-password', keep: true }
+  }));
+  process.env.CONNECTIONS_FILE = connectionsFile;
+  process.env[environmentName] = JSON.stringify({ password: 'env-password' });
+  const connection = resolveConnection(
+    { connection_ref: 'mixed.ref-2' },
+    { SIMULATION_MODE: false, CONNECTIONS_FILE: connectionsFile }
+  );
+  expect(connection).toEqual({
+    username: 'stored-user',
+    password: 'env-password',
+    keep: true
+  });
+});
+
 test('resolveConnection maps Ghost admin_api_key to api_key for the connector', () => {
+  connectionsDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'ix-connections-'));
+  const connectionsFile = path.join(connectionsDirectory, 'connections.json');
+  process.env.CONNECTIONS_FILE = connectionsFile;
   process.env[environmentName] = JSON.stringify({ admin_api_key: 'ghost-admin-key:abc123' });
-  const connection = resolveConnection({ connection_ref: 'mixed.ref-2', connector_key: 'ghost' }, { SIMULATION_MODE: false });
+  const connection = resolveConnection(
+    { connection_ref: 'mixed.ref-2', connector_key: 'ghost' },
+    { SIMULATION_MODE: false, CONNECTIONS_FILE: connectionsFile }
+  );
   expect(connection).toEqual({ admin_api_key: 'ghost-admin-key:abc123', api_key: 'ghost-admin-key:abc123' });
 });
 

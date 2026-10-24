@@ -17,9 +17,10 @@
     "lint": "eslint .",
     "migrate": "knex --knexfile knexfile.js migrate:latest",
     "migrate:rollback": "knex --knexfile knexfile.js migrate:rollback",
-    "bootstrap:local": "node bootstrap/bootstrap.js all",
+    "bootstrap:local": "docker compose run --rm bootstrap",
     "certify:local": "node bootstrap/verify.js all",
     "verify:local": "node bootstrap/verify.js all",
+    "certify:real": "node dist/scripts/certify-real.js",
     "ix-batch": "node dist/scripts/ix-batch.js",
     "gen-catalogue": "node dist/scripts/gen-catalogue.js"
   },

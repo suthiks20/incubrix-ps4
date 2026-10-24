@@ -1,7 +1,6 @@
 # Compose reads an optional .env for overrides; defaults below keep clean clones runnable.
-# The default stack contains the API, PostgreSQL and an S3-compatible storage service
-# (SeaweedFS, Apache-2.0). The service is named "minio" so existing S3_ENDPOINT settings keep working.
-# Local Lemmy and Ghost instances are opt-in through the local-instances profile.
+# The default stack includes local Lemmy and Ghost instances for real certification.
+# SeaweedFS provides the S3-compatible storage service while retaining the "minio" service name.
 services:
   api:
     build: .
@@ -44,7 +43,8 @@ services:
       RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-60}
       CONNECTION_LEMMY_LOCAL: ${CONNECTION_LEMMY_LOCAL:-}
       CONNECTION_GHOST_LOCAL: ${CONNECTION_GHOST_LOCAL:-}
-      
+      CONNECTIONS_FILE: ${CONNECTIONS_FILE:-/app/data/connections.json}
+      CERTIFY_API_URL: http://api:8000
     volumes:
       - certdata:/app/data
       - ./evidence:/app/evidence
@@ -100,7 +100,6 @@ services:
       S3_REGION: ${S3_REGION:-us-east-1}
     entrypoint: ["node", "scripts/initBucket.js"]
   lemmy-db:
-    profiles: [local-instances]
     image: postgres:16.10-alpine
     environment:
       POSTGRES_DB: lemmy
@@ -114,8 +113,16 @@ services:
       interval: 5s
       timeout: 3s
       retries: 30
+  lemmy-config:
+    build: .
+    entrypoint: ["node", "dist/scripts/prepare-lemmy.js"]
+    environment:
+      CERT_DATA_DIR: /app/data
+      LEMMY_DB_PASSWORD: lemmy-spike-password
+    volumes:
+      - certdata:/app/data
+    restart: "no"
   pictrs:
-    profiles: [local-instances]
     image: asonix/pictrs:0.5.19
     mem_limit: 256m
     volumes:
@@ -126,25 +133,25 @@ services:
       timeout: 3s
       retries: 15
   lemmy:
-    profiles: [local-instances]
     image: dessalines/lemmy:0.19.12
     depends_on:
       lemmy-db:
         condition: service_healthy
+      lemmy-config:
+        condition: service_completed_successfully
       pictrs:
         condition: service_started
     mem_limit: 512m
     ports:
       - "8536:8536"
     volumes:
-      - ./bootstrap/lemmy.hjson:/config/config.hjson:ro
+      - certdata:/config:ro
     healthcheck:
       test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1:8536/api/v3/site >/dev/null"]
       interval: 10s
       timeout: 5s
       retries: 30
   ghost:
-    profiles: [local-instances]
     image: ghost:6.0.10-alpine
     mem_limit: 1g
     ports:
@@ -165,6 +172,22 @@ services:
       interval: 10s
       timeout: 15s
       retries: 40
+  bootstrap:
+    build: .
+    entrypoint: ["node", "bootstrap/bootstrap.js", "all"]
+    environment:
+      LEMMY_URL: http://lemmy:8536
+      GHOST_URL: http://ghost:2368
+      CONNECTIONS_FILE: /app/data/connections.json
+      LEMMY_DB_PASSWORD: lemmy-spike-password
+    volumes:
+      - certdata:/app/data
+    depends_on:
+      lemmy:
+        condition: service_healthy
+      ghost:
+        condition: service_healthy
+    restart: "no"
 volumes:
   pgdata:
   certdata:

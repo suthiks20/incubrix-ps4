@@ -24,9 +24,32 @@ Copying `.env.example` to `.env` is optional and only needed to override the Com
 docker compose up --build -d
 docker compose run --rm api npm test
 docker compose run --rm api npm run lint
+docker compose run --rm api npm run build
 ```
 
 The single command that runs all tests is `docker compose run --rm api npm test`.
+The default stack starts the API, PostgreSQL, SeaweedFS storage, local Lemmy and Ghost instances,
+and a one-shot bootstrap service. Allow about 6 GB of Docker memory for all services.
+The API starts independently of Lemmy and Ghost; the bootstrap waits for both platforms to be healthy
+and writes their credentials to `/app/data/connections.json` in the shared `certdata` volume.
+The optional `CONNECTIONS_FILE` setting defaults to that path. Per-connection environment values
+override matching fields from the file.
+
+For simulation-only development without the local platforms, start just:
+
+```bash
+docker compose up api postgres minio minio-init
+```
+
+After the default stack is healthy, certify the two local instances through the API and write
+secret-free evidence:
+
+```bash
+docker compose run --rm api npm run certify:real
+```
+
+The command prints only status, level, and step outcomes. The integration evidence test is skipped
+until both `evidence/cert-lemmy-real.json` and `evidence/cert-ghost-real.json` exist.
 
 ## Destinations API
 

@@ -40,6 +40,10 @@ test('reads API_TOKEN and TEST_DATABASE_URL from the supplied environment', () =
 test('defaults storage to the configured S3-compatible driver', () => {
   expect(loadConfig({ DATABASE_URL: 'postgres://localhost:5432/ix' }).STORAGE_DRIVER).toBe('s3');
 });
+test('defaults the shared connection file path', () => {
+  expect(loadConfig({ DATABASE_URL: 'postgres://localhost:5432/ix' }).CONNECTIONS_FILE)
+    .toBe('/app/data/connections.json');
+});
 test('parses idempotency numeric settings and rejects invalid values', () => {
   const base = { DATABASE_URL: 'postgres://ix:ix@localhost:5432/ix' };
   expect(loadConfig({ ...base, IDEMPOTENCY_TTL_HOURS: '48', IDEMPOTENCY_WAIT_MS: '0', IDEMPOTENCY_LOCK_TTL_SECONDS: '90' })).toMatchObject({ IDEMPOTENCY_TTL_HOURS: 48, IDEMPOTENCY_WAIT_MS: 0, IDEMPOTENCY_LOCK_TTL_SECONDS: 90 });

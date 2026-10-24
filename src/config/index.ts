@@ -39,6 +39,7 @@ interface AppConfig {
   RATE_LIMIT_PER_MINUTE: number;
   CONNECTION_LEMMY_LOCAL: string;
   CONNECTION_GHOST_LOCAL: string;
+  CONNECTIONS_FILE: string;
   LLM_PROVIDER: string;
   GEMINI_API_KEY: string;
   GROQ_API_KEY: string;
@@ -130,6 +131,7 @@ function loadConfig(env: Environment = process.env): Readonly<AppConfig> {
     RATE_LIMIT_PER_MINUTE: parseIntegerSetting('RATE_LIMIT_PER_MINUTE', env.RATE_LIMIT_PER_MINUTE, 60, 1),
     CONNECTION_LEMMY_LOCAL: env.CONNECTION_LEMMY_LOCAL || '',
     CONNECTION_GHOST_LOCAL: env.CONNECTION_GHOST_LOCAL || '',
+    CONNECTIONS_FILE: env.CONNECTIONS_FILE || '/app/data/connections.json',
     LLM_PROVIDER: env.LLM_PROVIDER || 'mock',
     GEMINI_API_KEY: env.GEMINI_API_KEY || '',
     GROQ_API_KEY: env.GROQ_API_KEY || '',

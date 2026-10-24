@@ -1,11 +1,13 @@
 /**
  * Creates local-only Lemmy and Ghost identities without printing credentials.
- * The generated values are persisted solely in gitignored bootstrap-output.json.
+ * Compose stores the connection file in the shared certification data volume.
  */
 const fs = require('fs/promises');
 const path = require('path');
+const crypto = require('crypto');
 
-const output = path.join(__dirname, '..', 'bootstrap-output.json');
+const output = process.env.CONNECTIONS_FILE || path.join(__dirname, '..', 'bootstrap-output.json');
+const lemmyAdminPath = path.join(path.dirname(output), 'lemmy-admin.json');
 const lemmyUrl = process.env.LEMMY_URL || 'http://127.0.0.1:8536';
 const ghostUrl = process.env.GHOST_URL || 'http://127.0.0.1:2368';
 const lemmyCommunityName = 'incubrix_test';
@@ -15,20 +17,49 @@ async function request(url, options = {}) {
   const body = await response.text();
   let json;
   try { json = JSON.parse(body); } catch { json = body; }
-  if (!response.ok) throw new Error(`${response.status} ${JSON.stringify(json)}`);
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return { json, headers: response.headers };
 }
 
 async function readOutput() {
-  try { return JSON.parse(await fs.readFile(output, 'utf8')); } catch { return {}; }
+  try {
+    return JSON.parse(await fs.readFile(output, 'utf8'));
+  } catch (error) {
+    if (error.code === 'ENOENT') return {};
+    throw new Error('Connection file could not be read');
+  }
 }
 
 async function writeOutput(values) {
+  await fs.mkdir(path.dirname(output), { recursive: true });
   await fs.writeFile(output, `${JSON.stringify(values, null, 2)}\n`, { mode: 0o600 });
 }
 
+async function readLemmyAdmin() {
+  try {
+    return JSON.parse(await fs.readFile(lemmyAdminPath, 'utf8'));
+  } catch (error) {
+    if (error.code === 'ENOENT') throw new Error('Lemmy configuration has not been prepared');
+    throw new Error('Lemmy admin credentials could not be read');
+  }
+}
+
+async function waitForService(url, name) {
+  const deadline = Date.now() + 90000;
+  while (Date.now() < deadline) {
+    try {
+      const response = await fetch(url, { signal: globalThis.AbortSignal.timeout(3000) });
+      if (response.ok) return;
+    } catch {
+      // The service may still be starting; retry until the bounded deadline.
+    }
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+  throw new Error(`${name} did not become healthy`);
+}
+
 async function bootstrapLemmy(values) {
-  values.lemmy ||= { username: 'incubrixadmin', password: 'spike-lemmy-password-only-local' };
+  values.lemmy ||= await readLemmyAdmin();
   if (!values.lemmy.jwt) {
     const login = await request(`${lemmyUrl}/api/v3/user/login`, {
       method: 'POST',
@@ -44,7 +75,7 @@ async function bootstrapLemmy(values) {
     const found = await request(`${lemmyUrl}/api/v3/community?name=${lemmyCommunityName}`, { headers });
     values.lemmy.community_id = found.json.community_view.community.id;
   } catch (error) {
-    if (!String(error.message).startsWith('404 ')) throw error;
+    if (error.message !== 'HTTP 404') throw error;
     const created = await request(`${lemmyUrl}/api/v3/community`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...headers },
@@ -56,7 +87,11 @@ async function bootstrapLemmy(values) {
 
 async function bootstrapGhost(values) {
   if (values.ghost?.admin_api_key) return;
-  values.ghost ||= { email: 'owner@local.test', password: 'T9!rQ2@zL7#vM4$k' };
+  values.ghost ||= {
+    email: 'owner@local.test',
+    password: crypto.randomBytes(32).toString('base64url')
+  };
+  await writeOutput(values);
   const origin = ghostUrl;
   const status = await request(`${ghostUrl}/ghost/api/admin/authentication/setup/`, { headers: { origin } });
   if (!status.json.setup?.[0]?.status) {
@@ -92,10 +127,19 @@ async function main() {
   const values = await readOutput();
   const target = process.argv[2] || 'all';
   if (!['all', 'lemmy', 'ghost'].includes(target)) throw new Error('Use lemmy, ghost, or all');
+  if (target === 'all' || target === 'lemmy') {
+    await waitForService(`${lemmyUrl}/api/v3/site`, 'Lemmy');
+  }
+  if (target === 'all' || target === 'ghost') {
+    await waitForService(`${ghostUrl}/`, 'Ghost');
+  }
   if (target === 'all' || target === 'lemmy') await bootstrapLemmy(values);
   if (target === 'all' || target === 'ghost') await bootstrapGhost(values);
   await writeOutput(values);
-  console.log(`bootstrap ${target} completed; credentials were written without printing values`);
+  console.log(`bootstrap ${target} completed; local connections were saved`);
 }
 
-main().catch((error) => { console.error(`bootstrap failed: ${error.message}`); process.exit(1); });
+main().catch((error) => {
+  console.error(`bootstrap failed: ${error.message}`);
+  process.exit(1);
+});
