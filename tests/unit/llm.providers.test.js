@@ -7,6 +7,7 @@ const loggerOptions = require('../../src/shared/logger');
 const discourse = require('../../src/modules/connectors/discourse');
 const pino = require('pino');
 const { Writable } = require('node:stream');
+const { setImmediate } = require('node:timers');
 
 const rules = {
   self_promo_allowed: false,
