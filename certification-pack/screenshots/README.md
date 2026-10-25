@@ -1,9 +1,16 @@
 # Certification screenshots
-01/02: API run records for the real local Lemmy and Ghost certifications (L3).
-03: Lemmy test post shown as removed (soft delete). 04: Ghost test post gone.
-05/06: live Render demo and its selftest result (simulation mode).
 
-Six screenshots exist. Missing certification screenshots: Discourse, Dev.to, webhook, and assisted.
+01_0-lemmy-run-record.png
+01_1-lemmy-run-record.png
+02_0-ghost-run-record.png
+02_1-ghost-run-record.png
+03-lemmy-post-removed.png
+04-ghost-no-leftover-post.png
+05-render-root.png
+06-render-selftest.png
+07-discourse-run-record.png
+08-devto-run-record.png
+09-webhook-run-record.png
+10-assisted-run-record.png
 
-Missing certification screenshots: Discourse, Dev.to, webhook, and assisted.
-07-10: API run records for the Discourse, Dev.to, webhook and assisted mock certifications (mock instances, not real platforms).
+Certification screenshots are still needed for Discourse, Dev.to, webhook, and assisted.

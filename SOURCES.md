@@ -1,7 +1,7 @@
 # Sources, dependencies, and licences
 
 This inventory is based on the committed `package-lock.json` package metadata and the
-container image declarations in `docker-compose.yml` as of 24 October 2026. It is an
+container image declarations in `docker-compose.yml` as of 25 October 2026. It is an
 engineering inventory, not legal advice; the student must recheck upstream terms before
 submission or redistribution.
 
@@ -574,9 +574,21 @@ package. Verify current image tags and upstream licence notices before distribut
 - `tests/fixtures/rule-cases.json` and `samples/catalogue/catalogue-1000.csv` are deterministic
   project-authored fixtures, not external datasets.
 - No foundation model or downloaded model weights are bundled. `LLM_PROVIDER=mock` is the
-  default; external Gemini/Groq services or local Ollama are optional and subject to their
-  respective terms.
+  default; optional Gemini/Groq requests send rules-page text to those hosted services. Local
+  Ollama uses its local REST service; model weights have their own licenses and terms.
 - Node.js built-ins are part of the Node.js runtime and are not additional npm packages.
+
+## Optional rules-capture APIs and terms
+
+| Provider | API used | Applicable terms and notes |
+|---|---|---|
+| Gemini | [GenerateContent REST API](https://ai.google.dev/api/generate-content) | [Gemini API Additional Terms](https://ai.google.dev/gemini-api/terms) and the linked Google APIs Terms apply. |
+| Groq | [OpenAI-compatible chat completions API](https://console.groq.com/docs/overview) | The GroqCloud Services Agreement and policies govern cloud use. [Website Terms of Use](https://groq.com/terms-of-use/) explicitly do not govern cloud services. |
+| Ollama | Local `POST /api/chat` | [Ollama API documentation](https://github.com/ollama/ollama/blob/main/docs/api.md); Ollama software is [MIT licensed](https://github.com/ollama/ollama/blob/main/LICENSE), while selected model terms vary. |
+
+No live provider was used to produce this submission. Check the providers' current service
+terms, privacy, pricing, model availability, and model licenses before sending page text or
+using a model in production.
 
 ## Upstream references
 

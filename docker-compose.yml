@@ -45,6 +45,14 @@ services:
       CONNECTION_LEMMY_LOCAL: ${CONNECTION_LEMMY_LOCAL:-}
       CONNECTION_GHOST_LOCAL: ${CONNECTION_GHOST_LOCAL:-}
       CONNECTIONS_FILE: ${CONNECTIONS_FILE:-/app/data/connections.json}
+      LLM_PROVIDER: ${LLM_PROVIDER:-mock}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-}
+      OLLAMA_URL: ${OLLAMA_URL:-http://localhost:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-}
+      LLM_TIMEOUT_MS: ${LLM_TIMEOUT_MS:-10000}
       CERTIFY_API_URL: http://api:8000
     volumes:
       - certdata:/app/data

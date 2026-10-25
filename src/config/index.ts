@@ -44,7 +44,11 @@ interface AppConfig {
   LLM_PROVIDER: string;
   GEMINI_API_KEY: string;
   GROQ_API_KEY: string;
-  OLLAMA_BASE_URL: string;
+  GEMINI_MODEL: string;
+  GROQ_MODEL: string;
+  OLLAMA_URL: string;
+  OLLAMA_MODEL: string;
+  LLM_TIMEOUT_MS: number;
 }
 
 type Environment = Record<string, string | undefined>;
@@ -137,7 +141,11 @@ function loadConfig(env: Environment = process.env): Readonly<AppConfig> {
     LLM_PROVIDER: env.LLM_PROVIDER || 'mock',
     GEMINI_API_KEY: env.GEMINI_API_KEY || '',
     GROQ_API_KEY: env.GROQ_API_KEY || '',
-    OLLAMA_BASE_URL: env.OLLAMA_BASE_URL || 'http://localhost:11434'
+    GEMINI_MODEL: env.GEMINI_MODEL || '',
+    GROQ_MODEL: env.GROQ_MODEL || '',
+    OLLAMA_URL: validateUrl('OLLAMA_URL', env.OLLAMA_URL || 'http://localhost:11434'),
+    OLLAMA_MODEL: env.OLLAMA_MODEL || '',
+    LLM_TIMEOUT_MS: parseIntegerSetting('LLM_TIMEOUT_MS', env.LLM_TIMEOUT_MS, 10000, 1)
   });
 }
 

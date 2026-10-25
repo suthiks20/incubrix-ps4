@@ -2,6 +2,7 @@
 
 This pack links reviewer claims to reproducible inputs, actual outputs, and logs.
 It preserves both passing gate output and observed failed attempts; no credentials are included.
+selftest-*.json were re-encoded from UTF-16 to UTF-8; content unchanged.
 
 | Claim | Input | Output or log | Reproduction |
 |---|---|---|---|

@@ -37,14 +37,14 @@ each connector. A retry checks that marker before creating another post. The mea
 Discourse timeout case observed exactly one item after retry. The publish lock is in-process;
 multiple API replicas would need a PostgreSQL advisory lock or equivalent distributed lock.
 
-### Deterministic rules before optional language models
+### Deterministic publishing rules and mock rules capture
 
 Frequency caps, self-promotion, links, AI disclosure, and language checks use a pure,
-deterministic rules engine. The default LLM adapter is `mock`; optional Gemini, Groq, or
-Ollama integrations are isolated behind the adapter. This keeps core publishing tests
-reproducible and avoids a model call being treated as the authority for hard policy.
-Rules capture creates a pending proposal; a human confirmation is required before it can
-affect decisions.
+deterministic rules engine. Rules capture supports an offline deterministic mock and optional
+Gemini, Groq, and Ollama REST adapters. The mock is the default and leaves unmentioned fields
+unspecified. Adapter tests use fake fetch responses; no live model provider has been exercised.
+Captures create pending proposals, and a human confirmation is required before captured rules
+can affect decisions.
 
 ### Small custom CSV and XML handling
 
@@ -84,7 +84,7 @@ the parsers small and explicitly tested.
 | Forced timeout retries | 20 / 20 succeeded; 0 failures | Same-key marker reconciliation was exercised on all five publish-capable Core connectors |
 | Duplicate posts under retry | 0 | Checked after each forced retry; all 20 retry posts were deleted and verified gone |
 | Rule fixture | 24 cases; 13/13 expected target violations caught; 0 missed | Frequency cap 4/4, no-promo 3/3, link policy 3/3, AI disclosure 3/3 |
-| Catalogue import | 1,000 rows; 880 imported; 100 duplicates; 120 errors; 2.626 s | Existing real import record; not rewritten by Phase 8 |
+| Catalogue import | 1,000 generated example rows; 880 imported; 100 duplicates; 120 errors; 2.626 s | Integration test with mocked reachability; not a live-site catalogue or 1,000-site reachability run |
 | Cost per 1,000 mock publications | $0 API usage | Excludes host compute, storage, network, and operational cost |
 
 These numbers are not a production load test. The 100 simulated publishes are disposable
@@ -102,6 +102,17 @@ and source files.
   the first `/ready` request took 22.7 seconds (HTTP 200); the next request took 0.3 seconds.
 - The Compose stack uses persistent Docker volumes locally. The hosted demo's filesystem may
   be ephemeral; production artifacts must use durable S3-compatible storage.
+- The Render demo database is a free instance that expires 30 days after creation. Its file
+  storage is ephemeral, so job output downloads can disappear after a restart.
+- Rules capture uses text heuristics with the mock provider; proposals remain pending until
+  confirmed. Optional Gemini, Groq, and Ollama adapters exist, but no live model capture has
+  been run; these adapters are tested only with fake fetch responses. A provider's
+  free-tier capture costs $0 when that provider's free tier applies; paid usage is not measured.
+  The default runtime provider is `mock`; no external provider was used for a live capture.
+- Catalogue reachability always succeeds in simulation mode and member counts are deterministic
+  mock values. `defaultReachability` provides a real HTTP check outside simulation, but it was
+  not run against 1,000 live sites. The 2.626-second figure is from an integration test with
+  mocked reachability.
 - Lemmy's delete API is a soft delete. The certification pack records the API deletion
   confirmation; it does not claim physical erasure from Lemmy's database.
 - `batch_publish` is available for seeded simulation destinations. Its items use the shared
@@ -118,6 +129,5 @@ Mock APIs incur $0 API charges per 1,000 publications; this is not a total cost-
 estimate. Include hosting, PostgreSQL, object storage, bandwidth, monitoring, and backup costs
 when choosing a production plan.
 
-Before submission, the student should enter the links in the Submission Form, verify
-reviewer repository access, and capture the remaining connector certification screenshots
-without credentials.
+Before submission, the student should enter the links in the Submission Form and verify
+reviewer repository access.

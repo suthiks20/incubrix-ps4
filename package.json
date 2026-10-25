@@ -26,7 +26,8 @@
     "ix-batch": "node dist/scripts/ix-batch.js",
     "gen-catalogue": "node dist/scripts/gen-catalogue.js",
     "measure": "node dist/scripts/measure.js",
-    "certify:mock": "node dist/scripts/certify-mock.js"
+    "certify:mock": "node dist/scripts/certify-mock.js",
+    "capture:real": "node dist/scripts/capture-real.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1156.0",

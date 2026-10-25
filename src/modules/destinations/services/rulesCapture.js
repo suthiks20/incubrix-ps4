@@ -13,7 +13,7 @@ async function captureRules(knex, destinationId, payload, server) {
   const proposal = await llm.getAdapter(provider).captureRules({
     rules_text: payload.rules_text || payload.text || '',
     url: payload.url || ''
-  }, payload.fetcher || null);
+  }, { config: server.config });
   server.ruleProposals.set(destinationId, { ...proposal, destination_id: destinationId, status: 'PENDING' });
   return {
     destination_id: destination.id,
@@ -21,6 +21,9 @@ async function captureRules(knex, destinationId, payload, server) {
     status: 'PENDING',
     rules: proposal.rules,
     provider: proposal.provider || provider,
+    model: proposal.model,
+    latency_ms: proposal.latency_ms,
+    evidence: proposal.evidence,
     source: payload.url || null,
     created_at: proposal.created_at
   };

@@ -37,8 +37,8 @@ capabilities not implemented are marked No.
 | 3a | Yes | MRSS feed, XML escaping, retry marker, certification | `tests/integration/phase1.remainder.test.js` MRSS tests; `tests/integration/certification/certify.test.js` |
 | 3b | Yes | Slack Web API connector and mock certification | `tests/integration/phase1.remainder.test.js`; `tests/integration/certification/certify.test.js` |
 | 3c | Yes | Hashnode GraphQL connector and mock certification | `tests/integration/phase1.remainder.test.js`; `tests/integration/certification/certify.test.js` |
-| 4 | Yes | Rules capture proposal is pending until confirmation | `tests/integration/phase5.tailoring.test.js` required capture/confirm tests |
-| 5 | Yes | Catalogue import with CSV, deduplication, language, errors, and 1,000-row timing | `tests/integration/catalogue/catalogue.import.test.js`; `evidence/catalogue-1000-import.json`; `evidence/metrics.json` |
+| 4 | Partial | Adapter implemented and tested with a fake fetch; not exercised against a live model. Proposals remain pending until confirmed. | `tests/unit/llm.providers.test.js`; `tests/integration/phase5.tailoring.test.js`; `evidence/rules-capture-real.json` is PENDING (not present) |
+| 5 | Partial | CSV import, deduplication, language, and row errors work. Simulation reachability always succeeds and member counts are deterministic mock values. `defaultReachability` provides a real HTTP check but was not run against 1,000 live sites; 2.626 seconds is from the integration test with mocked reachability. | `tests/integration/catalogue/catalogue.import.test.js`; `evidence/catalogue-1000-import.json`; `src/modules/catalogue/service.ts` |
 
 ## Integration Standard points 1-10
 
@@ -85,6 +85,7 @@ capabilities not implemented are marked No.
 | 30-day recertification scheduler | No | Demotion and alerts exist; no recertification scheduler is implemented. |
 | Real catalogue of 150+ destinations | No | `catalogue-1000.csv` contains generated `example.com` data, not a real destination catalogue. |
 | Hosted demo cold-start measurement | Yes | First `/ready` after idle: 22.7 seconds (HTTP 200); next request: 0.3 seconds; [README](../README.md) |
-| Reviewer screenshots and video | Yes | Six screenshots are in `certification-pack/screenshots/`; unedited 10:09 video: https://youtu.be/uj-4iZKrkFA. The IncuBrix team confirmed that up to 10 minutes is acceptable. Discourse, Dev.to, webhook, and assisted still lack certification screenshots. |
+| Certification screenshots | Partial | The existing screenshot files and the remaining destinations are listed in `certification-pack/screenshots/README.md`; certification screenshots are still needed for Discourse, Dev.to, webhook, and assisted. |
+| Demo video | Yes | Unedited screen recording, 10:09 long: https://youtu.be/uj-4iZKrkFA |
 | AI tools used | Yes | `AI_USE.md` documents GitHub Copilot and Claude; no other tools were used. |
 | Submission Form/reviewer access | Partial | TODO(student): enter the links from this map in the live form and verify repository access. |

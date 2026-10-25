@@ -94,9 +94,11 @@ If authentication is enabled, add `-H "Authorization: Bearer YOUR_API_TOKEN"` to
 `202` job response. CSV headers must be unique and use the destination fields `name`, `url`,
 `platform_key`, and `connector_key`; optional fields include `category`, `description`,
 `audience_tags`, `language`, `geo`, and `rules_url`. Credential/configuration columns are rejected.
-URLs are normalized before de-duplication on `(platform_key, url)`. Reachability checks use a 1.5-second
-timeout and a concurrency limit of 50; member counts use deterministic mock enrichment unless the
-import service is given an injected provider. Language detection uses script ranges and common stopwords.
+URLs are normalized before de-duplication on `(platform_key, url)`. In simulation mode, reachability
+always succeeds without an HTTP request, and member counts use a deterministic mock value. Outside
+simulation mode, the `defaultReachability` HTTP function is available, but it has not been run against
+1,000 live sites. Reachability checks use a 1.5-second timeout and a concurrency limit of 50.
+Language detection uses script ranges and common stopwords.
 Every job stores a row-by-row error CSV and exposes it through `links.errors`.
 
 In Windows Command Prompt, generate a 1,000-row fixture and submit it from an accessible CSV URL:
@@ -107,10 +109,11 @@ npm run gen-catalogue
 curl.exe -X POST http://localhost:8000/api/v1/catalogue/import -H "Content-Type: application/json" -H "Idempotency-Key: catalogue-demo-001" --data-raw "{\"source\":{\"url\":\"https://example.com/catalogue.csv\"}}"
 ```
 
-The generated fixture contains duplicate URLs, invalid schemes, and English/Spanish text. The integration
-test imports it with mocked reachability, records the actual elapsed time and counts in
-`evidence/catalogue-1000-import.json`, and verifies the under-five-minute target. No new environment
-settings are needed for catalogue import.
+The generated fixture contains duplicate URLs, invalid schemes, and English/Spanish text; it is not a
+catalogue of live destinations. The integration test imports it with mocked reachability, records the
+actual elapsed time and counts in `evidence/catalogue-1000-import.json`, and verifies the under-five-minute
+target. The recorded 2.626-second timing is from this integration test with mocked reachability, not from
+1,000 live sites. No new environment settings are needed for catalogue import.
 
 ## Simulation demo seed and self-test
 
@@ -340,17 +343,38 @@ curl.exe -X POST http://localhost:8000/connector/v1/discourse/publish -H "Conten
 | CONNECTIONS_FILE | /app/data/connections.json | Optional local connections JSON merged below environment overrides |
 | CONNECTION_LEMMY_LOCAL | empty | Optional local Lemmy connection override |
 | CONNECTION_GHOST_LOCAL | empty | Optional local Ghost connection override |
-| LLM_PROVIDER | mock | Rules-capture adapter: mock, gemini, groq, or ollama |
-| GEMINI_API_KEY | empty | Optional key when using Gemini rules capture |
-| GROQ_API_KEY | empty | Optional key when using Groq rules capture |
-| OLLAMA_BASE_URL | http://localhost:11434 | Ollama endpoint when selected |
+| LLM_PROVIDER | mock | Rules-capture provider: mock, gemini, groq, or ollama |
+| GEMINI_API_KEY | empty | Optional Gemini API key |
+| GEMINI_MODEL | gemini-2.0-flash | Gemini model; model names change, check provider documentation |
+| GROQ_API_KEY | empty | Optional Groq API key |
+| GROQ_MODEL | llama-3.3-70b-versatile | Groq model; model names change, check provider documentation |
+| OLLAMA_URL | http://localhost:11434 | Ollama endpoint |
+| OLLAMA_MODEL | llama3.2 | Ollama model; model names change, check provider documentation |
+| LLM_TIMEOUT_MS | 10000 | Timeout for rules page and provider requests |
+
+The default `mock` provider works offline and returns `null` for rule fields not supported by
+the supplied page text. Gemini and Groq require their respective API keys and a configured
+model; Ollama uses `OLLAMA_URL` and `OLLAMA_MODEL`. Provider model identifiers change; check
+the provider's current model list before configuring them. Live provider requests send the
+rules page text to that provider. All captured proposals remain `PENDING` until confirmed.
+
+To create optional, real-provider evidence, configure a provider and its credential in the
+environment, then run:
+
+```powershell
+docker compose run --rm -e LLM_PROVIDER -e GROQ_API_KEY -e GROQ_MODEL api npm run capture:real
+```
+
+For Gemini, pass `GEMINI_API_KEY` and `GEMINI_MODEL` instead. Ollama needs a reachable
+`OLLAMA_URL` and `OLLAMA_MODEL`. The command never writes evidence with the mock provider and
+does not run unless invoked explicitly.
 
 ## Error codes
 
 | Group | Codes |
 | --- | --- |
 | Connector contract | DEST_SPEC_VIOLATION, DEST_RULE_FREQUENCY_CAP, CONNECTION_AUTH_EXPIRED, PLATFORM_RATE_LIMIT, PLATFORM_QUOTA_EXHAUSTED, PLATFORM_CONTENT_REJECTED, PLATFORM_UNAVAILABLE, CONNECTOR_DISABLED |
-| Connector framework and rules | SCHEMA_DRIFT, DEST_RULE_VIOLATION, DESTINATION_DEMOTED, DESTINATION_DISABLED, CONNECTOR_NOT_IMPLEMENTED |
+| Connector framework and rules | SCHEMA_DRIFT, DEST_RULE_VIOLATION, DESTINATION_DEMOTED, DESTINATION_DISABLED, CONNECTOR_NOT_IMPLEMENTED, LLM_PROVIDER_ERROR |
 | Certification | CERT_HOST_NOT_ALLOWED, CERT_CONFIG_INVALID |
 | Validation and HTTP | VALIDATION_ERROR, UNSUPPORTED_MEDIA_TYPE, PAYLOAD_TOO_LARGE, NOT_FOUND, UNAUTHORIZED, RATE_LIMITED, NOT_READY, INTERNAL_ERROR |
 | Idempotency | IDEMPOTENCY_KEY_REQUIRED, IDEMPOTENCY_KEY_CONFLICT, IDEMPOTENCY_REQUEST_IN_PROGRESS |

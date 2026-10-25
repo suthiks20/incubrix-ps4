@@ -408,6 +408,65 @@ overall assessment is complete until those items are resolved.
 
 ## Next
 
-The student must verify the live-demo cold start, provide screenshots and the required unedited
-video, confirm the full Submission Form Outstanding rows, and confirm prior AI-tool use. The
-assessment is not complete while Phase 8 remains PARTIAL.
+The remaining Phase 8 tasks are entering Submission Form links, verifying reviewer repository
+access, and capturing certification screenshots for Discourse, Dev.to, webhook, and assisted.
+The assessment is not complete while Phase 8 remains PARTIAL.
+
+## Evidence hygiene and documentation phase gate
+
+The evidence encoding script re-wrote only `selftest-result.json` and `selftest-render.json`
+as UTF-8 and verified parsed JSON equality. The evidence JSON encoding test passed as part of
+the full suite. All 12 screenshot files were renamed from `.png.png` to `.png`; the screenshot
+README lists their filenames. Rules-capture and catalogue claims were corrected in the docs.
+
+Gate results:
+
+```text
+docker compose build api                      PASS
+docker compose run --rm api npm test          Test Suites: 73 passed, 73 total
+                                              Tests:       401 passed, 401 total
+docker compose run --rm api npm run lint      FAIL: no-undef for TextDecoder in
+                                              scripts/fix-evidence-encoding.js (lines 26, 43, 50)
+                                              and tests/unit/evidence.encoding.test.js (line 15)
+docker compose run --rm api npm run build     NOT RUN; stopped after lint failed
+```
+
+The first lint attempt failed because the configured ESLint globals do not include `TextDecoder`.
+Both files now import `TextDecoder` from `node:util`; no lint rule or configuration was changed.
+The rerun passed:
+
+```text
+docker compose build api                     PASS
+docker compose run --rm api npm test         Test Suites: 73 passed, 73 total
+                                             Tests:       401 passed, 401 total
+docker compose run --rm api npm run lint     PASS
+> eslint .
+
+docker compose run --rm api npm run build    PASS
+> tsc && node scripts/copyAssets.js
+```
+
+The corrected encoding code and evidence JSON test completed successfully.
+
+## Phase 2 rules-capture provider gate — PARTIAL
+
+Implemented the provider adapters, mock extraction, config and documentation updates, secret
+redaction, rules-page URL checks, and optional live-capture command. No live provider was
+called, and `evidence/rules-capture-real.json` remains absent. Both full Docker Jest runs
+passed, including all eight required named tests. Lint failed, so Phase 2 is not complete and
+Phase 3 has not started.
+
+```text
+docker compose build api                     PASS before each full test run
+docker compose run --rm api npm test         Test Suites: 74 passed, 74 total
+                                             Tests:       411 passed, 411 total
+docker compose run --rm api npm test         Test Suites: 74 passed, 74 total
+                                             Tests:       411 passed, 411 total
+docker compose run --rm api npm run lint     FAIL
+/app/tests/unit/llm.providers.test.js
+  176:34  error  'setImmediate' is not defined  no-undef
+
+✖ 1 problem (1 error, 0 warnings)
+docker compose run --rm api npm run build    PASS
+> tsc && node scripts/copyAssets.js
+```

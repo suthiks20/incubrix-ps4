@@ -23,8 +23,9 @@ and Hashnode pass their mock certifications and contract tests. Lemmy and Ghost 
 certification at L3; secret-free results and deletion confirmations are in
 `evidence/cert-lemmy-real.json` and `evidence/cert-ghost-real.json`.
 The clean default Docker stack passed two consecutive full gates at 72 suites / 400 tests each,
-with lint and build clean. A separate clone without `.env` passed the full 72-suite / 400-test
-gate, lint, build, the seeded 14-case selftest, and all eight batch outcomes. Phase 3 has
+with lint and build clean; the subsequent evidence-encoding test gate passed at 73 suites /
+401 tests with lint and build clean. A separate clone without `.env` passed the full
+72-suite / 400-test gate, lint, build, the seeded 14-case selftest, and all eight batch outcomes. Phase 3 has
 assisted error-envelope, batch CLI, end-to-end, configuration, job-log, and proof-document
 coverage; the simulation-only batch publisher produced eight expected results and cleaned up
 its test posts.

@@ -33,7 +33,8 @@ const codes = Object.freeze({
   JOB_TYPE_NOT_READY: { statusCode: 501, retryable: false },
   DUPLICATE_DESTINATION: { statusCode: 409, retryable: false },
   RULES_PROPOSAL_NOT_FOUND: { statusCode: 404, retryable: false },
-  RULES_PROPOSAL_REJECTED: { statusCode: 422, retryable: false }
+  RULES_PROPOSAL_REJECTED: { statusCode: 422, retryable: false },
+  LLM_PROVIDER_ERROR: { statusCode: 502, retryable: true }
 });
 
 export = codes;

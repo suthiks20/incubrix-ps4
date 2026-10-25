@@ -44,6 +44,29 @@ test('defaults the shared connection file path', () => {
   expect(loadConfig({ DATABASE_URL: 'postgres://localhost:5432/ix' }).CONNECTIONS_FILE)
     .toBe('/app/data/connections.json');
 });
+test('loads rules-capture provider settings and applies safe defaults', () => {
+  expect(loadConfig({ DATABASE_URL: 'postgres://localhost:5432/ix' })).toMatchObject({
+    LLM_PROVIDER: 'mock',
+    GEMINI_API_KEY: '',
+    GEMINI_MODEL: '',
+    GROQ_API_KEY: '',
+    GROQ_MODEL: '',
+    OLLAMA_URL: 'http://localhost:11434',
+    OLLAMA_MODEL: '',
+    LLM_TIMEOUT_MS: 10000
+  });
+  expect(loadConfig({
+    DATABASE_URL: 'postgres://localhost:5432/ix',
+    LLM_PROVIDER: 'groq',
+    GROQ_API_KEY: 'test-groq-key',
+    GROQ_MODEL: 'test-model',
+    LLM_TIMEOUT_MS: '2500'
+  })).toMatchObject({ LLM_PROVIDER: 'groq', GROQ_API_KEY: 'test-groq-key', GROQ_MODEL: 'test-model', LLM_TIMEOUT_MS: 2500 });
+  expect(() => loadConfig({
+    DATABASE_URL: 'postgres://localhost:5432/ix',
+    LLM_TIMEOUT_MS: '0'
+  })).toThrow('LLM_TIMEOUT_MS');
+});
 test('parses idempotency numeric settings and rejects invalid values', () => {
   const base = { DATABASE_URL: 'postgres://ix:ix@localhost:5432/ix' };
   expect(loadConfig({ ...base, IDEMPOTENCY_TTL_HOURS: '48', IDEMPOTENCY_WAIT_MS: '0', IDEMPOTENCY_LOCK_TTL_SECONDS: '90' })).toMatchObject({ IDEMPOTENCY_TTL_HOURS: 48, IDEMPOTENCY_WAIT_MS: 0, IDEMPOTENCY_LOCK_TTL_SECONDS: 90 });
