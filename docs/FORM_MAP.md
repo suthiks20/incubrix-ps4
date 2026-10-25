@@ -1,8 +1,7 @@
 # Submission Form evidence map
 
-Status is limited to checked-in proof and the available prompt summary. The assessment brief
-PDF and Submission Form were not present in the repository; unidentified form items are
-explicitly left for student confirmation instead of being assumed.
+Statuses reflect checked-in proof and student-confirmed assessment details. Outstanding
+capabilities not implemented are marked No.
 
 ## Must-haves 1-9
 
@@ -81,8 +80,11 @@ explicitly left for student confirmation instead of being assumed.
 
 | Item | Status | Proof or remaining action |
 |---|---|---|
-| Outstanding form section | No | The full brief PDF and exact Outstanding rows were unavailable. TODO(student): copy every exact Outstanding row from the Submission Form and assess it; no Outstanding claim is made here. |
-| Hosted demo cold-start measurement | Partial | README Live demo section contains `TODO(student): ...`; measure the actual live instance. |
-| Reviewer screenshots and video | Partial | `certification-pack/SCREENSHOT_TODO.md`; TODO(student): record the required unedited demonstration video. |
-| Other AI tools used in earlier sessions | Partial | `AI_USE.md`; TODO(student): confirm Claude/Codex/other tool use. |
+| Outstanding recommender with labelled-set precision | No | No recommender or labelled precision evaluation is implemented. |
+| `fetch_metrics` on 3+ connectors | Yes | Discourse, Dev.to, and Ghost; `tests/integration/phase1.remainder.test.js` |
+| 30-day recertification scheduler | No | Demotion and alerts exist; no recertification scheduler is implemented. |
+| Real catalogue of 150+ destinations | No | `catalogue-1000.csv` contains generated `example.com` data, not a real destination catalogue. |
+| Hosted demo cold-start measurement | Yes | First `/ready` after idle: 22.7 seconds (HTTP 200); next request: 0.3 seconds; [README](../README.md) |
+| Reviewer screenshots and video | Yes | Six screenshots are in `certification-pack/screenshots/`; unedited 10:09 video: https://youtu.be/uj-4iZKrkFA. The IncuBrix team confirmed that up to 10 minutes is acceptable. Discourse, Dev.to, webhook, and assisted still lack certification screenshots. |
+| AI tools used | Yes | `AI_USE.md` documents GitHub Copilot and Claude; no other tools were used. |
 | Submission Form/reviewer access | Partial | TODO(student): enter the links from this map in the live form and verify repository access. |

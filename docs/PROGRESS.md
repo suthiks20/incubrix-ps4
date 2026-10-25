@@ -11,7 +11,7 @@
 | 5 — Tailoring, relevance and rules capture | DONE | Items 5.1-5.3 and their required tests pass in `tests/integration/phase5.tailoring.test.js`. |
 | 6 — MRSS, Slack and Hashnode | DONE | All three Advanced connectors pass mock certification and contract coverage; see the Phase 6b gate below. |
 | 7 — Catalogue import | DONE | Import, row errors, mixed languages, real selftest importer scenario, and the protected 1,000-row record are proved by `tests/integration/catalogue/catalogue.import.test.js`, `tests/integration/phase4.selftest.test.js`, and `evidence/catalogue-1000-import.json` (2.626 seconds). |
-| 8 — Measurement and submission pack | PARTIAL | Metrics, documents, and the clean-clone run are recorded below. Hosted cold-start, screenshots/video, unknown form rows, and confirmation of earlier AI tools remain student-only. |
+| 8 — Measurement and submission pack | PARTIAL | Metrics, sources, AI-use disclosure, 22.7-second cold-start result, and unedited demo video are recorded. Remaining items: Submission Form entry, reviewer repository access, and certification screenshots for Discourse, Dev.to, webhook, and assisted. |
 
 ## Brief-item reconciliation
 
@@ -44,11 +44,11 @@
 | 7.3 Real catalogue selftest scenario | DONE | `tests/integration/phase4.selftest.test.js` |
 | 8.0 Phase and item reconciliation | DONE | This table and `docs/FORM_MAP.md` |
 | 8.1 Metrics generation | DONE | `scripts/measure.ts`; `evidence/metrics.json`; `tests/unit/measure.test.js` |
-| 8.2 Report, sources, and AI-use disclosure | PARTIAL | `REPORT.md`; `SOURCES.md`; `AI_USE.md`; TODO(student) remains for confirmation of prior AI tools |
-| 8.3 Test, certification, and catalogue packs | PARTIAL | `test-pack/`, `certification-pack/`, and `catalogue/` contain run outputs; screenshot/video TODO remains |
-| 8.4 README completeness | DONE | `README.md`; live demo cold-start TODO is student-only |
+| 8.2 Report, sources, and AI-use disclosure | DONE | `REPORT.md`, `SOURCES.md`, and `AI_USE.md`; the `exit` MIT licence and AI tools are confirmed |
+| 8.3 Test, certification, and catalogue packs | PARTIAL | Packs exist; the unedited 10:09 demo video is at https://youtu.be/uj-4iZKrkFA; certification screenshots remain for Discourse, Dev.to, webhook, and assisted |
+| 8.4 README completeness | DONE | `README.md`; live demo first `/ready` after idle took 22.7 seconds, next request took 0.3 seconds |
 | 8.5 Clean-clone run | DONE | The Phase 9 clean clone passed startup/readiness, 72 suites / 400 tests, lint, build, eight batch outcomes, and the 14-case selftest; see `test-pack/outputs/batch/summary.json` and the Phase 9 verification below. |
-| 8.6 Submission Form map | PARTIAL | `docs/FORM_MAP.md`; exact unavailable Outstanding rows and student-only items need confirmation |
+| 8.6 Submission Form map | PARTIAL | `docs/FORM_MAP.md`; enter links in the form and confirm reviewer repository access |
 
 ## Test isolation
 
@@ -60,7 +60,8 @@ Audited destination inserts and fixed destination URLs/names across
 `idempotency/destinations.idempotency.test.js`, `certification/certify.test.js`,
 `certification/alerts.test.js`, `certification/cleanup.test.js`,
 `certification/failure.test.js`, `certification/routes.validation.test.js`,
-`certification/secrets.test.js`, `phase2.integration.test.js`,
+`certification/secrets.test.js`, `certification/helpers.js`,
+`destinationTestHelpers.js`, `jobs/helpers.js`, `phase2.integration.test.js`,
 `phase3.second-half.test.js`, `phase5.tailoring.test.js`,
 `jobs/jobs.api.test.js`, `jobs/jobs.callback.test.js`, `jobs/jobs.storage.test.js`,
 and `jobs/jobs.worker.test.js`.
@@ -73,7 +74,21 @@ was the exception: it only cleared `publish_ledger`. It now truncates
 `beforeEach` and `afterAll`, while retaining all mock `_reset` calls and existing setup.
 No test assertions or timeout settings were changed.
 
-Verification stopped at the first failing full-suite run as required:
+The Jest setup now pins `API_TOKEN`, `CONNECTORS_DISABLED`, `SIMULATION_MODE`,
+`SEED_DEMO`, `STORAGE_DRIVER`, both local connection values, `CONNECTIONS_FILE`, and all
+`JOBS_*` settings to deterministic test values. This prevents API authentication and other
+host runtime settings from changing test behavior. `tests/unit/config.test.js` retains its
+explicit environment expectations and was not changed.
+
+The persistent PowerShell profile was configured and a fresh `powershell -NoLogo -Command
+"Run-Case 'expired_token' 'check-1'"` succeeded with `CONNECTION_AUTH_EXPIRED` and no post.
+Demo checks `docker compose ps` and `/ready` also passed. The full self-test rehearsal
+command did not return captured output within 120 seconds and was stopped; its polling request
+did not include authentication on GET when the host token may be enabled. Per the user's
+stop-on-failure instruction, no further demo or proof commands were run. The Jest setup
+changes and remaining demo steps are not yet verified.
+
+Historical test-isolation attempt (25 Oct 2026) stopped at the first failing full-suite run:
 
 ```text
 docker compose build api                                  PASS
@@ -85,12 +100,14 @@ docker compose run --rm api npm test (full run 1)         Test Suites: 1 failed,
                                                          Tests:       2 failed, 398 passed, 400 total
 ```
 
-The full run passed `tests/integration/phase1.remainder.test.js`, including the three
+That run passed `tests/integration/phase1.remainder.test.js`, including the three
 reported mock-connector tests, but stopped with two failures in
 `tests/integration/errors.test.js`: `unsupported media type and oversized bodies retain
 their client error statuses` expected HTTP 415 and received 401; `empty JSON body returns a
 validation envelope` expected HTTP 400 and received 401. Per the test-isolation request,
 no further suite, order-specific, lint, or build commands were run after this failure.
+This is historical; the latest recorded successful full-suite gate remains 72 suites /
+400 tests from the Phase 9 verification below.
 
 ## Latest repair and verification
 
@@ -296,14 +313,14 @@ logical mock publications; zero duplicate posts; 13/13 expected rule violations 
 120 errors, 2.626 seconds). Mock API cost is $0 per 1,000 publications; infrastructure is excluded.
 
 A separate clone at `LongTail-clean-clone-phase8` had no `.env` or bootstrap credential file.
-`docker compose up --build -d` started the default stack and `/ready` returned database and
-storage checks `ok`. The clean-clone Docker gate reported 72 suites / 394 tests passed, with
-lint and build clean. `npm run seed` created 17 mock-only destinations. The documented batch
-CLI wrote `summary.json` and eight per-input results; each job correctly reports
-`JOB_TYPE_NOT_READY` because batch publishing remains unimplemented. After seeding, the real
-selftest job passed all 14 cases, and both report and manifest downloads returned HTTP 200.
-The first unseeded selftest attempt is retained separately to show why the documented seed
-step is required. See `test-pack/index.md` for file-by-file evidence.
+At that 24 Oct 2026 Phase 8 checkpoint, `docker compose up --build -d` started the default
+stack and `/ready` returned database and storage checks `ok`. Its clean-clone Docker gate
+reported 72 suites / 394 tests passed, with lint and build clean. `npm run seed` created 17
+mock-only destinations. The documented batch CLI wrote `summary.json` and eight per-input
+results; each job reported `JOB_TYPE_NOT_READY` because batch publishing had not yet been
+implemented. After seeding, the real selftest job passed all 14 cases, and both report and
+manifest downloads returned HTTP 200. The first unseeded selftest attempt is retained
+separately to show why the documented seed step was required. See `test-pack/index.md`.
 
 Docker verification on the source worktree after the measurement lint fix:
 
@@ -315,11 +332,11 @@ docker compose run --rm api npm run lint  PASS
 docker compose run --rm api npm run build PASS
 ```
 
-Phase 8 remains PARTIAL: the live-demo cold-start, screenshots/video, unknown Submission Form
-Outstanding rows, and confirmation of earlier AI tools require student input. At this Phase 8
-checkpoint, Phase 3 was also marked PARTIAL because `batch_publish` had not yet been implemented;
-Phase 9 below supersedes that status. Do not claim the assessment is complete while Phase 8
-remains PARTIAL.
+Phase 8 remains PARTIAL: Submission Form entry, reviewer repository access, and four
+certification screenshots require student follow-up. Cold-start timing, demo video, and AI
+tool disclosure are now recorded. At this 24 Oct 2026 checkpoint, Phase 3 was also marked
+PARTIAL because `batch_publish` had not yet been implemented; Phase 9 below supersedes that
+status. Do not claim the assessment is complete while Phase 8 remains PARTIAL.
 
 WP4 - DONE (23 Oct 2026). Completed the Lemmy and Ghost native connectors, production-shaped simulation
 mocks, registry/catalogue coverage, logger redaction, local verification alias, and Dev.to cleanup-failure
@@ -385,10 +402,9 @@ successfully, returned `/ready` with database and storage `ok`, and passed 72 su
 tests, lint, build, eight of eight batch outcomes, and all 14 selftest cases. The clean-clone
 batch summary and selftest report/manifest downloads are preserved under `test-pack/outputs/`.
 
-Phase 3 is DONE; Phase 8 remains PARTIAL only for student-supplied live-demo cold-start
-seconds, screenshots/video, exact unavailable Submission Form rows, and confirmation of any
-additional AI coding tools. Do not claim the overall assessment is complete until those
-student-only items are resolved.
+Phase 3 is DONE; Phase 8 remains PARTIAL only for Submission Form entry, reviewer repository access, and
+certification screenshots for Discourse, Dev.to, webhook, and assisted. Do not claim the
+overall assessment is complete until those items are resolved.
 
 ## Next
 
