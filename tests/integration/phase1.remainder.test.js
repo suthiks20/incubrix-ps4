@@ -43,7 +43,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   logs = '';
-  await knex('publish_ledger').del();
+  await knex.raw('TRUNCATE publish_ledger, destinations, certification_runs, destination_alerts CASCADE');
   const scenarios = [
     'normal', 'timeout_after_success', 'renamed_field', 'rate_limit_long',
     'expired_token', 'content_rejected', 'unavailable', 'delete_fails_once',
@@ -57,6 +57,7 @@ beforeEach(async () => {
 });
 
 afterAll(async () => {
+  await knex.raw('TRUNCATE publish_ledger, destinations, certification_runs, destination_alerts CASCADE');
   await app.close();
   await knex.destroy();
   logStream.end();

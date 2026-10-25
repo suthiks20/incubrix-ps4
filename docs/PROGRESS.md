@@ -50,6 +50,48 @@
 | 8.5 Clean-clone run | DONE | The Phase 9 clean clone passed startup/readiness, 72 suites / 400 tests, lint, build, eight batch outcomes, and the 14-case selftest; see `test-pack/outputs/batch/summary.json` and the Phase 9 verification below. |
 | 8.6 Submission Form map | PARTIAL | `docs/FORM_MAP.md`; exact unavailable Outstanding rows and student-only items need confirmation |
 
+## Test isolation
+
+Audited destination inserts and fixed destination URLs/names across
+`tests/integration/phase1.remainder.test.js`, `connectors.test.js`, `devto.test.js`,
+`lemmy.test.js`, `ghost.test.js`, `catalogue/catalogue.import.test.js`,
+`destinations/crud.test.js`, `destinations/duplicates.test.js`,
+`destinations/validation.test.js`, `destinations/filters.test.js`,
+`idempotency/destinations.idempotency.test.js`, `certification/certify.test.js`,
+`certification/alerts.test.js`, `certification/cleanup.test.js`,
+`certification/failure.test.js`, `certification/routes.validation.test.js`,
+`certification/secrets.test.js`, `phase2.integration.test.js`,
+`phase3.second-half.test.js`, `phase5.tailoring.test.js`,
+`jobs/jobs.api.test.js`, `jobs/jobs.callback.test.js`, `jobs/jobs.storage.test.js`,
+and `jobs/jobs.worker.test.js`.
+
+The destination integration helper and certification/jobs reset helpers already clear
+destination rows before each test. `devto.test.js`, `lemmy.test.js`, and `ghost.test.js`
+already truncate destination-related tables in `beforeEach`. The phase 1 remainder suite
+was the exception: it only cleared `publish_ledger`. It now truncates
+`publish_ledger, destinations, certification_runs, destination_alerts CASCADE` in both
+`beforeEach` and `afterAll`, while retaining all mock `_reset` calls and existing setup.
+No test assertions or timeout settings were changed.
+
+Verification stopped at the first failing full-suite run as required:
+
+```text
+docker compose build api                                  PASS
+phase1.remainder.test.js run 1                            Test Suites: 1 passed, 1 total
+                                                         Tests:       28 passed, 28 total
+phase1.remainder.test.js run 2                            Test Suites: 1 passed, 1 total
+                                                         Tests:       28 passed, 28 total
+docker compose run --rm api npm test (full run 1)         Test Suites: 1 failed, 71 passed, 72 total
+                                                         Tests:       2 failed, 398 passed, 400 total
+```
+
+The full run passed `tests/integration/phase1.remainder.test.js`, including the three
+reported mock-connector tests, but stopped with two failures in
+`tests/integration/errors.test.js`: `unsupported media type and oversized bodies retain
+their client error statuses` expected HTTP 415 and received 401; `empty JSON body returns a
+validation envelope` expected HTTP 400 and received 401. Per the test-isolation request,
+no further suite, order-specific, lint, or build commands were run after this failure.
+
 ## Latest repair and verification
 
 ### Phase 6a MRSS video feed connector (24 Oct 2026)
