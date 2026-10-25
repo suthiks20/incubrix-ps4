@@ -30,11 +30,11 @@ submission or redistribution.
 ## Complete locked npm dependency inventory
 
 The following list contains every package entry in the lockfile with its declared
-licence and locked version. No AGPL-licensed npm dependency was found. One package,
-`exit`, has no licence value in the lock metadata; TODO(student): verify its upstream
-licence before submission. Transitive metadata counts: 510 package entries; MIT 397,
+licence and locked version. No AGPL-licensed npm dependency was found. The `exit` package
+is MIT licensed, verified from its upstream license and `npm view exit licenses`.
+Transitive metadata counts: 510 package entries; MIT 398,
 Apache-2.0 42, ISC 35, BSD-3-Clause 21, BSD-2-Clause 8, BlueOak-1.0.0 1,
-Python-2.0 1, CC-BY-4.0 1, `(MIT OR CC0-1.0)` 2, 0BSD 1, and unknown 1.
+Python-2.0 1, CC-BY-4.0 1, `(MIT OR CC0-1.0)` 2, and 0BSD 1.
 
 | Locked package | Version | Licence |
 |---|---:|---|
@@ -280,7 +280,7 @@ Python-2.0 1, CC-BY-4.0 1, `(MIT OR CC0-1.0)` 2, 0BSD 1, and unknown 1.
 | `estraverse` | 5.3.0 | BSD-2-Clause |
 | `esutils` | 2.0.3 | BSD-2-Clause |
 | `execa` | 5.1.1 | MIT |
-| `exit` | 0.1.2 | UNKNOWN |
+| `exit` | 0.1.2 | MIT |
 | `expect` | 29.7.0 | MIT |
 | `fast-decode-uri-component` | 1.0.1 | MIT |
 | `fast-deep-equal` | 3.1.3 | MIT |

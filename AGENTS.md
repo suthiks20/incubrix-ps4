@@ -17,8 +17,8 @@ Candidate submission for IncuBrix Assessment 4 ("Distribution: Long-Tail Destina
 - Tests: npm test runs Jest --runInBand against a real Postgres test database. Test cleanup must TRUNCATE ... CASCADE because destinations is referenced by foreign keys.
 ## Roadmap (update as you go)
 The work-package order and source of truth are in docs/MASTER_PLAN.md. Phase verification on
-25 Oct 2026: Phases 1-7 are DONE; Phase 8 is PARTIAL because cold-start timing, screenshots/video,
-unknown Submission Form rows, and prior AI-tool confirmation require student input. MRSS, Slack
+25 Oct 2026: Phases 1-7 are DONE; Phase 8 is PARTIAL because Submission Form entry, reviewer
+repository access, and four certification screenshots remain. MRSS, Slack
 and Hashnode pass their mock certifications and contract tests. Lemmy and Ghost passed real API
 certification at L3; secret-free results and deletion confirmations are in
 `evidence/cert-lemmy-real.json` and `evidence/cert-ghost-real.json`.
@@ -30,7 +30,9 @@ coverage; the simulation-only batch publisher produced eight expected results an
 its test posts.
 Phase 1 includes verified mock parity, media validation, and normalized Discourse, Dev.to and
 Ghost metrics. Phase 7's protected 1,000-row record reports 880 imported, 100 duplicates,
-120 errors, and 2.626 seconds in `evidence/catalogue-1000-import.json`. Phase 8 still has
-student-only cold-start, screenshot/video, unknown form rows, and prior AI-tool confirmations.
+120 errors, and 2.626 seconds in `evidence/catalogue-1000-import.json`. The hosted demo
+first `/ready` after idle took 22.7 seconds and the next request took 0.3 seconds. The 10:09
+unedited demo video is recorded and AI use is disclosed in `AI_USE.md`. Four certification
+screenshots and Submission Form/reviewer access remain.
 Do not claim the overall assessment is complete while any phase remains partial or not done.
 ---

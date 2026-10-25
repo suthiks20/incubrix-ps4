@@ -130,6 +130,34 @@ The job result includes a `links.report` URL and a `links.manifest` URL. Poll
 single `case` to review that one scenario; omitting it runs the full set. When `API_TOKEN` is enabled,
 add `-H "Authorization: Bearer $env:API_TOKEN"` to the command.
 
+### Demo commands
+
+In PowerShell, rehearse the local demo sequence:
+
+```powershell
+docker compose up --build -d
+docker compose ps
+curl.exe -s http://localhost:8000/ready
+curl.exe -s -X POST http://localhost:8000/api/v1/selftest -H "Idempotency-Key: demo-full-001" -H "Content-Type: application/json" -d "{}"
+Run-Case "expired_token" "demo-expired-001"
+Run-Case "rate_limit_reset_honored" "demo-429-001"
+docker compose run --rm api npm test
+docker compose run --rm api npm test -- --runTestsByPath tests/integration/lemmy.test.js -t "timeout retry" --verbose
+curl.exe -s -o NUL -w "%{http_code}\n" https://incubrix-ps4-2ms6.onrender.com/ready
+```
+
+The full self-test command returns a `job_id`; poll
+`GET http://localhost:8000/api/v1/jobs/{job_id}` until `succeeded` or `failed` (up to
+60 seconds) to see all 14 cases. The optional `scripts/demo-helpers.ps1` file defines
+`Run-Case`; add its absolute path to your PowerShell profile to make it available in new
+windows. The helper polls up to 60 seconds and prints the terminal job JSON. if `API_TOKEN` is set, include its bearer token on the full self-test request; the helper
+reads it from the environment automatically. For Render, retry readiness up to three times
+20 seconds apart if the free tier is cold-starting, then submit the self-test request to
+`https://incubrix-ps4-2ms6.onrender.com/api/v1/selftest` with a fresh key and poll its
+`/api/v1/jobs/{job_id}` endpoint.
+Use a fresh idempotency key for every run; reusing a key replays the original job instead
+of starting a new self-test.
+
 ### Reviewer guide
 
 Run these commands only against the local simulation stack. Each queues one case; expected code and
@@ -336,7 +364,7 @@ Every error response uses `{ "error": { "code", "message", "retryable", "details
 - URL: https://incubrix-ps4-2ms6.onrender.com
 - token: provided in the Submission Form
 - Rate limit: 120/min
-- Cold start: TODO(student): cold-start seconds; record the observed value before submission.
+- Cold start: first `/ready` after idle took 22.7 seconds (HTTP 200); the next request took 0.3 seconds.
 
 ## Phases
 
@@ -347,4 +375,4 @@ Every error response uses `{ "error": { "code", "message", "retryable", "details
 - Phase 5 — DONE: Tailoring, relevance scoring, and rules capture.
 - Phase 6 — DONE: MRSS, Slack, and Hashnode connectors pass mock certification and contract tests.
 - Phase 7 — DONE: Catalogue CSV import, error reports, mixed-language detection, and 1,000-row timing are verified.
-- Phase 8 — PARTIAL: Metrics and documentation are recorded; student-only demo, screenshot, and form tasks remain.
+- Phase 8 — PARTIAL: Metrics, cold-start timing, AI-use disclosure, and demo video are recorded; Submission Form/reviewer access and four certification screenshots remain.

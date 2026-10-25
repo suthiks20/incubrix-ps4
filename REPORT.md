@@ -98,9 +98,8 @@ and source files.
 - Real destination reachability is mocked in simulation. Simulation success is not evidence
   that an arbitrary community URL is reachable or accepts a post.
 - The Render demo does not include Lemmy or Ghost; those platforms are local Docker services.
-  The demo URL and stated 120/min rate limit are supplied submission details, not an uptime or
-  cold-start measurement. TODO(student): measure the cold-start duration and verify the live
-  demo is still available before submission.
+  The demo URL and stated 120/min rate limit are supplied submission details. After idle,
+  the first `/ready` request took 22.7 seconds (HTTP 200); the next request took 0.3 seconds.
 - The Compose stack uses persistent Docker volumes locally. The hosted demo's filesystem may
   be ephemeral; production artifacts must use durable S3-compatible storage.
 - Lemmy's delete API is a soft delete. The certification pack records the API deletion
@@ -110,8 +109,8 @@ and source files.
   and manifest links. It is not a real-platform bulk publishing feature.
 - The preserved real certification evidence only covers Lemmy and Ghost. Other connectors
   have mock certification coverage, not independent real-platform runs.
-- The full assessment brief PDF was not present in the repository. The form map uses the
-  supplied task summary and marks unidentified Outstanding form rows for student review.
+- Outstanding recommender precision, 30-day recertification scheduling, and a real
+  150-destination catalogue are not implemented. The form map records these accurately.
 
 ## Cost and next steps
 
@@ -119,7 +118,6 @@ Mock APIs incur $0 API charges per 1,000 publications; this is not a total cost-
 estimate. Include hosting, PostgreSQL, object storage, bandwidth, monitoring, and backup costs
 when choosing a production plan.
 
-Before submission, the student should verify the live demo and record cold-start seconds;
-capture screenshots without credentials; fill any unknown Submission Form and Outstanding
-rows; confirm additional AI tools used in earlier sessions; check repository access and links;
-and record the unedited demo video required by the assessment plan.
+Before submission, the student should enter the links in the Submission Form, verify
+reviewer repository access, and capture the remaining connector certification screenshots
+without credentials.
